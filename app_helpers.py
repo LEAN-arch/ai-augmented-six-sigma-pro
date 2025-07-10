@@ -16,7 +16,7 @@ from scipy.stats import f as f_dist
 from typing import List, Dict, Tuple
 
 # ==============================================================================
-# SECTION 1: VISUAL & STYLING CONFIGURATION
+# SECTION 1: VISUAL & STYLING CONFIGURATION (UNCHANGED)
 # ==============================================================================
 COLORS = {
     "primary": "#0072B2", "secondary": "#009E73", "accent": "#D55E00",
@@ -26,33 +26,21 @@ COLORS = {
 }
 
 def get_custom_css() -> str:
-    """Returns the custom CSS string for a professional, clean Streamlit app theme."""
     return f"""
     <style>
         div[data-testid="stAppViewContainer"] > main {{
             background-color: {COLORS['background']};
             color: {COLORS['text']};
         }}
-        h1, h2 {{
-            color: {COLORS['dark_gray']};
-            border-bottom: 2px solid {COLORS['light_gray']};
-            padding-bottom: 10px;
-        }}
+        h1, h2 {{ color: {COLORS['dark_gray']}; border-bottom: 2px solid {COLORS['light_gray']}; padding-bottom: 10px; }}
         h3 {{ color: {COLORS['primary']}; }}
         h4, h5 {{ color: {COLORS['dark_gray']}; }}
-        div[data-testid="stBlock"] {{
-            border: 1px solid {COLORS['light_gray']};
-            border-radius: 0.5rem;
-            box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
-        }}
-        button[data-testid="stButton"] > button {{
-            border-radius: 0.5rem;
-        }}
+        div[data-testid="stBlock"] {{ border: 1px solid {COLORS['light_gray']}; border-radius: 0.5rem; box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075); }}
+        button[data-testid="stButton"] > button {{ border-radius: 0.5rem; }}
     </style>
     """
 
 def hex_to_rgba(h: str, a: float) -> str:
-    """Converts a hex color string to an rgba string for Plotly compatibility."""
     return f"rgba({int(h[1:3], 16)}, {int(h[3:5], 16)}, {int(h[5:7], 16)}, {a})"
 
 # ==============================================================================
@@ -105,158 +93,109 @@ def generate_hotelling_data() -> pd.DataFrame:
     return pd.DataFrame(np.vstack((data_in, data_out)), columns=['Pct_Mapped', 'Pct_Duplication'])
 
 # ==============================================================================
-# SECTION 3: VISUALIZATION HELPERS (DEFINITIVE VERSION)
+# SECTION 3: VISUALIZATION HELPERS (DEFINITIVE OVERHAUL)
 # ==============================================================================
 
-def _create_network_fig() -> go.Figure:
+def _create_network_fig(height=400) -> go.Figure:
     """Helper to create a blank, styled Plotly figure for network graphs."""
     fig = go.Figure()
     fig.update_layout(
-        showlegend=False,
-        plot_bgcolor='white',
+        showlegend=False, plot_bgcolor='white', height=height,
         xaxis=dict(showgrid=False, zeroline=False, visible=False),
         yaxis=dict(showgrid=False, zeroline=False, visible=False),
         margin=dict(t=20, b=20, l=20, r=20),
-        hovermode='closest'
     )
     return fig
 
-# --- RESTORED FUNCTIONS ---
-def plot_project_charter_visual() -> go.Figure:
-    """CRITICAL FIX: This function was accidentally deleted and has been restored."""
-    fig = go.Figure()
-    fig.add_shape(type="rect", x0=0, y0=0, x1=1, y1=1, fillcolor='white', line_width=0)
-    fig.add_annotation(x=0.5, y=0.92, text="<b>Assay Development Plan: Liquid Biopsy for CRC</b>", showarrow=False, font=dict(size=22, color=COLORS['primary']))
-    kpis = {"Analytical Sensitivity": ("LOD < 0.1% VAF", COLORS['success']), "Clinical Specificity": ("> 99.5%", COLORS['success']), "Turnaround Time": ("< 5 days", COLORS['success'])}
-    for i, (k, (v, c)) in enumerate(kpis.items()):
-        fig.add_annotation(x=0.2+i*0.3, y=0.75, text=f"<b>{k}</b>", showarrow=False, font=dict(size=14, color=COLORS['dark_gray']))
-        fig.add_annotation(x=0.2+i*0.3, y=0.65, text=v, showarrow=False, font=dict(size=20, color=c))
-    statements = {
-        "Problem Statement": (0.05, 0.45, "Colorectal Cancer (CRC) requires earlier detection methods. Current methods are invasive or lack sensitivity for early-stage disease.", "left"),
-        "Goal Statement": (0.95, 0.45, "Develop and validate a cfDNA-based NGS assay for early-stage CRC detection with >90% sensitivity at 99.5% specificity.", "right")}
-    for title, (x, y, txt, anchor) in statements.items():
-        fig.add_annotation(x=x, y=y, text=f"<b>{title}</b>", showarrow=False, align=anchor, xanchor=anchor, font_size=16)
-        fig.add_annotation(x=x, y=y-0.1, text=txt, showarrow=False, align=anchor, xanchor=anchor, yanchor='top', width=400)
-    fig.update_layout(xaxis=dict(visible=False, range=[0, 1]), yaxis=dict(visible=False, range=[0, 1]), plot_bgcolor='white', margin=dict(t=20, b=20, l=20, r=20), height=350)
-    return fig
+def _add_network_nodes_and_edges(fig: go.Figure, nodes: Dict, edges: List[Tuple]):
+    """Helper to add styled annotations as nodes and lines as edges."""
+    # Add Edges
+    for edge in edges:
+        start_node, end_node = nodes[edge[0]], nodes[edge[1]]
+        fig.add_trace(go.Scatter(
+            x=[start_node['x'], end_node['x']],
+            y=[start_node['y'], end_node['y']],
+            mode='lines',
+            line=dict(color=COLORS['light_gray'], width=2),
+            hoverinfo='none'
+        ))
 
-def plot_sipoc_visual() -> go.Figure:
-    """CRITICAL FIX: This function was accidentally deleted and has been restored."""
-    header_values = ['<b>👤<br>Suppliers</b>', '<b>🧬<br>Inputs</b>', '<b>⚙️<br>Process</b>', '<b>📊<br>Outputs</b>', '<b>⚕️<br>Customers</b>']
-    cell_values = [['• Reagent Vendors<br>• Instrument Mfr.<br>• LIMS Provider'], ['• Patient Blood Sample<br>• Reagent Kits<br>• Lab Protocol (SOP)'], ['1. Sample Prep<br>2. Library Prep<br>3. NGS Sequencing<br>4. Bioinformatics<br>5. Reporting'], ['• VCF File<br>• QC Metrics Report<br>• Clinical Report'], ['• Oncologists<br>• Patients<br>• Pharma Partners']]
-    fig = go.Figure(data=[go.Table(header=dict(values=header_values, line_color=COLORS['light_gray'], fill_color=COLORS['light_gray'], align='center', font=dict(color=COLORS['primary'], size=14)), cells=dict(values=cell_values, line_color=COLORS['light_gray'], fill_color='white', align='left', font_size=12, height=150))])
-    fig.update_layout(title_text="<b>SIPOC Diagram:</b> NGS Assay Workflow", margin=dict(l=10, r=10, t=50, b=10))
-    return fig
+    # Add Nodes (as annotations for auto-sizing and better styling)
+    for node_id, node_data in nodes.items():
+        fig.add_annotation(
+            x=node_data['x'], y=node_data['y'],
+            text=f"<b>{node_data['text'].replace('<br>', '<br>')}</b>",
+            showarrow=False,
+            font=dict(color=COLORS['text'], size=11),
+            bgcolor=hex_to_rgba(node_data.get('color', COLORS['primary']), 0.15),
+            bordercolor=node_data.get('color', COLORS['primary']),
+            borderwidth=2,
+            borderpad=10,
+            align="center"
+        )
 
-def plot_kano_visual() -> go.Figure:
-    """CRITICAL FIX: This function was accidentally deleted and has been restored."""
-    df = generate_kano_data(); fig = go.Figure()
-    fig.add_shape(type="rect", x0=0, y0=0, x1=10, y1=10, fillcolor=hex_to_rgba(COLORS['success'], 0.1), line_width=0, layer='below')
-    fig.add_shape(type="rect", x0=0, y0=-10, x1=10, y1=0, fillcolor=hex_to_rgba(COLORS['danger'], 0.1), line_width=0, layer='below')
-    colors = {'Basic (Must-be)': COLORS['accent'], 'Performance': COLORS['primary'], 'Excitement (Delighter)': COLORS['secondary']}
-    for cat, color in colors.items():
-        subset = df[df['category'] == cat]
-        fig.add_trace(go.Scatter(x=subset['functionality'], y=subset['satisfaction'], mode='lines', name=cat, line=dict(color=color, width=4)))
-    fig.add_annotation(x=8, y=8, text="<b>Excitement</b><br>e.g., Detects new<br>resistance mutation", showarrow=True, arrowhead=1, ax=-50, ay=-40, font_color=COLORS['secondary'])
-    fig.add_annotation(x=8, y=4, text="<b>Performance</b><br>e.g., VAF quantification<br>accuracy", showarrow=True, arrowhead=1, ax=0, ay=-40, font_color=COLORS['primary'])
-    fig.add_annotation(x=8, y=-8, text="<b>Basic</b><br>e.g., Detects known<br>KRAS hotspot", showarrow=True, arrowhead=1, ax=0, ay=40, font_color=COLORS['accent'])
-    fig.update_layout(title='<b>Kano Model:</b> Prioritizing Diagnostic Features', xaxis_title='Feature Performance / Implementation →', yaxis_title='← Clinician Dissatisfaction ... Satisfaction →', plot_bgcolor='white', legend=dict(x=0.01, y=0.99, bgcolor='rgba(255,255,255,0.7)'))
-    return fig
-
-# --- UPGRADED & NEWLY IMPLEMENTED PLOTLY VISUALIZATIONS ---
 def plot_ctq_tree_plotly() -> go.Figure:
-    """OVERHAUL: Re-implemented CTQ Tree using pure Plotly for reliability and interactivity."""
-    fig = _create_network_fig()
+    """OVERHAUL: Re-implemented CTQ Tree using Plotly annotations for robust rendering."""
+    fig = _create_network_fig(height=450)
     nodes = {
-        'Need': {'x': 0, 'y': 2, 'text': 'Clinician Need:<br>Reliable Early CRC Detection', 'color': COLORS['accent'], 'size': 35},
-        'Driver1': {'x': 1, 'y': 3, 'text': 'High Sensitivity', 'color': COLORS['primary'], 'size': 30},
-        'Driver2': {'x': 1, 'y': 2, 'text': 'High Specificity', 'color': COLORS['primary'], 'size': 30},
-        'Driver3': {'x': 1, 'y': 1, 'text': 'Fast Turnaround', 'color': COLORS['primary'], 'size': 30},
-        'CTQ1': {'x': 2, 'y': 3, 'text': 'CTQ:<br>LOD < 0.1% VAF', 'color': COLORS['secondary'], 'size': 35},
-        'CTQ2': {'x': 2, 'y': 2, 'text': 'CTQ:<br>Specificity > 99.5%', 'color': COLORS['secondary'], 'size': 35},
-        'CTQ3': {'x': 2, 'y': 1, 'text': 'CTQ:<br>Sample-to-Report < 5 days', 'color': COLORS['secondary'], 'size': 35}
+        'Need':    {'x': 0, 'y': 2, 'text': 'Clinician Need<br>Reliable Early CRC Detection', 'color': COLORS['accent']},
+        'Driver1': {'x': 1, 'y': 3, 'text': 'High Sensitivity', 'color': COLORS['primary']},
+        'Driver2': {'x': 1, 'y': 2, 'text': 'High Specificity', 'color': COLORS['primary']},
+        'Driver3': {'x': 1, 'y': 1, 'text': 'Fast Turnaround', 'color': COLORS['primary']},
+        'CTQ1':    {'x': 2, 'y': 3, 'text': 'CTQ:<br>LOD < 0.1% VAF', 'color': COLORS['secondary']},
+        'CTQ2':    {'x': 2, 'y': 2, 'text': 'CTQ:<br>Specificity > 99.5%', 'color': COLORS['secondary']},
+        'CTQ3':    {'x': 2, 'y': 1, 'text': 'CTQ:<br>Sample-to-Report < 5 days', 'color': COLORS['secondary']}
     }
-    edges = [('Need', 'Driver1'), ('Need', 'Driver2'), ('Need', 'Driver3'), ('Driver1', 'CTQ1'), ('Driver2', 'CTQ2'), ('Driver3', 'CTQ3')]
-
-    for edge in edges: fig.add_trace(go.Scatter(x=[nodes[edge[0]]['x'], nodes[edge[1]]['x']], y=[nodes[edge[0]]['y'], nodes[edge[1]]['y']], mode='lines', line=dict(color=COLORS['light_gray'], width=2)))
-    
-    node_trace = go.Scatter(
-        x=[d['x'] for d in nodes.values()], y=[d['y'] for d in nodes.values()],
-        text=[d['text'] for d in nodes.values()], mode='markers+text',
-        textposition="middle center", textfont=dict(color='white', size=10, family="Arial"),
-        hoverinfo='text', hovertext=[d['text'].replace('<br>', ' ') for d in nodes.values()],
-        marker=dict(size=[d['size'] for d in nodes.values()], color=[d['color'] for d in nodes.values()], symbol='square', opacity=0.9, line=dict(width=1, color=COLORS['dark_gray']))
-    )
-    fig.add_trace(node_trace)
-    fig.update_layout(height=400)
+    edges = [('Need', 'Driver1'), ('Need', 'Driver2'), ('Need', 'Driver3'),
+             ('Driver1', 'CTQ1'), ('Driver2', 'CTQ2'), ('Driver3', 'CTQ3')]
+    _add_network_nodes_and_edges(fig, nodes, edges)
     return fig
 
 def plot_causal_discovery_plotly() -> go.Figure:
-    """OVERHAUL: Re-implemented Causal Discovery graph using pure Plotly."""
-    fig = _create_network_fig()
+    """OVERHAUL: Re-implemented Causal Discovery graph using Plotly annotations."""
+    fig = _create_network_fig(height=350)
     nodes = {
-        'ReagentLot': {'x': 0, 'y': 1.5, 'text': 'Reagent Lot', 'color': COLORS['primary']},
-        'DNAnq': {'x': 0, 'y': 0.5, 'text': 'DNA Input (ng)', 'color': COLORS['primary']},
+        'ReagentLot':   {'x': 0, 'y': 1.5, 'text': 'Reagent Lot', 'color': COLORS['primary']},
+        'DNAnq':        {'x': 0, 'y': 0.5, 'text': 'DNA Input (ng)', 'color': COLORS['primary']},
         'LigationTime': {'x': 1, 'y': 1, 'text': 'Ligation Time', 'color': COLORS['secondary']},
         'AdapterDimer': {'x': 2, 'y': 1, 'text': 'Adapter-Dimer %', 'color': COLORS['accent']}
     }
     edges = [('ReagentLot', 'LigationTime'), ('DNAnq', 'LigationTime'), ('LigationTime', 'AdapterDimer')]
-
-    for edge in edges:
-        start_node, end_node = nodes[edge[0]], nodes[edge[1]]
-        fig.add_trace(go.Scatter(x=[start_node['x'], end_node['x']], y=[start_node['y'], end_node['y']], mode='lines', line=dict(color=COLORS['dark_gray'], width=1.5)))
-        # Add arrow annotation
-        fig.add_annotation(x=end_node['x'], y=end_node['y'], ax=start_node['x'], ay=start_node['y'], xref='x', yref='y', axref='x', ayref='y', showarrow=True, arrowhead=2, arrowsize=1.5, arrowwidth=1.5, arrowcolor=COLORS['dark_gray'])
-    
-    node_trace = go.Scatter(
-        x=[d['x'] for d in nodes.values()], y=[d['y'] for d in nodes.values()],
-        mode='markers', hoverinfo='text', hovertext=[d['text'] for d in nodes.values()],
-        marker=dict(size=50, color=[d['color'] for d in nodes.values()], symbol='circle', line=dict(width=2, color=COLORS['dark_gray']))
-    )
-    fig.add_trace(node_trace)
-    for node in nodes.values(): fig.add_annotation(x=node['x'], y=node['y'], text=f"<b>{node['text']}</b>", showarrow=False, font=dict(color='white', size=10))
-    fig.update_layout(height=350)
+    _add_network_nodes_and_edges(fig, nodes, edges)
+    # Add arrows
+    for start, end in edges:
+        fig.add_annotation(x=nodes[end]['x'], y=nodes[end]['y'], ax=nodes[start]['x'], ay=nodes[start]['y'], xref='x', yref='y', axref='x', ayref='y', showarrow=True, arrowhead=2, arrowsize=1.2, arrowwidth=1.5, arrowcolor=COLORS['dark_gray'])
     return fig
 
 def plot_process_mining_plotly() -> go.Figure:
-    """OVERHAUL: Re-implemented Process Mining map using pure Plotly."""
-    fig = _create_network_fig()
+    """OVERHAUL: Re-implemented Process Mining map using Plotly annotations."""
+    fig = _create_network_fig(height=450)
     nodes = {
-        'start': {'x': 0, 'y': 2, 'text': 'Sample<br>Received', 'color': COLORS['success']},
-        'A': {'x': 1, 'y': 2, 'text': 'DNA<br>Extraction', 'color': COLORS['primary']},
-        'B': {'x': 2, 'y': 2, 'text': 'Library<br>Prep', 'color': COLORS['primary']},
-        'E': {'x': 2, 'y': 0.8, 'text': 'QC Fail:<br>Re-Prep', 'color': COLORS['danger']},
-        'C': {'x': 3, 'y': 2, 'text': 'Sequencing', 'color': COLORS['primary']},
-        'D': {'x': 4, 'y': 2, 'text': 'Bioinformatics', 'color': COLORS['primary']},
-        'end': {'x': 5, 'y': 2, 'text': 'Report<br>Sent', 'color': COLORS['dark_gray']}
+        'start': {'x': 0.0, 'y': 2.0, 'text': 'Sample<br>Received', 'color': COLORS['success']},
+        'A':     {'x': 1.0, 'y': 2.0, 'text': 'DNA Extraction', 'color': COLORS['primary']},
+        'B':     {'x': 2.0, 'y': 2.0, 'text': 'Library Prep', 'color': COLORS['primary']},
+        'E':     {'x': 2.0, 'y': 0.8, 'text': 'QC Fail:<br>Re-Prep', 'color': COLORS['danger']},
+        'C':     {'x': 3.0, 'y': 2.0, 'text': 'Sequencing', 'color': COLORS['primary']},
+        'D':     {'x': 4.0, 'y': 2.0, 'text': 'Bioinformatics', 'color': COLORS['primary']},
+        'end':   {'x': 5.0, 'y': 2.0, 'text': 'Report<br>Sent', 'color': COLORS['dark_gray']}
     }
-    edges = {
-        'start-A': ('start', 'A', '20 Samples', 0.1), 'A-B': ('A', 'B', '20 Samples', 0.1),
-        'B-C': ('B', 'C', '18 Samples (Avg 5h)', 0.1), 'C-D': ('C', 'D', '18 Samples (Avg 26h)', 0.1),
-        'D-end': ('D', 'end', '18 Samples (Avg 4h)', 0.1), 'B-E': ('B', 'E', '2 Samples (10%)', -0.1),
-        'E-B': ('E', 'B', 'Avg 8h Delay', 0.1)}
-    
-    for start, end, text, offset in edges.values():
-        start_node, end_node = nodes[start], nodes[end]
-        fig.add_trace(go.Scatter(x=[start_node['x'], end_node['x']], y=[start_node['y'], end_node['y']], mode='lines', line=dict(color=COLORS['dark_gray'], width=2)))
-        fig.add_annotation(x=(start_node['x'] + end_node['x']) / 2, y=(start_node['y'] + end_node['y']) / 2 + offset, text=text, showarrow=False, font=dict(size=9), bgcolor="rgba(255,255,255,0.7)")
-
-    node_trace = go.Scatter(
-        x=[d['x'] for d in nodes.values()], y=[d['y'] for d in nodes.values()],
-        text=[d['text'] for d in nodes.values()], mode='markers+text',
-        textposition="middle center", textfont=dict(color='white', size=9),
-        hoverinfo='text', hovertext=[d['text'].replace('<br>', ' ') for d in nodes.values()],
-        marker=dict(size=40, color=[d['color'] for d in nodes.values()], symbol='square', line=dict(width=2, color=COLORS['dark_gray']))
-    )
-    fig.add_trace(node_trace)
-    fig.update_layout(height=450)
+    edges = [('start', 'A'), ('A', 'B'), ('B', 'C'), ('C', 'D'), ('D', 'end'), ('B', 'E'), ('E', 'B')]
+    _add_network_nodes_and_edges(fig, nodes, edges)
+    # Add edge labels
+    edge_labels = { 'start-A': ('start', 'A', '20 Samples', 0.15), 'A-B': ('A', 'B', '20 Samples', 0.15),
+                    'B-C': ('B', 'C', '18 Samples<br>Avg 5h', 0.15), 'C-D': ('C', 'D', '18 Samples<br>Avg 26h', 0.15),
+                    'D-end': ('D', 'end', '18 Samples<br>Avg 4h', 0.15), 'B-E': ('B', 'E', '2 Samples (10%)', -0.15),
+                    'E-B': ('E', 'B', 'Avg 8h Delay', 0.15) }
+    for start, end, text, offset in edge_labels.values():
+        fig.add_annotation(x=(nodes[start]['x'] + nodes[end]['x']) / 2, y=(nodes[start]['y'] + nodes[end]['y']) / 2 + offset, text=text, showarrow=False, font=dict(size=9), bgcolor='rgba(255,255,255,0.7)')
     return fig
 
 def plot_fishbone_plotly() -> go.Figure:
-    """OVERHAUL: Re-implemented Fishbone diagram using pure Plotly."""
-    fig = _create_network_fig()
-    fig.add_trace(go.Scatter(x=[0, 8], y=[5, 5], mode='lines', line=dict(color=COLORS['dark_gray'], width=3)))
-    fig.add_annotation(x=8.2, y=5, text="<b>Low Library<br>Yield</b>", align="left", showarrow=False, font=dict(color=COLORS['danger'], size=14), xanchor="left")
+    """OVERHAUL: Re-implemented Fishbone diagram using pure Plotly for robust rendering."""
+    fig = _create_network_fig(height=500)
+    # Head and Spine
+    fig.add_annotation(x=8.5, y=5, text="<b>Low Library<br>Yield</b>", showarrow=False, font=dict(color=COLORS['text'], size=14), bgcolor=hex_to_rgba(COLORS['danger'], 0.15), bordercolor=COLORS['danger'], borderwidth=2, borderpad=10, align="center")
+    fig.add_trace(go.Scatter(x=[0, 8], y=[5, 5], mode='lines', line=dict(color=COLORS['dark_gray'], width=3), hoverinfo='none'))
     
     bones = {
         'Reagents': {'pos': 1, 'causes': ['Enzyme Inactivity'], 'angle': 45}, 'Equipment': {'pos': 3, 'causes': ['Pipette Out of Cal'], 'angle': 45},
@@ -265,23 +204,46 @@ def plot_fishbone_plotly() -> go.Figure:
     
     for name, data in bones.items():
         angle_rad = np.deg2rad(data['angle']); x_start, y_start = data['pos'], 5
-        x_end = x_start + 2 * np.cos(angle_rad); y_end = y_start + 2 * np.sin(angle_rad)
-        fig.add_trace(go.Scatter(x=[x_start, x_end], y=[y_start, y_end], mode='lines', line=dict(color=COLORS['dark_gray'], width=1.5)))
-        fig.add_annotation(x=x_end, y=y_end + 0.3 * np.sign(y_end-5), text=f"<b>{name}</b>", showarrow=False, font=dict(color=COLORS['primary']))
+        x_end = x_start + 2.5 * np.cos(angle_rad); y_end = y_start + 2.5 * np.sin(angle_rad)
+        # Main bone
+        fig.add_trace(go.Scatter(x=[x_start, x_end], y=[y_start, y_end], mode='lines', line=dict(color=COLORS['dark_gray'], width=1.5), hoverinfo='none'))
+        fig.add_annotation(x=x_end, y=y_end, text=f"<b>{name}</b>", showarrow=False, font=dict(color=COLORS['primary']))
+        # Cause sub-bones and text
         for i, cause in enumerate(data['causes']):
-            cause_x = x_start + (i + 1) * 0.8 * np.cos(angle_rad); cause_y = y_start + (i + 1) * 0.8 * np.sin(angle_rad)
-            fig.add_trace(go.Scatter(x=[cause_x - 0.5*np.cos(angle_rad), cause_x], y=[cause_y - 0.5*np.sin(angle_rad), cause_y], mode='lines', line=dict(color='grey', width=1)))
-            fig.add_annotation(x=cause_x, y=cause_y, text=cause, ax=40*np.sign(x_end - x_start), ay=-30, font=dict(size=10))
-            
-    fig.update_layout(height=500, yaxis_range=[0,10], xaxis_range=[-1, 11])
+            sub_x_start = x_start + 1.0 * np.cos(angle_rad); sub_y_start = y_start + 1.0 * np.sin(angle_rad)
+            sub_x_end = sub_x_start + 1.0 * np.cos(angle_rad); sub_y_end = sub_y_start + 1.0 * np.sin(angle_rad)
+            fig.add_trace(go.Scatter(x=[sub_x_start, sub_x_end], y=[sub_y_start, sub_y_end], mode='lines', line=dict(color='grey', width=1), hoverinfo='none'))
+            fig.add_annotation(x=sub_x_end, y=sub_y_end, text=cause, ax=15*np.sign(x_end-x_start), ay=-30*np.sign(y_end-y_start), font=dict(size=10, color=COLORS['text']))
+    
+    fig.update_layout(yaxis_range=[0,10], xaxis_range=[-1, 11])
     return fig
 
-# --- Other visualizations remain as they are robust ---
+# --- RESTORED & CONFIRMED ROBUST FUNCTIONS ---
+def plot_project_charter_visual() -> go.Figure:
+    fig = go.Figure(); fig.add_shape(type="rect", x0=0, y0=0, x1=1, y1=1, fillcolor='white', line_width=0)
+    fig.add_annotation(x=0.5, y=0.92, text="<b>Assay Development Plan: Liquid Biopsy for CRC</b>", showarrow=False, font=dict(size=22, color=COLORS['primary']))
+    kpis = {"Analytical Sensitivity": ("LOD < 0.1% VAF", COLORS['success']), "Clinical Specificity": ("> 99.5%", COLORS['success']), "Turnaround Time": ("< 5 days", COLORS['success'])}
+    for i, (k, (v, c)) in enumerate(kpis.items()): fig.add_annotation(x=0.2+i*0.3, y=0.75, text=f"<b>{k}</b>", showarrow=False, font=dict(size=14, color=COLORS['dark_gray'])); fig.add_annotation(x=0.2+i*0.3, y=0.65, text=v, showarrow=False, font=dict(size=20, color=c))
+    statements = { "Problem Statement": (0.05, 0.45, "Colorectal Cancer (CRC) requires earlier detection methods. Current methods are invasive or lack sensitivity for early-stage disease.", "left"), "Goal Statement": (0.95, 0.45, "Develop and validate a cfDNA-based NGS assay for early-stage CRC detection with >90% sensitivity at 99.5% specificity.", "right")}
+    for title, (x, y, txt, anchor) in statements.items(): fig.add_annotation(x=x, y=y, text=f"<b>{title}</b>", showarrow=False, align=anchor, xanchor=anchor, font_size=16); fig.add_annotation(x=x, y=y-0.1, text=txt, showarrow=False, align=anchor, xanchor=anchor, yanchor='top', width=400)
+    fig.update_layout(xaxis=dict(visible=False, range=[0, 1]), yaxis=dict(visible=False, range=[0, 1]), plot_bgcolor='white', margin=dict(t=20, b=20, l=20, r=20), height=350)
+    return fig
+def plot_sipoc_visual() -> go.Figure:
+    header_values = ['<b>👤<br>Suppliers</b>', '<b>🧬<br>Inputs</b>', '<b>⚙️<br>Process</b>', '<b>📊<br>Outputs</b>', '<b>⚕️<br>Customers</b>']; cell_values = [['• Reagent Vendors<br>• Instrument Mfr.<br>• LIMS Provider'], ['• Patient Blood Sample<br>• Reagent Kits<br>• Lab Protocol (SOP)'], ['1. Sample Prep<br>2. Library Prep<br>3. NGS Sequencing<br>4. Bioinformatics<br>5. Reporting'], ['• VCF File<br>• QC Metrics Report<br>• Clinical Report'], ['• Oncologists<br>• Patients<br>• Pharma Partners']]
+    fig = go.Figure(data=[go.Table(header=dict(values=header_values, line_color=COLORS['light_gray'], fill_color=COLORS['light_gray'], align='center', font=dict(color=COLORS['primary'], size=14)), cells=dict(values=cell_values, line_color=COLORS['light_gray'], fill_color='white', align='left', font_size=12, height=150))])
+    fig.update_layout(title_text="<b>SIPOC Diagram:</b> NGS Assay Workflow", margin=dict(l=10, r=10, t=50, b=10))
+    return fig
+def plot_kano_visual() -> go.Figure:
+    df = generate_kano_data(); fig = go.Figure(); fig.add_shape(type="rect", x0=0, y0=0, x1=10, y1=10, fillcolor=hex_to_rgba(COLORS['success'], 0.1), line_width=0, layer='below'); fig.add_shape(type="rect", x0=0, y0=-10, x1=10, y1=0, fillcolor=hex_to_rgba(COLORS['danger'], 0.1), line_width=0, layer='below')
+    colors = {'Basic (Must-be)': COLORS['accent'], 'Performance': COLORS['primary'], 'Excitement (Delighter)': COLORS['secondary']}
+    for cat, color in colors.items(): subset = df[df['category'] == cat]; fig.add_trace(go.Scatter(x=subset['functionality'], y=subset['satisfaction'], mode='lines', name=cat, line=dict(color=color, width=4)))
+    fig.add_annotation(x=8, y=8, text="<b>Excitement</b><br>e.g., Detects new<br>resistance mutation", showarrow=True, arrowhead=1, ax=-50, ay=-40, font_color=COLORS['secondary']); fig.add_annotation(x=8, y=4, text="<b>Performance</b><br>e.g., VAF quantification<br>accuracy", showarrow=True, arrowhead=1, ax=0, ay=-40, font_color=COLORS['primary']); fig.add_annotation(x=8, y=-8, text="<b>Basic</b><br>e.g., Detects known<br>KRAS hotspot", showarrow=True, arrowhead=1, ax=0, ay=40, font_color=COLORS['accent'])
+    fig.update_layout(title='<b>Kano Model:</b> Prioritizing Diagnostic Features', xaxis_title='Feature Performance / Implementation →', yaxis_title='← Clinician Dissatisfaction ... Satisfaction →', plot_bgcolor='white', legend=dict(x=0.01, y=0.99, bgcolor='rgba(255,255,255,0.7)'))
+    return fig
 def plot_voc_bubble_chart() -> go.Figure:
     data = {'Category': ['Biomarkers', 'Biomarkers', 'Methodology', 'Methodology', 'Performance', 'Performance'], 'Topic': ['EGFR Variants', 'KRAS Hotspots', 'ddPCR', 'Shallow WGS', 'LOD <0.1%', 'Specificity >99%'], 'Count': [180, 150, 90, 60, 250, 210], 'Sentiment': [0.5, 0.4, -0.2, -0.4, 0.8, 0.7]}
     df = pd.DataFrame(data); fig = px.scatter(df, x='Topic', y='Sentiment', size='Count', color='Category', hover_name='Topic', size_max=60, labels={"Sentiment": "Average Sentiment Score", "Topic": "Biomarker or Methodology", "Count": "Publication Volume"}, color_discrete_map={'Biomarkers': COLORS['primary'], 'Methodology': COLORS['secondary'], 'Performance': COLORS['accent']})
-    fig.add_hline(y=0, line_width=1, line_dash="dash", line_color="grey"); fig.update_layout(title="<b>NLP Landscape:</b> Scientific Literature Analysis", plot_bgcolor='white', yaxis=dict(range=[-1, 1], gridcolor=COLORS['light_gray']), xaxis=dict(showgrid=False), legend_title_text='Topic Category')
-    fig.update_traces(hovertemplate='<b>%{hovertext}</b><br>Publication Count: %{marker.size:,}<br>Avg. Sentiment: %{y:.2f}')
+    fig.add_hline(y=0, line_width=1, line_dash="dash", line_color="grey"); fig.update_layout(title="<b>NLP Landscape:</b> Scientific Literature Analysis", plot_bgcolor='white', yaxis=dict(range=[-1, 1], gridcolor=COLORS['light_gray']), xaxis=dict(showgrid=False), legend_title_text='Topic Category'); fig.update_traces(hovertemplate='<b>%{hovertext}</b><br>Publication Count: %{marker.size:,}<br>Avg. Sentiment: %{y:.2f}')
     return fig
 def plot_gage_rr_pareto() -> go.Figure:
     data = {'Source of Variation': ['Assay Variation (Biology)', 'Repeatability (Sequencer)', 'Reproducibility (Operator)'], 'Contribution (%)': [92, 5, 3]}
