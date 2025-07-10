@@ -33,7 +33,6 @@ COLORS = {
     "danger": "#DC3545",       # Red for danger
 }
 
-# CORRECTED: Rewritten using .format() for robustness to avoid f-string parsing issues.
 def get_custom_css() -> str:
     """Returns the custom CSS string for the Streamlit app."""
     css = """
@@ -64,16 +63,9 @@ def get_custom_css() -> str:
             box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
         }}
 
-        /* Button Style */
+        /* Button Style for Custom Navigation */
         .stButton>button {{
             border-radius: 0.5rem;
-            border: 1px solid {primary};
-            color: {primary};
-        }}
-        .stButton>button:hover {{
-            background-color: {primary};
-            color: white;
-            border: 1px solid {primary};
         }}
     </style>
     """.format(**COLORS)
@@ -608,11 +600,6 @@ def plot_shap_summary(model: RandomForestRegressor, X: pd.DataFrame) -> go.Figur
     explainer = shap.TreeExplainer(model)
     shap_values = explainer.shap_values(X)
     
-    # Create a dummy figure to get Plotly's default template
-    dummy_fig = go.Figure()
-    dummy_fig.update_layout(template='plotly_white')
-    template = dummy_fig.layout.template
-    
     fig = go.Figure()
     # Manually create a beeswarm plot using scatter
     for i, feature in enumerate(X.columns):
@@ -908,14 +895,12 @@ def plot_hotelling_t2_chart() -> go.Figure:
     # Calculate UCL using F-distribution
     n, p = X.shape
     alpha = 0.01 # Corresponds to 99% confidence level
-    # CORRECTED: The UCL formula now correctly uses f.ppf (from scipy.stats)
     ucl = (p * (n + 1) * (n - 1)) / (n * (n - p)) * f.ppf(1 - alpha, p, n - p)
 
     fig = go.Figure()
     fig.add_trace(go.Scatter(y=t_squared, mode='lines+markers', name="T² Statistic", line_color=COLORS['primary']))
     fig.add_hline(y=ucl, line=dict(color=COLORS['danger'], dash='dash'), name='UCL')
     
-    # CORRECTED: The fillcolor format now robustly uses rgba()
     hex_color = COLORS['accent']
     r, g, b = int(hex_color[1:3], 16), int(hex_color[3:5], 16), int(hex_color[5:7], 16)
     rgba_fillcolor = f'rgba({r}, {g}, {b}, 0.2)'
@@ -948,39 +933,137 @@ def plot_control_plan() -> go.Figure:
     )
     return fig
 
+# --- NEW VISUALIZATIONS FOR COMPARISON & HYBRID PAGES ---
+
+def plot_comparison_radar() -> go.Figure:
+    """Creates a radar chart comparing Classical Stats and ML."""
+    categories = ['Interpretability', 'Data Volume Needs', 'Scalability', 
+                  'Handling Complexity', 'Proactive Capability', 'Regulatory Ease']
+    
+    # Scores (out of 5): Higher indicates stronger capability in that dimension
+    classical_scores = [5, 2, 1, 2, 1, 5] # Strong on interpretability/regulation
+    ml_scores = [2, 5, 5, 5, 5, 2]      # Strong on data/scale/complexity
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatterpolar(
+        r=classical_scores + [classical_scores[0]], # Close the loop
+        theta=categories + [categories[0]],
+        fill='toself',
+        name='Classical Stats',
+        marker_color=COLORS['primary']
+    ))
+    fig.add_trace(go.Scatterpolar(
+        r=ml_scores + [ml_scores[0]], # Close the loop
+        theta=categories + [categories[0]],
+        fill='toself',
+        name='Machine Learning',
+        marker_color=COLORS['secondary']
+    ))
+    fig.update_layout(
+        polar=dict(
+            radialaxis=dict(visible=True, range=[0, 5])
+        ),
+        showlegend=True,
+        title="<b>Strengths Profile:</b> Classical Stats vs. Machine Learning",
+        plot_bgcolor='white', paper_bgcolor='white',
+        legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5)
+    )
+    return fig
+
+def plot_verdict_barchart() -> go.Figure:
+    """Creates a diverging bar chart showing the 'winner' for different tasks."""
+    data = {
+        "Metric": ["Interpretability & Simplicity", "Predictive Accuracy", "High-Dimensional Data", 
+                   "Small-Data Rigor", "Proactive Control", "Auditability"],
+        "Winner": ["Classical", "ML", "ML", "Classical", "ML", "Classical"],
+        "Score": [-1, 1, 1, -1, 1, -1] # -1 for Classical, 1 for ML
+    }
+    df = pd.DataFrame(data).sort_values('Score')
+    
+    df['Color'] = df['Score'].apply(lambda x: COLORS['primary'] if x < 0 else COLORS['secondary'])
+
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        x=df['Score'],
+        y=df['Metric'],
+        orientation='h',
+        marker_color=df['Color']
+    ))
+    fig.update_layout(
+        title="<b>Task-Specific Verdict:</b> Which Approach is Better?",
+        xaxis=dict(
+            tickvals=[-1, 1],
+            ticktext=['<b>Winner: Classical Stats</b>', '<b>Winner: Machine Learning</b>'],
+            tickfont=dict(size=14),
+            range=[-1.5, 1.5]
+        ),
+        yaxis_title=None,
+        plot_bgcolor='white',
+        bargap=0.4
+    )
+    return fig
+
+def plot_synergy_diagram() -> go.Figure:
+    """Creates a Venn diagram showing the synergy between Classical and ML."""
+    fig = go.Figure()
+
+    # Circles
+    fig.add_shape(type="circle", x0=0, y0=0, x1=2, y1=2,
+                  line_color=COLORS['primary'], fillcolor=COLORS['primary'], opacity=0.6)
+    fig.add_shape(type="circle", x0=1.2, y0=0, x1=3.2, y1=2,
+                  line_color=COLORS['secondary'], fillcolor=COLORS['secondary'], opacity=0.6)
+
+    # Text Annotations
+    fig.add_annotation(x=1, y=1, text="<b>Classical Stats</b><br><i>Inference & Causality</i><br><i>Rigor & Compliance</i>", showarrow=False, font=dict(color="white", size=12))
+    fig.add_annotation(x=2.2, y=1, text="<b>Machine Learning</b><br><i>Prediction & Scale</i><br><i>Complexity & Automation</i>", showarrow=False, font=dict(color="white", size=12))
+    fig.add_annotation(x=1.6, y=1, text="<b>AI-Augmented<br>Excellence</b>", showarrow=False, font=dict(color="white", size=16, family="Arial Black"))
+    
+    fig.update_layout(
+        title="<b>The Hybrid Philosophy:</b> Combining Strengths",
+        xaxis=dict(showgrid=False, zeroline=False, visible=False, range=[-0.5, 3.7]),
+        yaxis=dict(showgrid=False, zeroline=False, visible=False, range=[-0.5, 2.5]),
+        plot_bgcolor='white',
+        margin=dict(t=50, b=10, l=10, r=10)
+    )
+    return fig
+
+
 # ==============================================================================
 # SECTION 4: CONTENT & LAYOUT HELPERS
 # ==============================================================================
 
-def get_comparison_data() -> pd.DataFrame:
-    """Returns the data for the comparison matrix."""
-    return pd.DataFrame({
-        "Dimension": ["Primary Goal", "Data Requirements", "Assumptions", "Interpretability", "Scalability", "Causality", "Implementation Cost", "Auditability & Compliance", "Detection Method"],
-        "Classical Stats": ["Inference & Hypothesis Testing", "Low (designed for small, clean samples)", "Many & Strict (normality, independence, etc.)", "High (coefficients have direct meaning)", "Poor (struggles with >5-7 variables)", "Inferred via designed experiments (DOE)", "Low (Excel, Minitab, established knowledge)", "High (standardized, validated methods)", "Reactive (detects shifts after they occur)"],
-        "Machine Learning": ["Prediction & Pattern Recognition", "High (performance scales with data volume)", "Fewer & Flexible (non-parametric)", "Requires post-hoc tools (SHAP, LIME)", "Excellent (designed for high dimensionality)", "Can be inferred from observational data (Causal ML)", "Higher (Python, cloud infra, specialized skills)", "Lower (models can be complex to validate)", "Proactive (can predict shifts before they occur)"]
-    })
-
-def get_verdict_data() -> pd.DataFrame:
-    """Returns the data for the verdict table."""
-    return pd.DataFrame({
-        "Metric": ["Interpretability & Simplicity", "Predictive Accuracy in Complex Systems", "Handling High-Dimensional Data", "Rigor in Small-Data, Physical Experiments", "Proactive & Early Warning Capability", "Regulatory Acceptance & Auditability"],
-        "Winner": ["Classical Stats", "Machine Learning", "Machine Learning", "Classical Stats", "Machine Learning", "Classical Stats"],
-        "Rationale": ["Models and outputs are simple, transparent, and defensible without extra tools.", "Natively captures non-linearities and complex interactions that classical models miss.", "Algorithms are designed to thrive in 'wide data' environments (many variables).", "DOE provides a statistically rigorous framework for establishing causality with minimal runs.", "Models are trained to recognize precursors to failure, enabling proactive control.", "Methods are standardized, well-documented, and accepted by regulatory bodies (e.g., FDA)."]
-    })
-
-def get_guidance_data() -> pd.DataFrame:
-    """Returns the data for the scenario guidance table."""
-    return pd.DataFrame({
-        "Scenario": ["Validating a change for FDA/FAA compliance", "Monitoring a semiconductor fab with 1000s of sensors", "Understanding why customers are churning by analyzing support emails",
-                     "Optimizing a simple, 3-factor physical mixing process", "Building a 'digital twin' of a chemical reactor", "Providing real-time operator guidance"],
-        "Recommended Approach": ["**Classical Stats** (Hypothesis Testing, DOE)", "**ML + SPC** (Multivariate Anomaly Detection)", "**ML NLP** (Topic Modeling & Sentiment Analysis)", "**Classical DOE**", "**Hybrid:** ML Model + Bayesian Opt.", "**ML** (Real-time Predictive Model)"],
-        "Why?": ["Methods are traceable, validated, and legally defensible.", "Detects subtle, multivariate sensor drifts that individual SPC charts would miss.", "Processes and extracts actionable themes from massive, unstructured text data.",
-                 "Simple, highly effective, and provides clear, interpretable results with minimal setup.", "ML builds the accurate simulation; Bayesian Opt. finds the peak efficiency in the vast parameter space.", "Predicts the outcome of the current settings and suggests optimal adjustments to the operator."]
-    })
+def get_guidance_data() -> Dict[str, Dict[str, str]]:
+    """Returns the data for the scenario guidance recommender as a dictionary."""
+    return {
+        "Validating a change for FDA/FAA compliance": {
+            "approach": "🏆 **Classical Stats** (Hypothesis Testing, DOE)",
+            "rationale": "Methods are traceable, validated, and legally defensible, which is paramount for regulatory bodies."
+        },
+        "Monitoring a semiconductor fab with 1000s of sensors": {
+            "approach": "🏆 **Machine Learning + SPC** (Multivariate Anomaly Detection)",
+            "rationale": "ML can detect subtle, correlated drifts across thousands of sensors that individual SPC charts would miss, preventing massive yield loss."
+        },
+        "Understanding why customers are churning by analyzing support emails": {
+            "approach": "🏆 **Machine Learning NLP** (Topic Modeling & Sentiment Analysis)",
+            "rationale": "NLP can process and extract actionable themes from millions of unstructured text entries, a task impossible for manual analysis."
+        },
+        "Optimizing a simple, 3-factor physical mixing process": {
+            "approach": "🏆 **Classical DOE**",
+            "rationale": "Simple, highly effective, and provides clear, interpretable results with a minimal number of experimental runs. The gold standard for this scale."
+        },
+        "Building a 'digital twin' of a chemical reactor": {
+            "approach": "🏆 **Hybrid:** ML Model + Bayesian Optimization",
+            "rationale": "ML builds the accurate simulation (the 'twin') from experimental or historical data; Bayesian Optimization then finds the peak efficiency in the vast parameter space without costly physical trials."
+        },
+        "Providing real-time operator guidance on a complex assembly line": {
+            "approach": "🏆 **Machine Learning** (Real-time Predictive Model)",
+            "rationale": "An ML model can continuously predict the outcome of the current settings and suggest optimal adjustments to the operator in real-time to prevent defects before they happen."
+        }
+    }
 
 def get_workflow_css() -> str:
     """Returns the CSS for the unified workflow diagram."""
-    return f"""
+    css = f"""
     <style>
     .workflow-container {{ display: flex; flex-direction: column; align-items: center; width: 100%; }}
     .workflow-step {{ 
@@ -1008,6 +1091,7 @@ def get_workflow_css() -> str:
     .tool-col-ml h5 {{ color: {COLORS['secondary']}; }}
     </style>
     """
+    return css
 
 def render_workflow_step(phase_name: str, phase_class: str, classical_tools: List[str], ml_tools: List[str]) -> str:
     """Renders a single step of the HTML workflow diagram."""
