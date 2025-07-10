@@ -8,8 +8,11 @@ from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
-from scipy.stats import norm, gaussian_kde, f
 import graphviz
+
+# --- CORRECTED IMPORT LINE ---
+# f_oneway has been added to this import from scipy.stats
+from scipy.stats import norm, gaussian_kde, f, f_oneway
 
 # --- START of config.py content ---
 COLORS = {
@@ -131,12 +134,13 @@ def plot_anova_groups(df):
         fig.add_trace(go.Box(y=df[df['Supplier'] == group]['Yield'], name=group, marker_color=colors[i]))
     
     group_data = [df[df['Supplier'] == g]['Yield'] for g in groups]
-    if len(group_data) > 1:
+    if len(group_data) > 1 and all(len(g) > 1 for g in group_data):
+        # f_oneway is now correctly imported and will be found
         f_val, p_val = f_oneway(*group_data)
         title = f'<b>ANOVA:</b> Comparing Supplier Yields (p-value: {p_val:.4f})'
     else:
         p_val = 1.0
-        title = '<b>ANOVA:</b> Comparing Supplier Yields'
+        title = '<b>ANOVA:</b> Comparing Supplier Yields (Not enough data for test)'
     
     fig.update_layout(title=title, yaxis_title='Product Yield (%)', xaxis_title='Supplier', plot_bgcolor='white', paper_bgcolor='white', showlegend=False)
     return fig, p_val
@@ -157,7 +161,7 @@ def plot_rul_prediction(df):
     fig.add_trace(go.Scatter(x=time, y=full_pred, mode='lines', name='ML Degradation Model', line=dict(color=COLORS['primary'], dash='dash')))
     fig.add_hline(y=threshold, line=dict(color='red', width=2, dash='solid'), name='Failure Threshold')
     
-    if time_to_failure != float('inf'):
+    if time_to_failure != float('inf') and time_to_failure > 0:
         fig.add_annotation(x=current_time, y=15, text=f"At T={current_time}, Predicted RUL: {time_to_failure:.1f} units", showarrow=True, arrowhead=1, ax=current_time+15, ay=20)
         fig.add_vrect(x0=current_time, x1=current_time + time_to_failure, fillcolor=COLORS['secondary'], opacity=0.2, line_width=0, name='RUL Window')
     
@@ -171,7 +175,7 @@ def plot_ewma_chart(df, lambda_val=0.2):
     L = 3
     ucl_ewma = mean + L * std_dev * np.sqrt(lambda_val / (2 - lambda_val) * (1 - (1 - lambda_val)**(2 * n)))
     lcl_ewma = mean - L * std_dev * np.sqrt(lambda_val / (2 - lambda_val) * (1 - (1 - lambda_val)**(2 * n)))
-    violations = df[df['ewma'] > ucl_ewma]
+    violations = df[(df['ewma'] > ucl_ewma) | (df['ewma'] < lcl_ewma)]
     first_violation_time = violations['Time'].min() if not violations.empty else None
     
     fig = go.Figure()
@@ -212,6 +216,13 @@ def plot_bayesian_optimization_interactive(true_func, x_range, sampled_points):
     fig.add_trace(go.Scatter(x=x_range, y=y_mean, mode='lines', name='GP Mean (Model Belief)', line=dict(color=COLORS['primary'], width=3))); fig.add_trace(go.Scatter(x=x_range, y=ucb, mode='lines', name='Acquisition Function (UCB)', line=dict(color=COLORS['secondary'], width=2, dash='dot'))); fig.add_vline(x=next_point_x, line=dict(color=COLORS['secondary'], width=2, dash='solid'), name="Next Point to Sample")
     fig.update_layout(title_text="<b>Bayesian Optimization:</b> Intelligent Search for Optimum", xaxis_title="Parameter Setting", yaxis_title="Process Output", plot_bgcolor='white', paper_bgcolor='white', font_color=COLORS['text'], legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)); return fig, next_point_x
 
+def plot_control_chart_pro(df):
+    mean, std_dev = df['Value'].iloc[:100].mean(), df['Value'].iloc[:100].std(); ucl, lcl = mean + 3 * std_dev, mean - 3 * std_dev; window = 10; df['RollingMean'] = df['Value'].rolling(window=window).mean(); df['RollingStd'] = df['Value'].rolling(window=window).std(); df['Z_Score'] = ((df['Value'] - df['RollingMean']) / df['RollingStd']).fillna(0)
+    spc_violations = df[(df['Value'] > ucl) | (df['Value'] < lcl)]; ml_anomalies = df[df['Z_Score'].abs() > 2.5]; fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.1, row_heights=[0.7, 0.3])
+    fig.add_trace(go.Scatter(x=df['Time'], y=df['Value'], mode='lines+markers', name='Process Data', marker_color=COLORS['primary']), row=1, col=1); fig.add_hline(y=ucl, line=dict(color=COLORS['accent'], width=2, dash='dash'), name="UCL", row=1, col=1); fig.add_hline(y=mean, line=dict(color=COLORS['dark_gray'], width=2, dash='dot'), name="Center Line", row=1, col=1); fig.add_hline(y=lcl, line=dict(color=COLORS['accent'], width=2, dash='dash'), name="LCL", row=1, col=1); fig.add_trace(go.Scatter(x=spc_violations['Time'], y=spc_violations['Value'], mode='markers', name='SPC Violation', marker=dict(color=COLORS['accent'], size=12, symbol='x')), row=1, col=1)
+    fig.add_trace(go.Scatter(x=df['Time'], y=df['Z_Score'].abs(), mode='lines', name='ML Anomaly Score', line=dict(color=COLORS['secondary']), fill='tozeroy', fillcolor=f'rgba({int(COLORS["secondary"][1:3], 16)}, {int(COLORS["secondary"][3:5], 16)}, {int(COLORS["secondary"][5:7], 16)}, 0.2)'), row=2, col=1); fig.add_hline(y=2.5, line=dict(color=COLORS['accent'], width=2, dash='dash'), name="ML Threshold", row=2, col=1); fig.add_trace(go.Scatter(x=ml_anomalies['Time'], y=ml_anomalies['Z_Score'].abs(), mode='markers', name='ML Anomaly Detected', marker=dict(color=COLORS['accent'], size=10, symbol='star')), row=2, col=1)
+    fig.update_layout(title_text="<b>Control Phase:</b> Classical SPC vs. Predictive ML Anomaly Detection", plot_bgcolor='white', paper_bgcolor='white', font_color=COLORS['text'], showlegend=False, margin=dict(t=50, l=10, r=10, b=10)); fig.update_yaxes(title_text="Measurement", row=1, col=1, showgrid=True, gridcolor=COLORS['light_gray']); fig.update_yaxes(title_text="Anomaly Score", row=2, col=1, showgrid=True, gridcolor=COLORS['light_gray']); fig.update_xaxes(title_text="Time / Sample Number", row=2, col=1, showgrid=True, gridcolor=COLORS['light_gray']); return fig
+
 def plot_doe_cube(df):
     fig = go.Figure(data=[go.Scatter3d(x=df['Temp'], y=df['Pressure'], z=df['Time'], mode='markers+text', marker=dict(size=12, color=df['Yield'], colorscale='Viridis', showscale=True, colorbar=dict(title='Yield')), text=[f"{y:.1f}" for y in df['Yield']], textposition='top center')])
     lines = [];
@@ -219,3 +230,4 @@ def plot_doe_cube(df):
         for j in range(i + 1, len(df)):
             if np.sum(df.iloc[i, :3] != df.iloc[j, :3]) == 1: lines.append(go.Scatter3d(x=[df.iloc[i]['Temp'], df.iloc[j]['Temp']], y=[df.iloc[i]['Pressure'], df.iloc[j]['Pressure']], z=[df.iloc[i]['Time'], df.iloc[j]['Time']], mode='lines', line=dict(color='grey', width=2), showlegend=False))
     fig.add_traces(lines); fig.update_layout(title="Classical DOE: 2³ Factorial Design Cube Plot", scene=dict(xaxis_title='Factor A: Temp', yaxis_title='Factor B: Pressure', zaxis_title='Factor C: Time'), margin=dict(l=0, r=0, b=0, t=40)); return fig
+# --- END of plotting_pro.py content ---
