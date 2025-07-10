@@ -11,7 +11,7 @@ from scipy.stats import f_oneway
 from app_helpers import *
 
 # ==============================================================================
-# PAGE 1: DEFINE PHASE
+# PAGE 1: DEFINE PHASE (VISUALLY ENHANCED)
 # ==============================================================================
 def show_define_phase():
     st.title("🌀 Define Phase: Establishing the Project's North Star")
@@ -30,7 +30,8 @@ def show_define_phase():
         - **Strength:** Creates alignment and clarity from the outset. It provides a constant reference point to prevent "scope creep" and ensures everyone agrees on what "success" looks like.
         - **Caveat:** It's a static document. While it shouldn't change frequently, it must be revisited if major discoveries in later phases fundamentally alter the project's direction.
         """)
-        st.plotly_chart(plot_project_charter(), use_container_width=True)
+        # ENHANCED VISUALIZATION
+        st.plotly_chart(plot_project_charter_visual(), use_container_width=True)
 
     # --- Tool 2: SIPOC & Causal Discovery ---
     with st.container(border=True):
@@ -43,15 +44,17 @@ def show_define_phase():
             - **Strength:** Unmatched simplicity for facilitating team alignment. It's the essential first step to building a shared understanding of the process from a bird's-eye view.
             - **Caveat:** Its value is entirely dependent on the existing domain knowledge of the team. It cannot uncover relationships or variables the team isn't already aware of.
             """)
-            st.plotly_chart(plot_sipoc_diagram(), use_container_width=True)
+            # ENHANCED VISUALIZATION
+            st.plotly_chart(plot_sipoc_visual(), use_container_width=True)
         with col2:
             st.markdown("##### **ML Counterpart: Causal Discovery**")
             st.info("""
             **What is it?** A family of algorithms (e.g., PC, FCI, LiNGAM) that analyze observational data to infer a graph of probable cause-and-effect relationships. It generates a data-driven map of potential process drivers.
             - **Strength:** Objectively discovers potential causal links and latent interactions that human experts might overlook. Excellent for generating data-driven hypotheses before the Analyze phase.
-            - **Caveat:** Requires large, high-quality datasets and outputs *hypotheses* that require validation, not proven facts. Correlation is not causation, but these graphs point to where causation might exist.
+            - **Caveat:** Requires large, high-quality datasets and outputs *hypotheses* that require validation, not proven facts.
             """)
-            st.graphviz_chart(plot_causal_discovery_graph())
+            # ENHANCED VISUALIZATION
+            st.graphviz_chart(plot_causal_discovery_visual())
 
     # --- Tool 3: VOC, CTQ Tree, Kano, and NLP ---
     with st.container(border=True):
@@ -66,7 +69,8 @@ def show_define_phase():
             - **Strength:** Provides a logical, structured way to ensure the project is focused on metrics that genuinely matter to the customer.
             - **Caveat:** Can be overly simplistic if not validated. The team's assumptions about drivers must be tested.
             """)
-            st.graphviz_chart(plot_ctq_tree())
+            # ENHANCED VISUALIZATION
+            st.graphviz_chart(plot_ctq_tree_visual())
         with tab2:
             st.markdown("""
             ##### **Classical Tool: Kano Model**
@@ -74,15 +78,17 @@ def show_define_phase():
             - **Strength:** Moves beyond a simple ranked list to understand the *non-linear impact* of features on satisfaction. Prevents over-investing in basic features while highlighting opportunities for delight.
             - **Caveat:** Requires structured survey data, which can be time-consuming to collect and analyze.
             """)
-            st.plotly_chart(plot_kano_model(), use_container_width=True)
+            # ENHANCED VISUALIZATION
+            st.plotly_chart(plot_kano_visual(), use_container_width=True)
         with tab3:
             st.markdown("""
-            ##### **ML Counterpart: NLP Topic Modeling & Sentiment Analysis**
-            **What is it?** Using algorithms (e.g., LDA, BERTopic) to analyze vast amounts of unstructured text (reviews, support tickets, survey comments) to automatically extract themes, quantify their prevalence, and gauge associated sentiment.
+            ##### **ML Counterpart: NLP Topic Modeling**
+            **What is it?** Using algorithms (e.g., BERTopic) to analyze vast amounts of unstructured text (reviews, support tickets, survey comments) to automatically extract themes, quantify their prevalence, and gauge associated sentiment.
             - **Strength:** Massively scalable, real-time, and objective. Can analyze millions of data points to instantly uncover emerging trends and quantify issue prevalence far beyond human capacity.
             - **Caveat:** Requires access to clean text data; may miss the 'why' without deeper qualitative follow-up.
             """)
-            st.plotly_chart(plot_voc_nlp_summary(), use_container_width=True)
+            # ENHANCED VISUALIZATION
+            st.plotly_chart(plot_voc_treemap(), use_container_width=True)
 
     st.success("""
     **🏆 Verdict & Hybrid Strategy for the Define Phase:**
