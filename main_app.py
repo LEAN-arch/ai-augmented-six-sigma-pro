@@ -39,7 +39,7 @@ st.set_page_config(
         Navigate through the R&D lifecycle (framed as DMAIC) to see classical methods presented 
         alongside their AI-augmented counterparts for the modern biotech lab.
         
-        **Version:** 6.0 (Modern Navigation Release)
+        **Version:** 7.0 (Commercial Grade UX Release)
         """
     }
 )
@@ -51,20 +51,20 @@ st.markdown(get_custom_css(), unsafe_allow_html=True)
 # ==============================================================================
 # 2. APPLICATION NAVIGATION (Modern Streamlit Approach)
 # ==============================================================================
-# UX/DX Enhancement: Replaced the manual button-based navigation with st.navigation.
-# This provides a more robust, stateful, and idiomatic multi-page app experience
-# with features like automatic URL routing for each page.
+# UX/DX Enhancement: Uses st.navigation for robust, stateful, and idiomatic
+# multi-page app experience with URL routing.
 
-# Define the pages of the application
+# FIX: Emojis are removed from the `title` and kept only in the `icon`
+# parameter to prevent the "double icon" bug in the sidebar.
 PAGES = [
-    st.Page(show_welcome_page, title="🏠 Welcome & Framework", icon="🏠"),
-    st.Page(show_define_phase, title="🌀 Define: Clinical Need", icon="🌀"),
-    st.Page(show_measure_phase, title="🔬 Measure: System Validation", icon="🔬"),
-    st.Page(show_analyze_phase, title="📈 Analyze: Root Cause", icon="📈"),
-    st.Page(show_improve_phase, title="⚙️ Improve: Optimization", icon="⚙️"),
-    st.Page(show_control_phase, title="📡 Control: Lab Operations & QC", icon="📡"),
-    st.Page(show_comparison_matrix, title="⚔️ Methodology Comparison", icon="⚔️"),
-    st.Page(show_hybrid_strategy, title="🤝 The Hybrid Lab Manifesto", icon="🤝")
+    st.Page(show_welcome_page, title="Welcome & Framework", icon="🏠"),
+    st.Page(show_define_phase, title="Define: Clinical Need", icon="🌀"),
+    st.Page(show_measure_phase, title="Measure: System Validation", icon="🔬"),
+    st.Page(show_analyze_phase, title="Analyze: Root Cause", icon="📈"),
+    st.Page(show_improve_phase, title="Improve: Optimization", icon="⚙️"),
+    st.Page(show_control_phase, title="Control: Lab Operations", icon="📡"),
+    st.Page(show_comparison_matrix, title="Methodology Comparison", icon="⚔️"),
+    st.Page(show_hybrid_strategy, title="The Hybrid Manifesto", icon="🤝")
 ]
 
 # --- Sidebar Rendering ---
@@ -72,7 +72,7 @@ st.sidebar.title("🧬 Bio-AI Framework")
 st.sidebar.markdown("##### Assay Development Playbook")
 st.sidebar.markdown("Navigate the R&D lifecycle below.")
 
-# Create the navigation menu
+# Create the navigation menu from the list of pages
 pg = st.navigation(PAGES)
 
 # --- Sidebar Footer ---
