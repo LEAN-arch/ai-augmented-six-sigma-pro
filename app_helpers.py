@@ -15,6 +15,43 @@ from scipy.stats import norm, gaussian_kde, f_oneway, t
 from typing import List, Dict, Any, Tuple
 
 # ==============================================================================
+# SECTION 1: CONFIGURATION & SECTION 2: DATA GENERATORS
+# (No changes in these sections - content omitted for brevity, it's the same as before)
+# ==============================================================================
+COLORS = {
+    "primary": "#0072B2",      # Muted Blue
+    "secondary": "#009E73",    # Muted Green
+    "accent": "#D55E00",       # Muted Orange
+    "neutral_yellow": "#F0E442",# Muted Yellow
+    "neutral_pink": "#CC79A7",  # Muted Pink
+    "background": "#F8F9FA",   # Very Light Gray
+    "text": "#212529",         # Dark Gray
+    "light_gray": "#DEE2E6",   # Light Gray for grids/borders
+    "dark_gray": "#495057",    # Medium-Dark Gray
+    "success": "#28A745",      # Green for success
+    "warning": "#FFC107",      # Yellow for warning
+    "danger": "#DC3545",       # Red for danger
+}
+
+def get_custom_css() -> str:
+    """Returns the custom CSS string for the Streamlit app."""
+    return f"""# app_helpers.py
+
+import numpy as np
+import pandas as pd
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+import graphviz
+import shap
+
+from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
+from scipy.stats import norm, gaussian_kde, f_oneway, t, f  # Added 'f' for the F-distribution
+from typing import List, Dict, Any, Tuple
+
+# ==============================================================================
 # SECTION 1: CONFIGURATION
 # ==============================================================================
 
@@ -239,8 +276,6 @@ def plot_project_charter() -> go.Figure:
 def plot_sipoc_diagram() -> go.Figure:
     """Creates a SIPOC diagram using Plotly shapes and annotations."""
     cats = ['Suppliers', 'Inputs', 'Process', 'Outputs', 'Customers']
-    
-    # CORRECTED: The values are now strings, not lists of strings.
     content = {
         'Suppliers': '• Component Fab<br>• Logistics Inc.<br>• Software Dev LLC',
         'Inputs': '• Silicon Wafers<br>• Assembly Instructions<br>• Firmware v2.1',
@@ -252,7 +287,6 @@ def plot_sipoc_diagram() -> go.Figure:
     for i, cat in enumerate(cats):
         fig.add_shape(type="rect", x0=i+0.1, y0=0.1, x1=i+0.9, y1=0.9, line=dict(color=COLORS['dark_gray']), fillcolor=COLORS['light_gray'], opacity=0.3)
         fig.add_annotation(x=i+0.5, y=0.95, text=f"<b>{cat}</b>", showarrow=False, font=dict(size=14, color=COLORS['primary']))
-        # This line will now work correctly as content[cat] is a string.
         fig.add_annotation(x=i+0.5, y=0.5, text=content[cat], showarrow=False, align='left', font=dict(size=11))
     
     # Add arrows
@@ -340,7 +374,7 @@ def plot_voc_nlp_summary() -> go.Figure:
     sentiments = [-0.2, 0.5, -0.4, 0.1, -0.8]  # Average sentiment per topic
     df = pd.DataFrame({'Topic': topics, 'Count': counts, 'Sentiment': sentiments}).sort_values('Count', ascending=True)
     
-    df['Color'] = [f'rgba({int(COLORS["accent"][1:3], 16)}, {int(COLORS["accent"][3:5], 16)}, {int(COLORS["accent"][5:7], 16)}, {1-s})' if s < 0 else f'rgba({int(COLORS["secondary"][1:3], 16)}, {int(COLORS["secondary"][3:5], 16)}, {int(COLORS["secondary"][5:7], 16)}, {s})' for s in df['Sentiment']]
+    df['Color'] = [f'rgba({int(COLORS["accent"][1:3], 16)}, {int(COLORS["accent"][3:5], 16)}, {int(COLORS["accent"][5:7], 16)}, {abs(s)})' if s < 0 else f'rgba({int(COLORS["secondary"][1:3], 16)}, {int(COLORS["secondary"][3:5], 16)}, {int(COLORS["secondary"][5:7], 16)}, {s})' for s in df['Sentiment']]
 
     fig = go.Figure(go.Bar(
         x=df['Count'], y=df['Topic'], orientation='h', 
@@ -895,7 +929,7 @@ def plot_cusum_chart(df: pd.DataFrame, k: float = 0.5, h: float = 5.0) -> go.Fig
 def plot_hotelling_t2_chart() -> go.Figure:
     """Creates a Hotelling's T^2 multivariate control chart."""
     df = generate_hotelling_data()
-    X = df.iloc[:80, :] # In-control data
+    X = df.iloc[:80, :] # In-control data for training
     mean_vec = X.mean().values
     cov_mat = np.cov(X.T)
     inv_cov_mat = np.linalg.inv(cov_mat)
@@ -906,14 +940,22 @@ def plot_hotelling_t2_chart() -> go.Figure:
         val = (x_i - mean_vec).T @ inv_cov_mat @ (x_i - mean_vec)
         t_squared.append(val)
     
-    # Calculate UCL
+    # Calculate UCL using F-distribution
     n, p = X.shape
-    ucl = (p * (n + 1) * (n - 1)) / (n * (n - p)) * t.ppf(0.99, p, n - p)
+    alpha = 0.01 # Corresponds to 99% confidence level
+    # Corrected UCL formula using the F-distribution
+    ucl = (p * (n + 1) * (n - 1)) / (n * (n - p)) * f.ppf(1 - alpha, p, n - p)
 
     fig = go.Figure()
     fig.add_trace(go.Scatter(y=t_squared, mode='lines+markers', name="T² Statistic", line_color=COLORS['primary']))
     fig.add_hline(y=ucl, line=dict(color=COLORS['danger'], dash='dash'), name='UCL')
-    fig.add_vrect(x0=80, x1=100, fillcolor=f"{COLORS['accent']}30", line_width=0, name="Induced Shift")
+    
+    # Corrected fillcolor format using rgba
+    hex_color = COLORS['accent']
+    r, g, b = int(hex_color[1:3], 16), int(hex_color[3:5], 16), int(hex_color[5:7], 16)
+    rgba_fillcolor = f'rgba({r}, {g}, {b}, 0.2)' # Opacity of 0.2
+    
+    fig.add_vrect(x0=80, x1=100, fillcolor=rgba_fillcolor, line_width=0, name="Induced Shift")
     
     fig.update_layout(title="<b>ML Control:</b> Hotelling's T² Chart for Multivariate Data", xaxis_title="Sample Number", yaxis_title="T² Statistic", plot_bgcolor='white', paper_bgcolor='white')
     return fig
