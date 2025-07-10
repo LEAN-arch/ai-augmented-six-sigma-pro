@@ -12,27 +12,36 @@ from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
-from scipy.stats import norm, gaussian_kde, f_oneway, t, f
-from typing import List, Dict, Any, Tuple
+from scipy.stats import gaussian_kde, f_oneway
+from scipy.stats import f as f_dist
+from typing import List, Dict, Tuple
 
 # ==============================================================================
 # SECTION 1: VISUAL & STYLING CONFIGURATION
 # ==============================================================================
 COLORS = {
-    "primary": "#0072B2", "secondary": "#009E73", "accent": "#D55E00", 
-    "neutral_yellow": "#F0E442", "neutral_pink": "#CC79A7", "background": "#F8F9FA", 
-    "text": "#212529", "light_gray": "#DEE2E6", "dark_gray": "#495057", 
+    "primary": "#0072B2", "secondary": "#009E73", "accent": "#D55E00",
+    "neutral_yellow": "#F0E442", "neutral_pink": "#CC79A7", "background": "#F8F9FA",
+    "text": "#212529", "light_gray": "#DEE2E6", "dark_gray": "#495057",
     "success": "#28A745", "warning": "#FFC107", "danger": "#DC3545"
 }
 
 def get_custom_css() -> str:
-    """Returns the custom CSS string for a professional, clean Streamlit app theme."""
+    """
+    Returns the custom CSS string for a professional, clean Streamlit app theme.
+    
+    DX Note: Uses robust `data-testid` selectors instead of brittle, auto-generated
+    `st-emotion-cache-*` classes to ensure stability across Streamlit versions.
+    """
     return f"""
     <style>
-        .stApp {{
+        /* Main app styling */
+        div[data-testid="stAppViewContainer"] > main {{
             background-color: {COLORS['background']};
             color: {COLORS['text']};
         }}
+        
+        /* Headers */
         h1, h2 {{
             color: {COLORS['dark_gray']};
             border-bottom: 2px solid {COLORS['light_gray']};
@@ -40,37 +49,52 @@ def get_custom_css() -> str:
         }}
         h3 {{ color: {COLORS['primary']}; }}
         h4, h5 {{ color: {COLORS['dark_gray']}; }}
-        .st-emotion-cache-16txtl3 {{ background-color: #FFFFFF; }}
-        .st-emotion-cache-1r4qj8v, .st-emotion-cache-1kyxreq {{
+        
+        /* Style for containers created with st.container(border=True) */
+        div[data-testid="stBlock"] {{
             border: 1px solid {COLORS['light_gray']};
             border-radius: 0.5rem;
             box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
         }}
-        .stButton>button {{ border-radius: 0.5rem; }}
+        
+        /* Button styling */
+        button[data-testid="stButton"] > button {{
+            border-radius: 0.5rem;
+        }}
     </style>
     """
+
+def hex_to_rgba(h: str, a: float) -> str:
+    """Converts a hex color string to an rgba string for Plotly compatibility."""
+    return f"rgba({int(h[1:3], 16)}, {int(h[3:5], 16)}, {int(h[5:7], 16)}, {a})"
 
 # ==============================================================================
 # SECTION 2: SYNTHETIC DATA GENERATORS (BIOTECH DOMAIN)
 # ==============================================================================
-def generate_assay_data(mean: float, std_dev: float, size: int, lsl: float, usl: float) -> np.ndarray:
+# NOTE: Function names have been aligned with calls in `app_pages.py` to fix bugs.
+
+def generate_process_data(mean: float, std_dev: float, size: int) -> np.ndarray:
+    """Generates data for process capability analysis."""
     return np.random.normal(mean, std_dev, size)
 
-def generate_pcr_optimization_data(size: int = 200) -> pd.DataFrame:
+def generate_nonlinear_data(size: int = 200) -> pd.DataFrame:
+    """Generates non-linear data for regression modeling comparison."""
     np.random.seed(42)
-    X1 = np.linspace(55, 65, size)
-    X2 = 1.0 + 0.1 * (X1 - 60)**2 + np.random.normal(0, 0.5, size)
-    X3_noise = np.random.randn(size) * 5
-    y = 70 - 0.5 * (X1 - 62)**2 + 10 * np.log(X2 + 1) + np.random.normal(0, 3, size)
+    X1 = np.linspace(55, 65, size) # Annealing Temp
+    X2 = 1.0 + 0.1 * (X1 - 60)**2 + np.random.normal(0, 0.5, size) # Enzyme Conc
+    X3_noise = np.random.randn(size) * 5 # Irrelevant factor
+    y = 70 - 0.5 * (X1 - 62)**2 + 10 * np.log(X2 + 1) + np.random.normal(0, 3, size) # On-Target Rate
     return pd.DataFrame({'Annealing_Temp': X1, 'Enzyme_Conc': X2, 'Humidity_Noise': X3_noise, 'On_Target_Rate': y})
 
-def generate_qc_control_data(mean: float = 20.0, std_dev: float = 1.5, size: int = 150, shift_point: int = 75, shift_magnitude: float = 0.8) -> pd.DataFrame:
+def generate_control_chart_data(mean: float = 20.0, std_dev: float = 1.5, size: int = 150, shift_point: int = 75, shift_magnitude: float = 0.8) -> pd.DataFrame:
+    """Generates data for SPC charts, simulating a process shift."""
     np.random.seed(42)
     in_control = np.random.normal(mean, std_dev, shift_point)
     out_of_control = np.random.normal(mean - shift_magnitude * std_dev, std_dev, size - shift_point)
     return pd.DataFrame({'Batch_ID': np.arange(size), 'Yield_ng': np.concatenate([in_control, out_of_control])})
 
 def generate_doe_data() -> pd.DataFrame:
+    """Generates data for a 2-level, 3-factor Design of Experiments."""
     np.random.seed(42)
     factors = [-1, 1]
     data = []
@@ -82,11 +106,15 @@ def generate_doe_data() -> pd.DataFrame:
     return pd.DataFrame(data, columns=['Primer_Conc', 'Anneal_Temp', 'PCR_Cycles', 'Library_Yield'])
 
 def generate_kano_data() -> pd.DataFrame:
+    """Generates data to illustrate the Kano model categories."""
     np.random.seed(42)
     func = np.linspace(0, 10, 20)
+    # Basic needs: high dissatisfaction when absent, but satisfaction quickly plateaus.
     basic_sat = np.clip(np.log(func + 0.1) * 3 - 8, -10, 0) + np.random.normal(0, 0.3, 20)
     basic_sat[func==0] = -10
+    # Performance needs: linear relationship between functionality and satisfaction.
     perf_sat = np.linspace(-5, 5, 20) + np.random.normal(0, 0.8, 20)
+    # Excitement needs: cause satisfaction when present, but no dissatisfaction when absent.
     excite_sat = np.clip(np.exp(func * 0.4) - 1.5, 0, 10) + np.random.normal(0, 0.3, 20)
     excite_sat[func==0] = 0
     df_basic = pd.DataFrame({'functionality': func, 'satisfaction': basic_sat, 'category': 'Basic (Must-be)'})
@@ -94,7 +122,8 @@ def generate_kano_data() -> pd.DataFrame:
     df_excite = pd.DataFrame({'functionality': func, 'satisfaction': excite_sat, 'category': 'Excitement (Delighter)'})
     return pd.concat([df_basic, df_perf, df_excite], ignore_index=True)
 
-def generate_reagent_lot_data(means: list, stds: list, n: int) -> pd.DataFrame:
+def generate_anova_data(means: list, stds: list, n: int) -> pd.DataFrame:
+    """Generates data for comparing multiple groups (for ANOVA)."""
     data, groups = [], []
     for i, (mean, std) in enumerate(zip(means, stds)):
         data.extend(np.random.normal(mean, std, n))
@@ -102,19 +131,23 @@ def generate_reagent_lot_data(means: list, stds: list, n: int) -> pd.DataFrame:
     return pd.DataFrame({'Library_Yield': data, 'Reagent_Lot': groups})
 
 def generate_sensor_degradation_data() -> pd.DataFrame:
+    """Generates time-series data simulating sensor signal degradation."""
     np.random.seed(42)
     time = np.arange(0, 100)
     degradation = 100 * np.exp(-time * 0.015) + np.random.normal(0, 0.5, 100)
+    # Add a few anomalous drops
     degradation[np.random.choice(100, 3, replace=False)] -= np.random.normal(5, 1, 3)
     return pd.DataFrame({'Run_Number': time, 'Laser_Power_mW': degradation})
 
 def generate_pareto_data() -> pd.DataFrame:
+    """Generates sample data for a Pareto chart."""
     return pd.DataFrame({
         'QC_Failure_Mode': ['Low Library Yield', 'Adapter-Dimer Contamination', 'High Duplication Rate', 'Failed Positive Control', 'Low Q30 Score', 'Sample Mix-up'],
         'Frequency': [45, 22, 11, 6, 4, 2]
     })
 
 def generate_fmea_data() -> pd.DataFrame:
+    """Generates sample data for a Failure Mode and Effects Analysis (FMEA) table."""
     return pd.DataFrame([
         {'Failure Mode': 'Reagent Contamination', 'Severity': 10, 'Occurrence': 3, 'Detection': 5},
         {'Failure Mode': 'Incorrect Pipetting Volume', 'Severity': 8, 'Occurrence': 5, 'Detection': 3},
@@ -123,6 +156,7 @@ def generate_fmea_data() -> pd.DataFrame:
     ]).assign(RPN=lambda df: df.Severity * df.Occurrence * df.Detection).sort_values('RPN', ascending=False)
 
 def generate_vsm_data() -> pd.DataFrame:
+    """Generates sample data for a Value Stream Map."""
     return pd.DataFrame([
         {"Step": "Accessioning", "CycleTime": 10, "WaitTime": 120, "ValueAdded": True},
         {"Step": "Extraction", "CycleTime": 90, "WaitTime": 30, "ValueAdded": True},
@@ -133,14 +167,17 @@ def generate_vsm_data() -> pd.DataFrame:
     ])
 
 def generate_hotelling_data() -> pd.DataFrame:
+    """Generates multivariate data for Hotelling's T-squared chart."""
     np.random.seed(42)
     mean_in, cov_in = [85, 15], [[4, -3], [-3, 4]]
     data_in = np.random.multivariate_normal(mean_in, cov_in, 80)
+    # Introduce a shift in the process
     mean_out = [80, 22]
     data_out = np.random.multivariate_normal(mean_out, cov_in, 20)
     return pd.DataFrame(np.vstack((data_in, data_out)), columns=['Pct_Mapped', 'Pct_Duplication'])
 
 def generate_causal_data(size: int = 500) -> pd.DataFrame:
+    """Generates data with a known causal structure for demonstration."""
     np.random.seed(42)
     x1 = np.random.uniform(5, 15, size=size)
     x2 = 0.5 * x1 + np.random.normal(size=size) * 0.2
@@ -150,13 +187,11 @@ def generate_causal_data(size: int = 500) -> pd.DataFrame:
 
 
 # ==============================================================================
-# SECTION 3: VISUALIZATION HELPERS (BIOTECH DOMAIN - ALL BUGS FIXED)
+# SECTION 3: VISUALIZATION HELPERS (BIOTECH DOMAIN)
 # ==============================================================================
-def hex_to_rgba(h: str, a: float) -> str:
-    """Converts a hex color string to an rgba string for Plotly compatibility."""
-    return f"rgba({int(h[1:3], 16)}, {int(h[3:5], 16)}, {int(h[5:7], 16)}, {a})"
 
 def plot_project_charter_visual() -> go.Figure:
+    """Creates a visual representation of a project charter."""
     fig = go.Figure()
     fig.add_shape(type="rect", x0=0, y0=0, x1=1, y1=1, fillcolor='white', line_width=0)
     fig.add_annotation(x=0.5, y=0.92, text="<b>Assay Development Plan: Liquid Biopsy for CRC</b>", showarrow=False, font=dict(size=22, color=COLORS['primary']))
@@ -177,6 +212,7 @@ def plot_project_charter_visual() -> go.Figure:
     return fig
 
 def plot_sipoc_visual() -> go.Figure:
+    """Creates a SIPOC (Suppliers, Inputs, Process, Outputs, Customers) diagram."""
     header_values = ['<b>👤<br>Suppliers</b>', '<b>🧬<br>Inputs</b>', '<b>⚙️<br>Process</b>', '<b>📊<br>Outputs</b>', '<b>⚕️<br>Customers</b>']
     cell_values = [
         ['• Reagent Vendors<br>• Instrument Mfr.<br>• LIMS Provider'],
@@ -192,7 +228,37 @@ def plot_sipoc_visual() -> go.Figure:
     fig.update_layout(title_text="<b>SIPOC Diagram:</b> NGS Assay Workflow", margin=dict(l=10, r=10, t=50, b=10))
     return fig
 
+def plot_ctq_tree_visual() -> graphviz.Digraph:
+    """
+    BUG FIX: This function was missing.
+    Creates a Critical-to-Quality (CTQ) tree diagram using Graphviz.
+    """
+    dot = graphviz.Digraph(comment='CTQ Tree')
+    dot.attr('node', shape='box', style='rounded,filled', fontname="helvetica", fontcolor=COLORS['dark_gray'])
+    dot.attr('edge', color=COLORS['dark_gray'])
+
+    dot.node('Need', 'Clinician Need:\n"Reliable Early CRC Detection"', fillcolor=hex_to_rgba(COLORS['accent'], 0.5))
+    
+    dot.node('Driver1', 'High Sensitivity', fillcolor=hex_to_rgba(COLORS['primary'], 0.3))
+    dot.node('Driver2', 'High Specificity', fillcolor=hex_to_rgba(COLORS['primary'], 0.3))
+    dot.node('Driver3', 'Fast Turnaround', fillcolor=hex_to_rgba(COLORS['primary'], 0.3))
+
+    dot.edge('Need', 'Driver1')
+    dot.edge('Need', 'Driver2')
+    dot.edge('Need', 'Driver3')
+
+    dot.node('CTQ1', 'CTQ:\nLOD < 0.1% VAF', fillcolor=hex_to_rgba(COLORS['secondary'], 0.3))
+    dot.node('CTQ2', 'CTQ:\nAnalytical Specificity > 99.5%', fillcolor=hex_to_rgba(COLORS['secondary'], 0.3))
+    dot.node('CTQ3', 'CTQ:\nSample-to-Report < 5 days', fillcolor=hex_to_rgba(COLORS['secondary'], 0.3))
+
+    dot.edge('Driver1', 'CTQ1')
+    dot.edge('Driver2', 'CTQ2')
+    dot.edge('Driver3', 'CTQ3')
+
+    return dot
+
 def plot_causal_discovery_visual() -> graphviz.Digraph:
+    """Creates a hypothetical causal graph from pilot data."""
     dot = graphviz.Digraph(comment='Causal Graph', graph_attr={'rankdir': 'LR', 'splines': 'spline'})
     dot.attr('node', shape='box', style='rounded,filled', fontname="helvetica", fontcolor=COLORS['dark_gray'])
     dot.attr('edge', color=COLORS['dark_gray'], penwidth='1.5', fontcolor=COLORS['dark_gray'])
@@ -204,6 +270,7 @@ def plot_causal_discovery_visual() -> graphviz.Digraph:
     return dot
 
 def plot_kano_visual() -> go.Figure:
+    """Creates a visualization of the Kano model for feature prioritization."""
     df = generate_kano_data()
     fig = go.Figure()
     fig.add_shape(type="rect", x0=0, y0=0, x1=10, y1=10, fillcolor=hex_to_rgba(COLORS['success'], 0.1), line_width=0, layer='below')
@@ -221,6 +288,7 @@ def plot_kano_visual() -> go.Figure:
     return fig
 
 def plot_voc_treemap() -> go.Figure:
+    """Creates a treemap to visualize NLP results from literature."""
     data = {'Category': ['Biomarkers', 'Biomarkers', 'Methodology', 'Methodology', 'Performance', 'Performance'],
             'Topic': ['EGFR Variants', 'KRAS Hotspots', 'ddPCR', 'Shallow WGS', 'LOD <0.1%', 'Specificity >99%'],
             'Count': [180, 150, 90, 60, 250, 210], 'Sentiment': [0.5, 0.4, -0.2, -0.4, 0.8, 0.7]}
@@ -232,17 +300,19 @@ def plot_voc_treemap() -> go.Figure:
     return fig
 
 def plot_gage_rr_variance_components() -> go.Figure:
+    """Creates a stacked bar chart for Gage R&R variance components."""
     df = pd.DataFrame({'Source': ['% Contribution'], 'Assay Variation': [92], 'Repeatability (Sequencer)': [5], 'Reproducibility (Operator)': [3]})
     fig = go.Figure()
     fig.add_trace(go.Bar(y=df['Source'], x=df['Assay Variation'], name='Assay Variation', orientation='h', marker_color=COLORS['primary']))
     fig.add_trace(go.Bar(y=df['Source'], x=df['Repeatability (Sequencer)'], name='Repeatability (Sequencer)', orientation='h', marker_color=COLORS['warning']))
     fig.add_trace(go.Bar(y=df['Source'], x=df['Reproducibility (Operator)'], name='Reproducibility (Operator)', orientation='h', marker_color=COLORS['accent']))
     fig.update_layout(barmode='stack', title='<b>Gage R&R:</b> Assay vs. System Variation',
-                      xaxis=dict(ticksuffix='%'), yaxis_visible=False, plot_bgcolor='white',
+                      xaxis=dict(ticksuffix='%', range=[0, 100]), yaxis_visible=False, plot_bgcolor='white',
                       legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
     return fig
 
 def plot_process_mining_graph() -> graphviz.Digraph:
+    """Creates a process map discovered from LIMS data."""
     dot = graphviz.Digraph(comment='Process Mining', graph_attr={'rankdir': 'LR', 'splines': 'true'})
     dot.attr('node', shape='box', style='rounded,filled', fillcolor=hex_to_rgba(COLORS['primary'], 0.3), fontcolor=COLORS['dark_gray'])
     dot.attr('edge', color=COLORS['dark_gray'], fontname="Helvetica", fontsize="10", fontcolor=COLORS['dark_gray'])
@@ -259,6 +329,7 @@ def plot_process_mining_graph() -> graphviz.Digraph:
     return dot
 
 def plot_vsm() -> go.Figure:
+    """Creates a Value Stream Map visualization."""
     df = generate_vsm_data()
     total_lead_time = (df['CycleTime'] + df['WaitTime']).sum()
     va_time = df[df['ValueAdded']]['CycleTime'].sum()
@@ -268,30 +339,36 @@ def plot_vsm() -> go.Figure:
     for _, row in df.iterrows():
         cycle_pct = row['CycleTime'] / total_lead_time * 100
         wait_pct = row['WaitTime'] / total_lead_time * 100
-        
-        fig.add_shape(type="rect", x0=current_pos, x1=current_pos + cycle_pct, y0=1, y1=2, 
+        # Value-Added Time
+        fig.add_shape(type="rect", x0=current_pos, x1=current_pos + cycle_pct, y0=1, y1=2,
                       fillcolor=COLORS['secondary'] if row['ValueAdded'] else COLORS['danger'], line_color=COLORS['dark_gray'])
         fig.add_annotation(x=current_pos + cycle_pct / 2, y=1.5, text=f"{row['Step']}<br>{row['CycleTime']/60:.1f}h", showarrow=False, font=dict(color='white'))
         current_pos += cycle_pct
-        
+        # Non-Value-Added (Wait) Time
         if row['WaitTime'] > 0:
-            fig.add_shape(type="rect", x0=current_pos, x1=current_pos + wait_pct, y0=0, y1=1, 
+            fig.add_shape(type="rect", x0=current_pos, x1=current_pos + wait_pct, y0=0, y1=1,
                           fillcolor=COLORS['warning'], line_color=COLORS['accent'], opacity=0.7)
             if wait_pct > 5:
                 fig.add_annotation(x=current_pos + wait_pct / 2, y=0.5, text=f"{row['WaitTime']/60:.1f}h wait", showarrow=False)
             current_pos += wait_pct
-            
     fig.update_layout(title=f"<b>Value Stream Map (Normalized):</b> Total TAT: {total_lead_time/1440:.1f} days | PCE: {pce:.1f}%",
                       xaxis=dict(title="Percentage of Total Lead Time", showgrid=False, range=[0, 100], ticksuffix="%"),
                       yaxis=dict(visible=False), plot_bgcolor='white', margin=dict(l=20, r=20, t=50, b=20), height=300)
     return fig
 
 def plot_capability_analysis_pro(data: np.ndarray, lsl: float, usl: float) -> Tuple[go.Figure, float, float]:
-    mean, std = np.mean(data), np.std(data)
+    """Generates a capability analysis histogram with KDE overlay."""
+    mean, std = np.mean(data), np.std(data, ddof=1)
     if std == 0: return go.Figure(), 0, 0
-    cpk = min((usl - mean) / (3 * std), (mean - lsl) / (3 * std)); cp = (usl - lsl) / (6 * std)
+    cpk = min((usl - mean) / (3 * std), (mean - lsl) / (3 * std))
+    cp = (usl - lsl) / (6 * std)
     x_range = np.linspace(min(lsl, data.min()) - 2 * std, max(usl, data.max()) + 2 * std, 500)
-    kde_y = gaussian_kde(data)(x_range); fig = make_subplots(specs=[[{"secondary_y": True}]])
+    try:
+        kde_y = gaussian_kde(data)(x_range)
+    except np.linalg.LinAlgError: # Handle cases with low variance
+        kde_y = np.zeros_like(x_range)
+        
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
     fig.add_trace(go.Histogram(x=data, name='Assay Output', marker_color=COLORS['primary'], opacity=0.7), secondary_y=False)
     fig.add_trace(go.Scatter(x=x_range, y=kde_y, mode='lines', name='KDE of Output', line=dict(color=COLORS['accent'], width=3)), secondary_y=True)
     fig.add_vline(x=lsl, line=dict(color=COLORS['danger'], width=2, dash='dash'), name="LSL")
@@ -304,13 +381,14 @@ def plot_capability_analysis_pro(data: np.ndarray, lsl: float, usl: float) -> Tu
     return fig, cp, cpk
 
 def plot_capability_metrics(cp: float, cpk: float) -> Tuple[go.Figure, go.Figure]:
+    """Generates gauge indicators for Cp and Cpk."""
     target = 1.33
     def get_gauge_color(v): return COLORS['danger'] if v < 1.0 else (COLORS['warning'] if v < target else COLORS['success'])
-    fig_cp = go.Figure(go.Indicator(mode="gauge+number", value=cp, title={'text': "<b>Process Potential (Cp)</b>"},
+    fig_cp = go.Figure(go.Indicator(mode="gauge+number", value=round(cp, 2), title={'text': "<b>Process Potential (Cp)</b>"},
                                   gauge={'axis': {'range': [0, 2]}, 'bar': {'color': get_gauge_color(cp)},
                                          'steps': [{'range': [0, 1.0], 'color': hex_to_rgba(COLORS['danger'], 0.2)}, {'range': [1.0, target], 'color': hex_to_rgba(COLORS['warning'], 0.2)}]}))
     fig_cp.update_layout(height=250, margin=dict(l=20, r=20, t=40, b=20))
-    fig_cpk = go.Figure(go.Indicator(mode="gauge+number", value=cpk, title={'text': "<b>Process Capability (Cpk)</b>"},
+    fig_cpk = go.Figure(go.Indicator(mode="gauge+number", value=round(cpk, 2), title={'text': "<b>Process Capability (Cpk)</b>"},
                                    gauge={'axis': {'range': [0, 2]}, 'bar': {'color': get_gauge_color(cpk)},
                                           'steps': [{'range': [0, 1.0], 'color': hex_to_rgba(COLORS['danger'], 0.2)}, {'range': [1.0, target], 'color': hex_to_rgba(COLORS['warning'], 0.2)}],
                                           'threshold': {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': target}}))
@@ -318,6 +396,7 @@ def plot_capability_metrics(cp: float, cpk: float) -> Tuple[go.Figure, go.Figure
     return fig_cp, fig_cpk
 
 def plot_fishbone_diagram() -> graphviz.Digraph:
+    """Creates a Fishbone (Ishikawa) diagram for root cause analysis."""
     dot = graphviz.Digraph(engine='neato', graph_attr={'splines': 'line'})
     dot.node('Effect', 'Low Library Yield', shape='box', style='filled', fillcolor=hex_to_rgba(COLORS['danger'], 0.5), fontcolor=COLORS['dark_gray'])
     cats = ['Reagents', 'Equipment', 'Method', 'Technician', 'Sample']
@@ -331,6 +410,7 @@ def plot_fishbone_diagram() -> graphviz.Digraph:
     return dot
 
 def plot_shap_summary(model: RandomForestRegressor, X: pd.DataFrame) -> go.Figure:
+    """Creates a Plotly-based SHAP summary plot."""
     explainer = shap.TreeExplainer(model)
     shap_values = explainer(X)
     fig = go.Figure()
@@ -356,6 +436,7 @@ def plot_shap_summary(model: RandomForestRegressor, X: pd.DataFrame) -> go.Figur
     return fig
 
 def plot_pareto_chart() -> go.Figure:
+    """Creates a Pareto chart to identify top failure modes."""
     df = generate_pareto_data().sort_values('Frequency', ascending=False)
     df['Cumulative Percentage'] = df['Frequency'].cumsum() / df['Frequency'].sum() * 100
     fig = make_subplots(specs=[[{"secondary_y": True}]])
@@ -369,6 +450,7 @@ def plot_pareto_chart() -> go.Figure:
     return fig
 
 def plot_anova_groups(df: pd.DataFrame) -> Tuple[go.Figure, float]:
+    """Creates box plots for group comparison and calculates ANOVA p-value."""
     groups = df['Reagent_Lot'].unique()
     fig = go.Figure()
     colors = [COLORS['primary'], COLORS['secondary'], COLORS['accent'], COLORS['neutral_pink']]
@@ -383,9 +465,11 @@ def plot_anova_groups(df: pd.DataFrame) -> Tuple[go.Figure, float]:
     return fig, p_val
 
 def plot_permutation_test(df: pd.DataFrame, n_permutations: int = 1000) -> go.Figure:
+    """Performs and visualizes a two-group permutation test."""
     groups = df['Reagent_Lot'].unique()
-    if len(groups) < 2: return go.Figure()
-    g1_data, g2_data = df[df['Reagent_Lot'] == groups[0]]['Library_Yield'], df[df['Reagent_Lot'] == groups[1]]['Library_Yield']
+    if len(groups) < 2: return go.Figure(layout=dict(title="Need at least two groups for permutation test."))
+    g1_data = df[df['Reagent_Lot'] == groups[0]]['Library_Yield'].dropna()
+    g2_data = df[df['Reagent_Lot'] == groups[1]]['Library_Yield'].dropna()
     observed_diff = g1_data.mean() - g2_data.mean()
     concat_data = np.concatenate([g1_data, g2_data])
     perm_diffs = []
@@ -400,10 +484,21 @@ def plot_permutation_test(df: pd.DataFrame, n_permutations: int = 1000) -> go.Fi
                       xaxis_title=f'Difference in Mean Yield ({groups[0]} vs {groups[1]})', yaxis_title='Frequency', plot_bgcolor='white')
     return fig
 
-def plot_regression_comparison_pro(df: pd.DataFrame) -> Tuple[go.Figure, RandomForestRegressor, pd.DataFrame]:
+def train_and_plot_regression_models(df: pd.DataFrame) -> Tuple[go.Figure, RandomForestRegressor, pd.DataFrame]:
+    """
+    DX NOTE: Renamed from `plot_regression_comparison_pro` for clarity.
+    Trains linear and RF models, and plots their predictions against actual data.
+    """
     X, y = df.drop(columns=['On_Target_Rate']), df['On_Target_Rate']
-    lin_reg = LinearRegression().fit(X, y); r2_lin = lin_reg.score(X, y); y_pred_lin = lin_reg.predict(X)
-    rf_reg = RandomForestRegressor(n_estimators=100, random_state=42, oob_score=True).fit(X, y); r2_rf = rf_reg.oob_score_; y_pred_rf = rf_reg.predict(X)
+    # Linear Regression
+    lin_reg = LinearRegression().fit(X, y)
+    y_pred_lin = lin_reg.predict(X)
+    r2_lin = lin_reg.score(X, y)
+    # Random Forest
+    rf_reg = RandomForestRegressor(n_estimators=100, random_state=42, oob_score=True).fit(X, y)
+    y_pred_rf = rf_reg.predict(X)
+    r2_rf = rf_reg.oob_score_
+    
     sort_idx = X['Annealing_Temp'].argsort()
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=X['Annealing_Temp'].iloc[sort_idx], y=y.iloc[sort_idx], mode='markers', name='Actual Data', marker=dict(color=COLORS['dark_gray'], opacity=0.4)))
@@ -414,10 +509,14 @@ def plot_regression_comparison_pro(df: pd.DataFrame) -> Tuple[go.Figure, RandomF
     return fig, rf_reg, X
 
 def plot_doe_cube(df: pd.DataFrame) -> go.Figure:
-    fig = go.Figure(data=[go.Scatter3d(x=df['Primer_Conc'], y=df['Anneal_Temp'], z=df['PCR_Cycles'], mode='markers+text',
+    """Creates a 3D cube plot for visualizing DOE results."""
+    fig = go.Figure(data=[go.Scatter3d(
+        x=df['Primer_Conc'], y=df['Anneal_Temp'], z=df['PCR_Cycles'], mode='markers+text',
         marker=dict(size=12, color=df['Library_Yield'], colorscale='Viridis', showscale=True, colorbar=dict(title='Yield (ng)')),
-        text=[f"{y:.1f}" for y in df['Library_Yield']], textposition='top center')])
+        text=[f"{y:.1f}" for y in df['Library_Yield']], textposition='top center'
+    )])
     lines = []
+    # Add edges to the cube
     for i in range(len(df)):
         for j in range(i + 1, len(df)):
             if np.sum(df.iloc[i, :3] != df.iloc[j, :3]) == 1:
@@ -429,11 +528,14 @@ def plot_doe_cube(df: pd.DataFrame) -> go.Figure:
     return fig
 
 def plot_doe_effects(df: pd.DataFrame) -> Tuple[go.Figure, go.Figure]:
+    """Creates main effects and interaction plots for a DOE."""
     main_effects = {f: df.loc[df[f] == 1, 'Library_Yield'].mean() - df.loc[df[f] == -1, 'Library_Yield'].mean() for f in ['Primer_Conc', 'Anneal_Temp', 'PCR_Cycles']}
     fig_main = px.bar(x=list(main_effects.keys()), y=list(main_effects.values()), color=list(main_effects.keys()),
                       color_discrete_map={'Primer_Conc': COLORS['primary'], 'Anneal_Temp': COLORS['accent'], 'PCR_Cycles': COLORS['secondary']},
                       labels={'x': 'Factor', 'y': 'Effect on Library Yield (ng)'}, title="<b>DOE:</b> Main Effects Plot")
     fig_main.update_layout(plot_bgcolor='white', showlegend=False)
+
+    # Interaction Plot for Temp*Cycles
     fig_int = go.Figure()
     for level in [-1, 1]:
         subset = df[df['Anneal_Temp'] == level]
@@ -444,17 +546,30 @@ def plot_doe_effects(df: pd.DataFrame) -> Tuple[go.Figure, go.Figure]:
     return fig_main, fig_int
 
 def plot_bayesian_optimization_interactive(true_func, x_range: np.ndarray, sampled_points: Dict[str, list]) -> Tuple[go.Figure, float]:
+    """Visualizes one step of a Bayesian Optimization loop."""
     X_sampled, y_sampled = np.array(sampled_points['x']).reshape(-1, 1), np.array(sampled_points['y'])
     kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2))
-    gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=10, alpha=0.1 ** 2, normalize_y=True); gp.fit(X_sampled, y_sampled)
-    y_mean, y_std = gp.predict(x_range.reshape(-1, 1), return_std=True); ucb = y_mean + 1.96 * y_std; next_point_x = x_range[np.argmax(ucb)]
+    gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=10, alpha=np.std(y_sampled)**2, normalize_y=True)
+    gp.fit(X_sampled, y_sampled)
+    
+    y_mean, y_std = gp.predict(x_range.reshape(-1, 1), return_std=True)
+    # Upper Confidence Bound (UCB) as acquisition function
+    ucb = y_mean + 1.96 * y_std 
+    next_point_x = x_range[np.argmax(ucb)]
+    
     fig = go.Figure()
+    # Confidence Interval
     fig.add_trace(go.Scatter(x=np.concatenate([x_range, x_range[::-1]]), y=np.concatenate([y_mean - 1.96 * y_std, (y_mean + 1.96 * y_std)[::-1]]),
                                fill='toself', fillcolor=hex_to_rgba(COLORS["primary"], 0.2), line=dict(color='rgba(255,255,255,0)'), name='95% Confidence Interval'))
+    # True Function (hidden from the model)
     fig.add_trace(go.Scatter(x=x_range, y=true_func(x_range), mode='lines', name='True Performance Curve (Hidden)', line=dict(color=COLORS['dark_gray'], width=2, dash='dash')))
+    # Sampled Points
     fig.add_trace(go.Scatter(x=X_sampled.ravel(), y=y_sampled, mode='markers', name='Experiments Run', marker=dict(color=COLORS['accent'], size=12, symbol='x', line=dict(width=3))))
+    # GP Mean (Model's belief)
     fig.add_trace(go.Scatter(x=x_range, y=y_mean, mode='lines', name='GP Model of Assay', line=dict(color=COLORS['primary'], width=3)))
+    # Acquisition Function
     fig.add_trace(go.Scatter(x=x_range, y=ucb, mode='lines', name='Acquisition Fn (UCB)', line=dict(color=COLORS['secondary'], width=2, dash='dot')))
+    # Next point to sample
     fig.add_vline(x=next_point_x, line=dict(color=COLORS['secondary'], width=3), name="Next Experiment to Run")
     fig.update_layout(title_text="<b>Bayesian Optimization:</b> Smart Search for Optimal Conditions",
                       xaxis_title="Parameter Setting (e.g., Enzyme Concentration)", yaxis_title="Assay Performance (e.g., On-Target %)",
@@ -462,20 +577,39 @@ def plot_bayesian_optimization_interactive(true_func, x_range: np.ndarray, sampl
     return fig, next_point_x
 
 def plot_fmea_table() -> go.Figure:
+    """Creates a table visualization for an FMEA."""
     df = generate_fmea_data()
+    # Color RPN cells based on risk level
     colors = df['RPN'].apply(lambda v: hex_to_rgba(COLORS['danger'], 0.5) if v > 150 else (hex_to_rgba(COLORS['warning'], 0.5) if v > 80 else 'white'))
     fig = go.Figure(data=[go.Table(
         header=dict(values=list(df.columns), fill_color=COLORS['primary'], font=dict(color='white'), align='left'),
-        cells=dict(values=[df[c] for c in df.columns], fill=dict(color=[colors if c == 'RPN' else ['white'] * len(df) for c in df.columns]), align='left'))])
+        cells=dict(values=[df[c] for c in df.columns],
+                   fill=dict(color=[colors if c == 'RPN' else ['white'] * len(df) for c in df.columns]), align='left'))])
     fig.update_layout(title="<b>FMEA:</b> Risk Analysis of Lab Protocol", margin=dict(l=10, r=10, t=50, b=10))
     return fig
 
 def plot_rul_prediction(df: pd.DataFrame) -> go.Figure:
-    time, signal = df['Run_Number'].values, df['Laser_Power_mW'].values; threshold, current_time = 80.0, 70
-    model_time, model_signal = time[time < current_time], signal[time < current_time]; p = np.polyfit(model_time, np.log(model_signal), 1)
-    future_time = np.arange(current_time, 120); pred_signal = np.exp(p[1]) * np.exp(p[0] * future_time)
+    """Plots Remaining Useful Life (RUL) prediction for a degrading component."""
+    time, signal = df['Run_Number'].values, df['Laser_Power_mW'].values
+    threshold, current_time = 80.0, 70
+    
+    # Model using data up to the 'current_time'
+    model_time, model_signal = time[time < current_time], signal[time < current_time]
+    p = np.polyfit(model_time, np.log(model_signal), 1) # Fit an exponential decay
+    
+    # Predict into the future
+    future_time = np.arange(current_time, 120)
+    pred_signal = np.exp(p[1]) * np.exp(p[0] * future_time)
+    
+    # Find time-to-failure (TTF)
     failure_indices = np.where(pred_signal <= threshold)[0]
-    ttf, rul_text = (future_time[failure_indices[0]], f"Predicted RUL: {future_time[failure_indices[0]] - current_time:.0f} Runs") if len(failure_indices) > 0 else (120, "RUL: >50 Runs")
+    if len(failure_indices) > 0:
+        ttf = future_time[failure_indices[0]]
+        rul_text = f"Predicted RUL: {ttf - current_time:.0f} Runs"
+    else:
+        ttf = 120 # No failure predicted in the window
+        rul_text = f"RUL: >{120-current_time} Runs"
+        
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=time, y=signal, mode='markers', name='Actual Laser Power', marker=dict(color=COLORS['dark_gray'], opacity=0.7)))
     fig.add_trace(go.Scatter(x=future_time, y=pred_signal, mode='lines', name='Degradation Model', line=dict(color=COLORS['primary'], dash='dash')))
@@ -487,9 +621,11 @@ def plot_rul_prediction(df: pd.DataFrame) -> go.Figure:
     return fig
 
 def plot_shewhart_chart(df: pd.DataFrame) -> go.Figure:
-    mean, std_dev = df['Yield_ng'].iloc[:75].mean(), df['Yield_ng'].iloc[:75].std()
+    """Creates a Shewhart (Levey-Jennings) control chart."""
+    mean, std_dev = df['Yield_ng'].iloc[:75].mean(), df['Yield_ng'].iloc[:75].std(ddof=1)
     ucl, lcl = mean + 3 * std_dev, mean - 3 * std_dev
     violations = df[(df['Yield_ng'] > ucl) | (df['Yield_ng'] < lcl)]
+    
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=df['Batch_ID'], y=df['Yield_ng'], mode='lines+markers', name='QC Control', line=dict(color=COLORS['primary'])))
     fig.add_trace(go.Scatter(x=[0, len(df) - 1], y=[ucl, ucl], mode='lines', name='UCL (Mean+3σ)', line=dict(color=COLORS['accent'], dash='dash')))
@@ -501,12 +637,15 @@ def plot_shewhart_chart(df: pd.DataFrame) -> go.Figure:
     return fig
 
 def plot_ewma_chart(df: pd.DataFrame, lambda_val: float = 0.2) -> go.Figure:
-    mean, std_dev = df['Yield_ng'].iloc[:75].mean(), df['Yield_ng'].iloc[:75].std()
+    """Creates an Exponentially Weighted Moving Average (EWMA) chart."""
+    mean, std_dev = df['Yield_ng'].iloc[:75].mean(), df['Yield_ng'].iloc[:75].std(ddof=1)
     df['ewma'] = df['Yield_ng'].ewm(span=(2 / lambda_val) - 1).mean()
     n = np.arange(1, len(df) + 1)
+    # Control limits for an EWMA chart vary for the first few points
     ucl_ewma = mean + 3 * std_dev * np.sqrt(lambda_val / (2 - lambda_val) * (1 - (1 - lambda_val) ** (2 * n)))
     lcl_ewma = mean - 3 * std_dev * np.sqrt(lambda_val / (2 - lambda_val) * (1 - (1 - lambda_val) ** (2 * n)))
     violations = df[(df['ewma'] > ucl_ewma) | (df['ewma'] < lcl_ewma)]
+    
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=df['Batch_ID'], y=df['Yield_ng'], mode='lines', name='Original QC Data', line=dict(color=COLORS['light_gray'], width=1)))
     fig.add_trace(go.Scatter(x=df['Batch_ID'], y=df['ewma'], mode='lines', name='EWMA', line=dict(color=COLORS['secondary'], width=2.5)))
@@ -518,13 +657,15 @@ def plot_ewma_chart(df: pd.DataFrame, lambda_val: float = 0.2) -> go.Figure:
     return fig
 
 def plot_cusum_chart(df: pd.DataFrame, k: float = 0.5, h: float = 5.0) -> go.Figure:
-    mean, std = df['Yield_ng'].iloc[:75].mean(), df['Yield_ng'].iloc[:75].std()
+    """Creates a Cumulative Sum (CUSUM) control chart."""
+    mean, std = df['Yield_ng'].iloc[:75].mean(), df['Yield_ng'].iloc[:75].std(ddof=1)
     target, k_val, h_val = mean, k * std, h * std
     sh, sl = np.zeros(len(df)), np.zeros(len(df))
     for i in range(1, len(df)):
         sh[i] = max(0, sh[i - 1] + df['Yield_ng'].iloc[i] - target - k_val)
         sl[i] = min(0, sl[i - 1] + df['Yield_ng'].iloc[i] - target + k_val)
     violations = np.where((sh > h_val) | (sl < -h_val))[0]
+    
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=df['Batch_ID'], y=sh, name='CUSUM High (Sh)', line=dict(color=COLORS['secondary'])))
     fig.add_trace(go.Scatter(x=df['Batch_ID'], y=sl, name='CUSUM Low (Sl)', line=dict(color=COLORS['primary'])))
@@ -536,29 +677,48 @@ def plot_cusum_chart(df: pd.DataFrame, k: float = 0.5, h: float = 5.0) -> go.Fig
     return fig
 
 def plot_hotelling_t2_chart() -> go.Figure:
-    df = generate_hotelling_data(); X = df.iloc[:80, :]
-    mean_vec, inv_cov_mat = X.mean().values, np.linalg.inv(np.cov(X.T))
+    """Creates a multivariate Hotelling's T-squared control chart."""
+    df = generate_hotelling_data()
+    X_in_control = df.iloc[:80, :] # Phase I data for setting limits
+    mean_vec = X_in_control.mean().values
+    inv_cov_mat = np.linalg.inv(np.cov(X_in_control.T))
+    
+    # Calculate T-squared for all data points
     t_squared = [(df.iloc[i, :].values - mean_vec).T @ inv_cov_mat @ (df.iloc[i, :].values - mean_vec) for i in range(len(df))]
-    n, p, alpha = X.shape[0], X.shape[1], 0.01
-    ucl = (p * (n + 1) * (n - 1)) / (n * (n - p)) * f.ppf(1 - alpha, p, n - p)
+    
+    # Calculate the upper control limit (UCL)
+    n, p, alpha = X_in_control.shape[0], X_in_control.shape[1], 0.01
+    ucl = (p * (n + 1) * (n - 1)) / (n * (n - p)) * f_dist.ppf(1 - alpha, p, n - p)
+    
     fig = go.Figure()
     fig.add_trace(go.Scatter(y=t_squared, mode='lines+markers', name="T² Statistic", line_color=COLORS['primary']))
     fig.add_hline(y=ucl, line=dict(color=COLORS['danger'], dash='dash'), name=f'UCL (α={alpha})')
-    rgba_fillcolor = hex_to_rgba(COLORS['accent'], 0.2)
-    fig.add_vrect(x0=80, x1=100, fillcolor=rgba_fillcolor, line_width=0, name="Induced Shift")
+    # Highlight the region where the process shift was induced
+    fig.add_vrect(x0=80, x1=100, fillcolor=hex_to_rgba(COLORS['accent'], 0.2), line_width=0, name="Induced Shift")
     fig.update_layout(title="<b>Multivariate QC:</b> Hotelling's T² on NGS Metrics", xaxis_title="Sample Number", yaxis_title="T² Statistic", plot_bgcolor='white')
     return fig
 
 def plot_control_plan() -> go.Figure:
-    data = {'Process Step': ['Library Prep', 'Sequencing', 'Bioinformatics'], 'Characteristic (X or Y)': ['Positive Control Yield (Y)', 'Sequencer Laser Power (X)', '% Mapped Reads (Y)'], 'Specification': ['20 ± 5 ng', '> 80 mW', '> 85%'], 'Tool': ['Fluorometer', 'Internal Sensor', 'FASTQC'], 'Method': ['Levey-Jennings', 'EWMA Chart', 'Shewhart Chart'], 'Frequency': ['Per Batch', 'Per Run', 'Per Sample'], 'Reaction Plan': ['Re-prep Batch', 'Schedule Maint.', 'Review Alignment']}
+    """Creates a table representing a process control plan."""
+    data = {'Process Step': ['Library Prep', 'Sequencing', 'Bioinformatics'],
+            'Characteristic (X or Y)': ['Positive Control Yield (Y)', 'Sequencer Laser Power (X)', '% Mapped Reads (Y)'],
+            'Specification': ['20 ± 5 ng', '> 80 mW', '> 85%'],
+            'Tool': ['Fluorometer', 'Internal Sensor', 'FASTQC'],
+            'Method': ['Levey-Jennings', 'EWMA Chart', 'Shewhart Chart'],
+            'Frequency': ['Per Batch', 'Per Run', 'Per Sample'],
+            'Reaction Plan': ['Re-prep Batch', 'Schedule Maint.', 'Review Alignment']}
     df = pd.DataFrame(data)
-    fig = go.Figure(data=[go.Table(header=dict(values=list(df.columns), fill_color=COLORS['dark_gray'], font=dict(color='white'), align='left', height=40), cells=dict(values=[df[c] for c in df.columns], align='left', height=30))])
+    fig = go.Figure(data=[go.Table(
+        header=dict(values=list(df.columns), fill_color=COLORS['dark_gray'], font=dict(color='white'), align='left', height=40),
+        cells=dict(values=[df[c] for c in df.columns], align='left', height=30))])
     fig.update_layout(title="<b>Assay Control Plan:</b> Formalizing QC Procedures", margin=dict(l=10, r=10, t=50, b=10))
     return fig
 
 def plot_comparison_radar() -> go.Figure:
+    """Creates a radar chart comparing Classical Stats vs. ML."""
     categories = ['Interpretability', 'Data Volume Needs', 'Scalability', 'Handling Complexity', 'Biomarker Discovery', 'Regulatory Ease']
-    classical_scores, ml_scores = [5, 2, 1, 2, 1, 5], [2, 5, 5, 5, 5, 2]
+    classical_scores = [5, 2, 1, 2, 1, 5]
+    ml_scores = [2, 5, 5, 5, 5, 2]
     fig = go.Figure()
     fig.add_trace(go.Scatterpolar(r=classical_scores + [classical_scores[0]], theta=categories + [categories[0]], fill='toself', name='Classical DOE/Stats', marker_color=COLORS['primary']))
     fig.add_trace(go.Scatterpolar(r=ml_scores + [ml_scores[0]], theta=categories + [categories[0]], fill='toself', name='ML / Bioinformatics', marker_color=COLORS['secondary']))
@@ -568,7 +728,10 @@ def plot_comparison_radar() -> go.Figure:
     return fig
 
 def plot_verdict_barchart() -> go.Figure:
-    data = {"Metric": ["Assay Parameter Optimization (DOE)", "Novel Biomarker Discovery", "High-Dimensional Data Analysis", "Analytical Validation (FDA)", "Proactive QC", "Protocol Interpretability"], "Winner": ["Classical", "ML", "ML", "Classical", "ML", "Classical"], "Score": [-1, 1, 1, -1, 1, -1]}
+    """Creates a bar chart showing which method is better for specific tasks."""
+    data = {"Metric": ["Assay Parameter Optimization (DOE)", "Novel Biomarker Discovery", "High-Dimensional Data Analysis", "Analytical Validation (FDA)", "Proactive QC", "Protocol Interpretability"],
+            "Winner": ["Classical", "ML", "ML", "Classical", "ML", "Classical"],
+            "Score": [-1, 1, 1, -1, 1, -1]}
     df = pd.DataFrame(data).sort_values('Score')
     df['Color'] = df['Score'].apply(lambda x: COLORS['primary'] if x < 0 else COLORS['secondary'])
     fig = px.bar(df, x='Score', y='Metric', orientation='h', color='Color', color_discrete_map='identity', title="<b>Task-Specific Verdict:</b> Which Approach is Better?")
@@ -577,6 +740,7 @@ def plot_verdict_barchart() -> go.Figure:
     return fig
 
 def plot_synergy_diagram() -> go.Figure:
+    """Creates a Venn-like diagram to show the synergy between Stats and ML."""
     fig = go.Figure()
     fig.add_shape(type="circle", x0=0, y0=0, x1=2, y1=2, line_color=COLORS['primary'], fillcolor=COLORS['primary'], opacity=0.6)
     fig.add_shape(type="circle", x0=1.2, y0=0, x1=3.2, y1=2, line_color=COLORS['secondary'], fillcolor=COLORS['secondary'], opacity=0.6)
@@ -589,6 +753,7 @@ def plot_synergy_diagram() -> go.Figure:
     return fig
 
 def get_guidance_data() -> Dict[str, Dict[str, str]]:
+    """Returns a dictionary of scenarios and recommended approaches."""
     return {
         "Validating an assay for FDA 510(k) submission": {"approach": "🏆 **Classical Stats** (DOE, LoD/LoB studies, Gage R&R)", "rationale": "Methods are traceable, validated, and follow CLSI/FDA guidelines, which is paramount for regulatory bodies. The focus is on rigorous inference and establishing performance characteristics beyond reproach."},
         "Discovering a new gene signature from RNA-Seq data": {"approach": "🏆 **Machine Learning** (Elastic Net, Random Forest with SHAP)", "rationale": "ML excels at feature selection from high-dimensional data (p >> n). It can identify a minimal, predictive set of genes from thousands of candidates, a task impossible for classical regression."},
@@ -598,27 +763,29 @@ def get_guidance_data() -> Dict[str, Dict[str, str]]:
     }
 
 def get_workflow_css() -> str:
+    """Returns CSS for the hybrid workflow visualization."""
     return f"""
     <style>
-        .workflow-container{{display:flex;flex-direction:column;align-items:center;width:100%;}} 
-        .workflow-step{{background-color:#FFFFFF;border:1px solid {COLORS['light_gray']};border-radius:10px;padding:20px;margin-bottom:20px;width:95%;box-shadow:0 4px 6px rgba(0,0,0,0.05);border-left:5px solid;}} 
-        .workflow-arrow{{font-size:28px;color:{COLORS['dark_gray']};margin-bottom:20px;font-weight:bold;}} 
-        .step-define{{border-left-color:{COLORS['primary']};}} 
-        .step-measure{{border-left-color:{COLORS['secondary']};}} 
-        .step-analyze{{border-left-color:{COLORS['accent']};}} 
-        .step-improve{{border-left-color:{COLORS['neutral_yellow']};}} 
-        .step-control{{border-left-color:{COLORS['neutral_pink']};}} 
-        .workflow-step h4{{margin-top:0;margin-bottom:15px;font-size:1.5em;color:#333333;}} 
-        .workflow-step .tool-col{{padding:0 15px;}} 
-        .workflow-step .tool-col h5{{color:#555555;border-bottom:2px solid #EEEEEE;padding-bottom:5px;margin-bottom:10px;}} 
-        .workflow-step .tool-col ul{{padding-left:20px;margin:0;}} 
-        .workflow-step .tool-col li{{margin-bottom:5px;}} 
-        .tool-col-classical h5{{color:{COLORS['primary']};}} 
+        .workflow-container{{display:flex;flex-direction:column;align-items:center;width:100%;}}
+        .workflow-step{{background-color:#FFFFFF;border:1px solid {COLORS['light_gray']};border-radius:10px;padding:20px;margin-bottom:20px;width:95%;box-shadow:0 4px 6px rgba(0,0,0,0.05);border-left:5px solid;}}
+        .workflow-arrow{{font-size:28px;color:{COLORS['dark_gray']};margin-bottom:20px;font-weight:bold;}}
+        .step-define{{border-left-color:{COLORS['primary']};}}
+        .step-measure{{border-left-color:{COLORS['secondary']};}}
+        .step-analyze{{border-left-color:{COLORS['accent']};}}
+        .step-improve{{border-left-color:{COLORS['neutral_yellow']};}}
+        .step-control{{border-left-color:{COLORS['neutral_pink']};}}
+        .workflow-step h4{{margin-top:0;margin-bottom:15px;font-size:1.5em;color:#333333;}}
+        .workflow-step .tool-col{{padding:0 15px;}}
+        .workflow-step .tool-col h5{{color:#555555;border-bottom:2px solid #EEEEEE;padding-bottom:5px;margin-bottom:10px;}}
+        .workflow-step .tool-col ul{{padding-left:20px;margin:0;}}
+        .workflow-step .tool-col li{{margin-bottom:5px;}}
+        .tool-col-classical h5{{color:{COLORS['primary']};}}
         .tool-col-ml h5{{color:{COLORS['secondary']};}}
     </style>
     """
 
 def render_workflow_step(phase_name: str, phase_class: str, classical_tools: List[str], ml_tools: List[str]) -> str:
+    """Renders a single step in the hybrid workflow visualization."""
     classical_list = "".join([f"<li>{tool}</li>" for tool in classical_tools])
     ml_list = "".join([f"<li>{tool}</li>" for tool in ml_tools])
     return f"""
