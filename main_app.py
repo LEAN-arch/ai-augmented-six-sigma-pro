@@ -19,8 +19,9 @@ from app_pages import (
 # ==============================================================================
 # 1. GLOBAL PAGE CONFIGURATION
 # ==============================================================================
+# This must be the first Streamlit command in the script.
 st.set_page_config(
-    page_title="Genomic Assay Development & Optimization Framework",
+    page_title="Bio-AI Excellence Framework",
     page_icon="🧬",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -38,7 +39,7 @@ st.set_page_config(
         Navigate through the R&D lifecycle (framed as DMAIC) to see classical methods presented 
         alongside their AI-augmented counterparts for the modern biotech lab.
         
-        **Version:** 5.2 (Definitive Stable Release)
+        **Version:** 6.0 (Modern Navigation Release)
         """
     }
 )
@@ -48,42 +49,31 @@ st.markdown(get_custom_css(), unsafe_allow_html=True)
 
 
 # ==============================================================================
-# 2. APPLICATION NAVIGATION & STATE MANAGEMENT
+# 2. APPLICATION NAVIGATION (Modern Streamlit Approach)
 # ==============================================================================
+# UX/DX Enhancement: Replaced the manual button-based navigation with st.navigation.
+# This provides a more robust, stateful, and idiomatic multi-page app experience
+# with features like automatic URL routing for each page.
 
-# The PAGES dictionary maps user-friendly names to their rendering functions.
-PAGES = {
-    "🏠 Welcome & Framework": show_welcome_page,
-    "---": None,
-    "🌀 Define: Clinical Need & Assay Goals": show_define_phase,
-    "🔬 Measure: Assay & System Validation": show_measure_phase,
-    "📈 Analyze: Root Cause of Assay Variability": show_analyze_phase,
-    "⚙️ Improve: Assay & Workflow Optimization": show_improve_phase,
-    "📡 Control: Lab Operations & QC": show_control_phase,
-    "---": None,
-    "⚔️ Methodology Comparison": show_comparison_matrix,
-    "🤝 The Hybrid Lab Manifesto": show_hybrid_strategy
-}
+# Define the pages of the application
+PAGES = [
+    st.Page(show_welcome_page, title="🏠 Welcome & Framework", icon="🏠"),
+    st.Page(show_define_phase, title="🌀 Define: Clinical Need", icon="🌀"),
+    st.Page(show_measure_phase, title="🔬 Measure: System Validation", icon="🔬"),
+    st.Page(show_analyze_phase, title="📈 Analyze: Root Cause", icon="📈"),
+    st.Page(show_improve_phase, title="⚙️ Improve: Optimization", icon="⚙️"),
+    st.Page(show_control_phase, title="📡 Control: Lab Operations & QC", icon="📡"),
+    st.Page(show_comparison_matrix, title="⚔️ Methodology Comparison", icon="⚔️"),
+    st.Page(show_hybrid_strategy, title="🤝 The Hybrid Lab Manifesto", icon="🤝")
+]
 
 # --- Sidebar Rendering ---
 st.sidebar.title("🧬 Bio-AI Framework")
-st.sidebar.markdown("### Assay Development Playbook")
+st.sidebar.markdown("##### Assay Development Playbook")
 st.sidebar.markdown("Navigate the R&D lifecycle below.")
 
-# If the page in session state is no longer valid, default to the first page.
-if 'current_page' not in st.session_state or st.session_state.current_page not in PAGES:
-    st.session_state.current_page = list(PAGES.keys())[0]
-
-# --- Custom Navigation Menu ---
-for page_name, page_function in PAGES.items():
-    if page_name == "---":
-        st.sidebar.divider()
-    else:
-        is_active = (st.session_state.current_page == page_name)
-        button_type = "primary" if is_active else "secondary"
-        if st.sidebar.button(page_name, use_container_width=True, type=button_type):
-            st.session_state.current_page = page_name
-            st.rerun()
+# Create the navigation menu
+pg = st.navigation(PAGES)
 
 # --- Sidebar Footer ---
 st.sidebar.divider()
@@ -99,7 +89,6 @@ st.sidebar.markdown(
 # ==============================================================================
 # 3. PAGE RENDERING LOGIC
 # ==============================================================================
-# Retrieve and execute the function for the currently selected page.
-page_to_render = PAGES[st.session_state.current_page]
-if page_to_render:
-    page_to_render()
+# The st.navigation object handles the rendering of the selected page.
+# The following line executes the function associated with the current page.
+pg.run()
