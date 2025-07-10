@@ -60,7 +60,7 @@ def show_define_phase():
         col1, col2 = st.columns(2)
         with col1:
             st.markdown("##### **Classical Tool: SIPOC for Lab Workflows**")
-            st.info("A high-level map of the entire assay workflow, from sample receipt to data analysis. It's a qualitative, expert-driven tool for defining process boundaries and fostering team alignment.")
+            st.info("A high-level map of the entire assay workflow. It's a qualitative, expert-driven tool for defining process boundaries and fostering team alignment.")
             st.plotly_chart(plot_sipoc_visual(), use_container_width=True)
         with col2:
             st.markdown("##### **ML Augmentation: Causal Discovery from Pilot Data**")
@@ -120,11 +120,9 @@ def show_measure_phase():
         usl = st.sidebar.slider("Upper Spec Limit (USL)", 8.0, 10.0, 9.0, key="m_usl", help="e.g., Maximum tolerable background")
         process_mean = st.sidebar.slider("Assay Mean (μ)", 2.0, 8.0, 4.0, key="m_mean")
         process_std = st.sidebar.slider("Assay Std Dev (σ)", 0.2, 2.0, 0.5, key="m_std")
-        
         data = generate_process_data(process_mean, process_std, 2000, lsl, usl)
         fig_cap_hist, cp, cpk = plot_capability_analysis_pro(data, lsl, usl)
         fig_cp_gauge, fig_cpk_gauge = plot_capability_metrics(cp, cpk)
-        
         col1, col2 = st.columns([3, 2])
         with col1:
             st.markdown("##### **Assay Distribution vs. Specifications**")
@@ -133,11 +131,8 @@ def show_measure_phase():
             st.markdown("##### **Capability Indices (Gauges)**")
             st.plotly_chart(fig_cp_gauge, use_container_width=True)
             st.plotly_chart(fig_cpk_gauge, use_container_width=True)
-            if cpk < 1.33:
-                st.error("Assay is not capable.", icon="🚨")
-            else:
-                st.success("Assay is capable.", icon="✅")
-            
+            if cpk < 1.33: st.error("Assay is not capable.", icon="🚨")
+            else: st.success("Assay is capable.", icon="✅")
     st.success("""**🏆 Hybrid Strategy for the Measure Phase:**\n1. **Validate (Classical):** Always perform a **Gage R&R** on critical instruments and operators before baselining performance.\n2. **Discover (ML):** Run **Process Mining** on LIMS event logs to get an objective map of the real lab workflow and its bottlenecks.\n3. **Detail (Classical):** Use insights from process mining to guide a targeted, physical **VSM** exercise.\n4. **Baseline & Diagnose (Hybrid):** Report the official **Cpk** baseline. Internally, use the **KDE plot** and **Gauge Visuals** to diagnose the *reason* for poor capability.""")
 
 # ==============================================================================
@@ -173,10 +168,8 @@ def show_analyze_phase():
             st.info("A test to determine if significant differences exist between the mean yields of different reagent lots. Assumes normality and equal variances.")
             fig_anova, p_val = plot_anova_groups(anova_data)
             st.plotly_chart(fig_anova, use_container_width=True)
-            if p_val < 0.05:
-                st.error(f"P-value is {p_val:.4f}. Reject the null hypothesis: A statistically significant difference exists.", icon="🚨")
-            else:
-                st.success(f"P-value is {p_val:.4f}. Fail to reject null: No significant difference detected.", icon="✅")
+            if p_val < 0.05: st.error(f"P-value is {p_val:.4f}. Reject the null hypothesis: A statistically significant difference exists.", icon="🚨")
+            else: st.success(f"P-value is {p_val:.4f}. Fail to reject null: No significant difference detected.", icon="✅")
         with tab2:
             st.markdown("##### **ML Augmentation: Permutation Testing**")
             st.info("A non-parametric, computational method that makes no assumptions about the data's distribution. More robust for the often non-normal, small-sample data common in biotech R&D.")
@@ -198,9 +191,6 @@ def show_analyze_phase():
             st.plotly_chart(plot_shap_summary(model, X_reg), use_container_width=True)
     st.success("""**🏆 Hybrid Strategy for the Analyze Phase:**\n1. **Structure & Prioritize (Classical):** Use a **Fishbone** diagram to brainstorm causes and a **Pareto** chart on QC failures to identify which modes to investigate first.\n2. **Verify Group Differences (Hybrid):** Use **ANOVA** as a first step but default to a more robust **Permutation Test** given the small sample sizes and potential for non-normal data in R&D.\n3. **Model Relationships (Hybrid):** Fit both **Linear Regression** and an **Ensemble ML model**. If the ML model is more accurate (check R²), its **SHAP** rankings are a more reliable guide to the true root causes.""")
 
-# ==============================================================================
-# PAGE 4: IMPROVE PHASE - ASSAY & WORKFLOW OPTIMIZATION
-# ==============================================================================
 def show_improve_phase():
     st.title("⚙️ Improve: Assay & Workflow Optimization")
     st.markdown("**Objective:** To identify, test, and implement solutions that address validated root causes. For assays, this involves finding the optimal settings for critical protocol parameters to maximize performance.")
@@ -212,35 +202,22 @@ def show_improve_phase():
         with tab1:
             st.markdown("##### **Classical: Design of Experiments (DOE)**")
             st.info("A structured method for efficiently changing multiple parameters simultaneously to determine their main and interaction effects. The gold standard for physical lab experimentation, but impractical for high-dimensional problems.")
-            doe_data = generate_doe_data()
-            fig_doe_main, fig_doe_interaction = plot_doe_effects(doe_data)
-            col1, col2 = st.columns(2)
-            with col1:
-                st.plotly_chart(plot_doe_cube(doe_data), use_container_width=True)
-            with col2:
-                st.plotly_chart(fig_doe_main, use_container_width=True)
-                st.plotly_chart(fig_doe_interaction, use_container_width=True)
+            doe_data = generate_doe_data(); fig_doe_main, fig_doe_interaction = plot_doe_effects(doe_data); col1, col2 = st.columns(2)
+            with col1: st.plotly_chart(plot_doe_cube(doe_data), use_container_width=True)
+            with col2: st.plotly_chart(fig_doe_main, use_container_width=True); st.plotly_chart(fig_doe_interaction, use_container_width=True)
         with tab2:
             st.markdown("##### **ML Augmentation: Bayesian Optimization**")
             st.info("An intelligent search algorithm for finding the global optimum of an expensive-to-evaluate function (e.g., a full NGS run). It builds a model of the assay's performance and uses it to intelligently select the most informative next experiment to run.")
-            st.sidebar.header("Bayesian Opt. Simulator")
-            st.sidebar.markdown("Let the algorithm intelligently choose the next experiment to run to find the maximum on-target rate.")
+            st.sidebar.header("Bayesian Opt. Simulator"); st.sidebar.markdown("Let the algorithm intelligently choose the next experiment to run to find the maximum on-target rate.")
             @st.cache_data 
-            def true_func(x): return (np.sin(x * 0.8) * 15) + (np.cos(x * 2.5)) * 5 - (x / 10)**3
-            x_range = np.linspace(0, 20, 400)
-            if 'sampled_points' not in st.session_state:
-                st.session_state.sampled_points = {'x': [2.0, 18.0], 'y': [true_func(2.0), true_func(18.0)]}
-            if st.sidebar.button("Run Next Smart Experiment", key='bo_sample'):
-                _, next_point = plot_bayesian_optimization_interactive(true_func, x_range, st.session_state.sampled_points)
-                st.session_state.sampled_points['x'].append(next_point)
-                st.session_state.sampled_points['y'].append(true_func(next_point))
-            if st.sidebar.button("Reset Simulation", key='bo_reset'):
-                st.session_state.sampled_points = {'x': [2.0, 18.0], 'y': [true_func(2.0), true_func(18.0)]}
-            fig_bo, _ = plot_bayesian_optimization_interactive(true_func, x_range, st.session_state.sampled_points)
-            st.plotly_chart(fig_bo, use_container_width=True)
+            def true_func(x): return (np.sin(x*0.8)*15)+(np.cos(x*2.5)*5)-(x/10)**3
+            x_range=np.linspace(0,20,400);
+            if 'sampled_points' not in st.session_state: st.session_state.sampled_points={'x':[2.0,18.0],'y':[true_func(2.0),true_func(18.0)]}
+            if st.sidebar.button("Run Next Smart Experiment",key='bo_sample'): _,next_point=plot_bayesian_optimization_interactive(true_func,x_range,st.session_state.sampled_points); st.session_state.sampled_points['x'].append(next_point); st.session_state.sampled_points['y'].append(true_func(next_point))
+            if st.sidebar.button("Reset Simulation",key='bo_reset'): st.session_state.sampled_points={'x':[2.0,18.0],'y':[true_func(2.0),true_func(18.0)]}
+            fig_bo,_=plot_bayesian_optimization_interactive(true_func,x_range,st.session_state.sampled_points); st.plotly_chart(fig_bo,use_container_width=True)
     with st.container(border=True):
-        st.subheader("2. Proactively Mitigating Risks")
-        col3, col4 = st.columns(2)
+        st.subheader("2. Proactively Mitigating Risks"); col3, col4 = st.columns(2)
         with col3:
             st.markdown("##### **Classical: FMEA**")
             st.info("Failure Mode and Effects Analysis is a systematic, team-based risk assessment of the assay protocol. It brainstorms failure modes (e.g., 'Reagent Contamination') and ranks them by a **Risk Priority Number (RPN)**.")
@@ -251,9 +228,6 @@ def show_improve_phase():
             st.plotly_chart(plot_rul_prediction(generate_sensor_degradation_data()), use_container_width=True)
     st.success("""**🏆 Hybrid Strategy for the Improve Phase:**\n1. **Optimize with the Right Tool:** For optimizing a few (<5) parameters, **DOE** is the gold standard. For high-dimensional protocols, use **Bayesian Optimization** for its superior sample efficiency.\n2. **Mitigate Risks (Hybrid):** Use a classical **FMEA** to identify the highest-risk failure modes. For top risks related to equipment, build a **predictive maintenance (RUL) model**.\n3. **The Ultimate Hybrid ("Digital Twin"):** Use data from a space-filling **DOE** to train an ML model of your assay. Then, use **Bayesian Optimization** on this *in silico* twin to find the global optimum before one final confirmation experiment.""")
 
-# ==============================================================================
-# PAGE 5: CONTROL PHASE - LAB OPERATIONS & QC
-# ==============================================================================
 def show_control_phase():
     st.title("📡 Control: Lab Operations & QC")
     st.markdown("**Objective:** To implement a robust Quality Control (QC) system to monitor the optimized assay in routine use, ensuring performance remains stable and that improvements are sustained.")
@@ -261,8 +235,7 @@ def show_control_phase():
     with st.container(border=True):
         st.subheader("1. Monitoring for Stability: Statistical Process Control (SPC) for QC")
         st.markdown("Control charts monitor positive/negative controls over time, distinguishing 'common cause' variation from 'special cause' variation that signals a problem.")
-        st.sidebar.header("QC Simulator")
-        st.sidebar.markdown("Introduce a shift in a positive control standard and see which chart detects it faster.")
+        st.sidebar.header("QC Simulator"); st.sidebar.markdown("Introduce a shift in a positive control standard and see which chart detects it faster.")
         shift_mag = st.sidebar.slider("Magnitude of Shift (in Std Devs)", 0.2, 3.0, 0.8, 0.1, key="ctrl_shift_mag")
         ewma_lambda = st.sidebar.slider("EWMA Lambda (λ)", 0.1, 0.5, 0.2, 0.05, help="Higher λ reacts faster to shifts.")
         chart_data = generate_control_chart_data(shift_point=75, shift_magnitude=shift_mag)
@@ -286,9 +259,6 @@ def show_control_phase():
         st.plotly_chart(plot_control_plan(), use_container_width=True)
     st.success("""**🏆 Hybrid Strategy for the Control Phase:**\n1. **Monitor with Levey-Jennings:** Use a classical **Levey-Jennings chart** for primary positive/negative controls for simplicity and regulatory compliance.\n2. **Detect Drifts with EWMA:** For critical secondary metrics, use a more sensitive **EWMA chart** to detect slow reagent or instrument degradation.\n3. **Holistic QC with ML:** For each sample, run a **multivariate QC model** (like Hotelling's T²) on the full profile of NGS QC metrics to flag subtle issues.\n4. **Codify Everything:** The **Control Plan** and **SOPs** must document all charts, limits, and reaction plans.""")
 
-# ==============================================================================
-# PAGE 6: METHODOLOGY COMPARISON
-# ==============================================================================
 def show_comparison_matrix():
     st.title("⚔️ Head-to-Head: Classical DOE vs. ML/Bioinformatics")
     st.markdown("A visual comparison of the core philosophies and practical strengths of the two approaches, tailored for biotech R&D tasks.")
@@ -302,9 +272,6 @@ def show_comparison_matrix():
         st.markdown("This chart provides a clear, decisive verdict for common use cases in a biotech R&D setting.")
         st.plotly_chart(plot_verdict_barchart(), use_container_width=True)
 
-# ==============================================================================
-# PAGE 7: THE HYBRID LAB MANIFESTO
-# ==============================================================================
 def show_hybrid_strategy():
     st.title("🤝 The Hybrid Lab Manifesto: The Future of Assay Development")
     st.markdown("The most competitive biotech organizations do not choose one over the other; they build a **Bio-AI framework** that fuses statistical rigor with machine learning's predictive power.")
