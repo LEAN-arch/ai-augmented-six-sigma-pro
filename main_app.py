@@ -3,7 +3,6 @@
 import streamlit as st
 
 # Import helper functions and all page definitions from their respective modules.
-# This architecture keeps the main app file clean and focused on navigation.
 from app_helpers import get_custom_css
 from app_pages import (
     show_welcome_page,
@@ -25,33 +24,22 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
     menu_items={
-        'Get Help': 'https://github.com/your-repo/your-project', # Placeholder
-        'Report a bug': "https://github.com/your-repo/your-project/issues", # Placeholder
+        'Get Help': 'https://github.com/your-repo/your-project',
+        'Report a bug': "https://github.com/your-repo/your-project/issues",
         'About': """
         ## 🧬 The Bio-AI Excellence Framework
-        
         **An interactive playbook for developing and optimizing robust genomic assays and devices.**
-
         This application demonstrates a unified framework that fuses the statistical rigor of
         classical **Design of Experiments (DOE)** with the predictive power of **Machine Learning and Bioinformatics**.
-        
-        Navigate through the R&D lifecycle (framed as DMAIC) to see classical methods presented 
-        alongside their AI-augmented counterparts for the modern biotech lab.
-        
-        **Version:** 5.1 (Stable Release)
         """
     }
 )
 
-# Apply the custom CSS theme for a consistent, polished look.
 st.markdown(get_custom_css(), unsafe_allow_html=True)
-
 
 # ==============================================================================
 # 2. APPLICATION NAVIGATION & STATE MANAGEMENT
 # ==============================================================================
-
-# The PAGES dictionary maps user-friendly names to their rendering functions.
 PAGES = {
     "🏠 Welcome & Framework": show_welcome_page,
     "---": None,
@@ -65,16 +53,13 @@ PAGES = {
     "🤝 The Hybrid Lab Manifesto": show_hybrid_strategy
 }
 
-# --- Sidebar Rendering ---
 st.sidebar.title("🧬 Bio-AI Framework")
 st.sidebar.markdown("### Assay Development Playbook")
 st.sidebar.markdown("Navigate the R&D lifecycle below.")
 
-# If the page in session state is no longer valid, default to the first page.
 if 'current_page' not in st.session_state or st.session_state.current_page not in PAGES:
     st.session_state.current_page = list(PAGES.keys())[0]
 
-# --- Custom Navigation Menu ---
 for page_name, page_function in PAGES.items():
     if page_name == "---":
         st.sidebar.divider()
@@ -85,21 +70,18 @@ for page_name, page_function in PAGES.items():
             st.session_state.current_page = page_name
             st.rerun()
 
-# --- Sidebar Footer ---
 st.sidebar.divider()
 st.sidebar.info(
     "This app demonstrates a framework for integrating Machine Learning into the "
     "biotech R&D lifecycle to achieve superior assay performance and reliability."
 )
 st.sidebar.markdown(
-    "**[View Source on GitHub](https://github.com/your-repo/your-project)**" # Placeholder
+    "**[View Source on GitHub](https://github.com/your-repo/your-project)**"
 )
-
 
 # ==============================================================================
 # 3. PAGE RENDERING LOGIC
 # ==============================================================================
-# Retrieve and execute the function for the currently selected page.
 page_to_render = PAGES[st.session_state.current_page]
 if page_to_render:
     page_to_render()
