@@ -302,7 +302,8 @@ def show_control_phase():
         - **Strength:** Simple, robust, and excellent for detecting large (>1.5σ) shifts.
         - **Limitation:** Slow to detect small, sustained shifts, as it has no 'memory' of past data points.
         """)
-        fig_spc, _ = plot_control_chart_pro(chart_data)
+        # ***** CORRECTED LINE IS HERE *****
+        fig_spc = plot_control_chart_pro(chart_data)
         st.plotly_chart(fig_spc, use_container_width=True)
 
     with col2:
@@ -320,6 +321,7 @@ def show_control_phase():
     2.  **Monitor Critical Inputs with Advanced SPC/ML:** For the critical input variables (Xs) that drive your process, use more sensitive charts like **EWMA** or **CUSUM**.
     3.  **Create an Early Warning System with ML:** For the most complex, multivariate interactions, deploy an ML anomaly detection model (like an LSTM or Autoencoder) that learns the normal 'heartbeat' of your process across all sensor inputs. This model doesn't just detect shifts; it predicts them, enabling true proactive control.
     """)
+
 
 # ==============================================================================
 # PAGE 6: COMPARISON MATRIX
