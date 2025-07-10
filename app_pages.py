@@ -4,7 +4,6 @@ import streamlit as st
 import numpy as np
 
 # Import all necessary helper functions from the single, corrected helper file.
-# This keeps the page definitions clean and focused on layout and content.
 from app_helpers import *
 
 
@@ -12,7 +11,7 @@ from app_helpers import *
 # PAGE 0: WELCOME & FRAMEWORK
 # ==============================================================================
 def show_welcome_page():
-    st.title("🧬 Welcome to the Bio-AI Excellence Framework")
+    st.title("Welcome to the Bio-AI Excellence Framework")
     st.markdown("##### An interactive playbook for developing and optimizing robust genomic assays and devices.")
     st.markdown("---")
     
@@ -51,13 +50,14 @@ def show_welcome_page():
 # PAGE 1: DEFINE PHASE - CLINICAL NEED & ASSAY GOALS
 # ==============================================================================
 def show_define_phase():
-    st.title("🌀 Define: Clinical Need & Assay Goals")
+    st.title("Define: Clinical Need & Assay Goals")
     st.markdown("**Objective:** To clearly articulate the clinical problem, establish the project's goals, define the scope of the assay, and translate the 'Voice of the Clinician' into quantifiable, 'Critical to Quality' (CTQ) assay performance characteristics.")
     st.markdown("---")
     
     with st.container(border=True):
         st.subheader("1. The Mandate: Assay Design & Development Plan")
-        st.markdown("The Design Plan is the foundational document, formally defining the assay's intended use, target population, required performance specifications, and development roadmap, aligning the scientific team with business and clinical goals.")
+        with st.expander("Learn more about the Design Plan"):
+            st.markdown("The Design Plan is the foundational document, formally defining the assay's intended use, target population, required performance specifications, and development roadmap, aligning the scientific team with business and clinical goals.")
         st.plotly_chart(plot_project_charter_visual(), use_container_width=True)
 
     with st.container(border=True):
@@ -65,28 +65,29 @@ def show_define_phase():
         col1, col2 = st.columns(2)
         with col1:
             st.markdown("##### **Classical Tool: SIPOC for Lab Workflows**")
-            st.info("A high-level map of the entire assay workflow. It's a qualitative, expert-driven tool for defining process boundaries and fostering team alignment.")
+            with st.expander("What is SIPOC?"):
+                st.info("A high-level map of the entire assay workflow. It's a qualitative, expert-driven tool for defining process boundaries and fostering team alignment.")
             st.plotly_chart(plot_sipoc_visual(), use_container_width=True)
         with col2:
-            st.markdown("##### **ML Augmentation: Causal Discovery from Pilot Data**")
-            st.info("Algorithms that analyze pilot data to infer a graph of probable cause-and-effect relationships between protocol parameters and assay outcomes, generating data-driven hypotheses for later validation.")
+            st.markdown("##### **ML Augmentation: Causal Discovery**")
+            with st.expander("What is Causal Discovery?"):
+                st.info("Algorithms that analyze pilot data to infer a graph of probable cause-and-effect relationships between protocol parameters and assay outcomes, generating data-driven hypotheses for later validation.")
             st.graphviz_chart(plot_causal_discovery_visual())
 
     with st.container(border=True):
         st.subheader("3. The Target: Translating Clinical Needs into Assay Specs (CTQs)")
         st.markdown("This step translates a clinician's need (e.g., 'detect tumors earlier') into measurable assay performance characteristics.")
-        tab1, tab2, tab3 = st.tabs(["📊 CTQ Tree for Assay Performance", "💖 Kano for Diagnostic Features", "🤖 NLP for Literature Review"])
+        tab1, tab2, tab3 = st.tabs(["📊 CTQ Tree", "💖 Kano Model", "🤖 NLP Review"])
         with tab1:
             st.markdown("##### **Classical Tool: CTQ Tree**")
             st.info("A decomposition tool to break down a broad clinical need (e.g., reliable liquid biopsy) into specific, measurable performance metrics like **Analytical Sensitivity (LOD), Specificity, and Precision (CV%)**.")
-            # BUG FIX: Was calling a non-existent function. Correct function now exists in helpers.
             st.graphviz_chart(plot_ctq_tree_visual())
         with tab2:
             st.markdown("##### **Classical Tool: Kano Model**")
             st.info("A framework for prioritizing diagnostic features. **Basic** needs might be detecting a known cancer mutation. **Performance** could be accurate VAF quantification. An **Excitement** feature could be discovering a novel, actionable co-mutation.")
             st.plotly_chart(plot_kano_visual(), use_container_width=True)
         with tab3:
-            st.markdown("##### **ML Augmentation: NLP for Scientific Literature**")
+            st.markdown("##### **ML Augmentation: NLP on Scientific Literature**")
             st.info("Using algorithms (e.g., SciBERT) to analyze thousands of publications to automatically extract prevalent biomarkers, competing methodologies, and reported performance benchmarks, massively accelerating the literature review process.")
             st.plotly_chart(plot_voc_treemap(), use_container_width=True)
 
@@ -96,9 +97,21 @@ def show_define_phase():
 # PAGE 2: MEASURE PHASE - ASSAY & SYSTEM VALIDATION
 # ==============================================================================
 def show_measure_phase():
-    st.title("🔬 Measure: Assay & System Validation")
+    st.title("Measure: Assay & System Validation")
     st.markdown("**Objective:** To validate the reliability of all measurement systems (pipettes, sequencers), collect data, and establish a robust, data-driven baseline of the assay's current performance.")
     st.markdown("---")
+    
+    # UX IMPROVEMENT: Local helper for clear, contextual interpretation of capability.
+    def get_capability_interpretation(cp, cpk, target=1.33):
+        cp_status, cpk_status = "", ""
+        if cp < 1.0: cp_status = (f"🚨 **Inadequate Potential (Cp < 1.0):** The process variation is wider than the specification limits. Improvement is required.", "error")
+        elif cp < target: cp_status = (f"⚠️ **Needs Improvement (1.0 ≤ Cp < {target}):** The process could potentially fit, but has little room for error or shift.", "warning")
+        else: cp_status = (f"✅ **Adequate Potential (Cp ≥ {target}):** The process has low enough variation to meet specs.", "success")
+
+        if cpk < 1.0: cpk_status = (f"🚨 **Not Capable (Cpk < 1.0):** The process is producing significant defects.", "error")
+        elif cpk < target: cpk_status = (f"⚠️ **Needs Centering (1.0 ≤ Cpk < {target}):** The process is not well-centered within the specification limits.", "warning")
+        else: cpk_status = (f"✅ **Capable & Centered (Cpk ≥ {target}):** The process is performing well within specifications.", "success")
+        return cp_status, cpk_status
 
     with st.container(border=True):
         st.subheader("1. Prerequisite: Measurement System Analysis (MSA)")
@@ -106,27 +119,26 @@ def show_measure_phase():
         col1, col2 = st.columns([1, 2])
         with col1:
             st.markdown("##### **Classical Tool: Gage R&R**")
-            st.info("A designed experiment to partition measurement variance into **Repeatability** (e.g., one sequencer's variation) and **Reproducibility** (e.g., variation between lab technicians).")
+            st.info("A designed experiment to partition measurement variance into **Repeatability** (equipment) and **Reproducibility** (operator).")
         with col2:
             st.plotly_chart(plot_gage_rr_variance_components(), use_container_width=True)
 
     with st.container(border=True):
         st.subheader("2. Understanding the End-to-End Workflow")
-        tab1, tab2 = st.tabs(["🗺️ Value Stream Mapping (VSM) of Lab Process", "🤖 Process Mining of LIMS Data"])
+        tab1, tab2 = st.tabs(["🗺️ Value Stream Mapping (VSM)", "🤖 Process Mining"])
         with tab1:
             st.markdown("##### **Classical Tool: Value Stream Mapping (VSM)**")
-            st.info("A manual, observational flowchart of the lab process, capturing hands-on and wait times to identify physical bottlenecks and streamline the workflow.")
+            st.info("A manual flowchart of the lab process, capturing hands-on and wait times to identify physical bottlenecks.")
             st.plotly_chart(plot_vsm(), use_container_width=True)
         with tab2:
             st.markdown("##### **ML Augmentation: Process Mining on LIMS Data**")
-            st.info("Algorithms that automatically discover the real lab workflow by analyzing event logs from a **Laboratory Information Management System (LIMS)**. It discovers all re-tests, QC failures, and true bottlenecks hidden in manual maps.")
+            st.info("Algorithms that automatically discover the real lab workflow by analyzing event logs from a **LIMS**, revealing hidden bottlenecks like QC failures and re-tests.")
             st.graphviz_chart(plot_process_mining_graph())
 
     with st.container(border=True):
         st.subheader("3. Establishing Baseline Assay Capability")
         st.markdown("Capability analysis answers: **Can our assay reliably meet the required performance specifications (e.g., Limit of Detection)?**")
         
-        # UX Improvement: Add a main header and divider for all simulators.
         st.sidebar.header("🔬 Simulators")
         st.sidebar.markdown("---")
         st.sidebar.subheader("Assay Capability")
@@ -136,7 +148,6 @@ def show_measure_phase():
         process_mean = st.sidebar.slider("Assay Mean (μ)", 2.0, 8.0, 4.0, key="m_mean")
         process_std = st.sidebar.slider("Assay Std Dev (σ)", 0.2, 2.0, 0.5, key="m_std")
         
-        # BUG FIX: Was calling `generate_assay_data` which was renamed to `generate_process_data`
         data = generate_process_data(process_mean, process_std, 2000)
         fig_cap_hist, cp, cpk = plot_capability_analysis_pro(data, lsl, usl)
         fig_cp_gauge, fig_cpk_gauge = plot_capability_metrics(cp, cpk)
@@ -146,11 +157,19 @@ def show_measure_phase():
             st.markdown("##### **Assay Distribution vs. Specifications**")
             st.plotly_chart(fig_cap_hist, use_container_width=True)
         with col2:
-            st.markdown("##### **Capability Indices (Gauges)**")
-            st.plotly_chart(fig_cp_gauge, use_container_width=True)
-            st.plotly_chart(fig_cpk_gauge, use_container_width=True)
-            if cpk < 1.33: st.error("Assay is not capable.", icon="🚨")
-            else: st.success("Assay is capable.", icon="✅")
+            st.markdown("##### **Capability Indices**")
+            sub_col1, sub_col2 = st.columns(2)
+            with sub_col1:
+                st.markdown("<p style='text-align: center;'><b>Process Potential (Cp)</b></p>", unsafe_allow_html=True)
+                st.plotly_chart(fig_cp_gauge, use_container_width=True)
+            with sub_col2:
+                st.markdown("<p style='text-align: center;'><b>Process Capability (Cpk)</b></p>", unsafe_allow_html=True)
+                st.plotly_chart(fig_cpk_gauge, use_container_width=True)
+            
+            # UX Improvement: Provide direct, contextual interpretation.
+            cp_status, cpk_status = get_capability_interpretation(cp, cpk)
+            getattr(st, cp_status[1])(cp_status[0])
+            getattr(st, cpk_status[1])(cpk_status[0])
 
     st.success("""**🏆 Hybrid Strategy for the Measure Phase:**\n1. **Validate (Classical):** Always perform a **Gage R&R** on critical instruments and operators before baselining performance.\n2. **Discover (ML):** Run **Process Mining** on LIMS event logs to get an objective map of the real lab workflow and its bottlenecks.\n3. **Detail (Classical):** Use insights from process mining to guide a targeted, physical **VSM** exercise.\n4. **Baseline & Diagnose (Hybrid):** Report the official **Cpk** baseline. Internally, use the **KDE plot** and **Gauge Visuals** to diagnose the *reason* for poor capability.""")
 
@@ -158,7 +177,7 @@ def show_measure_phase():
 # PAGE 3: ANALYZE PHASE - ROOT CAUSE OF ASSAY VARIABILITY
 # ==============================================================================
 def show_analyze_phase():
-    st.title("📈 Analyze: Root Cause of Assay Variability")
+    st.title("Analyze: Root Cause of Assay Variability")
     st.markdown("**Objective:** To analyze data to identify, validate, and quantify the root cause(s) of poor assay performance (e.g., low sensitivity, high CV%). This moves from *what* is failing to *why* it is failing.")
     st.markdown("---")
 
@@ -167,57 +186,54 @@ def show_analyze_phase():
         col1, col2 = st.columns(2)
         with col1:
             st.markdown("##### **Classical Tool: Fishbone Diagram**")
-            st.info("A structured brainstorming tool to organize potential causes of an assay problem (e.g., 'Low Library Yield') into categories like 'Reagents', 'Equipment', 'Method', etc.")
+            st.info("A structured brainstorming tool to organize potential causes of a problem.")
             st.graphviz_chart(plot_fishbone_diagram())
         with col2:
             st.markdown("##### **Classical Tool: Pareto Chart**")
-            st.info("A chart to identify the 'vital few' failure modes (e.g., 'Adapter-dimer formation', 'Low PCR efficiency'). This focuses effort on the highest-frequency problems.")
+            st.info("A chart to identify the 'vital few' failure modes to focus improvement efforts.")
             st.plotly_chart(plot_pareto_chart(), use_container_width=True)
 
     with st.container(border=True):
         st.subheader("2. Proving the Difference: Comparing Experimental Groups")
-        st.markdown("Once hypotheses are formed (e.g., 'Reagent Lot B is causing lower library concentrations'), statistical proof is required.")
+        with st.expander("Learn about group comparison methods"):
+            st.markdown("Once hypotheses are formed (e.g., 'Reagent Lot B is causing lower library concentrations'), statistical proof is required to confirm a significant difference.")
         
         st.sidebar.header("🔬 Simulators")
         st.sidebar.markdown("---")
         st.sidebar.subheader("Group Comparison")
-        st.sidebar.markdown("Adjust reagent lot means to see if the difference in library yield becomes statistically significant.")
+        st.sidebar.markdown("Adjust reagent lot means to see if the difference becomes statistically significant.")
         mean1 = st.sidebar.slider("Lot A Mean Yield (ng/µL)", 18.0, 22.0, 19.5, 0.1, key='a1')
         mean2 = st.sidebar.slider("Lot B Mean Yield (ng/µL)", 18.0, 22.0, 20.0, 0.1, key='a2')
         mean3 = st.sidebar.slider("Lot C Mean Yield (ng/µL)", 18.0, 22.0, 20.5, 0.1, key='a3')
         anova_data = generate_anova_data(means=[mean1, mean2, mean3], stds=[0.8, 0.8, 0.8], n=20)
         
-        tab1, tab2 = st.tabs(["🔬 Classical: ANOVA", "💻 ML Augmentation: Permutation Testing"])
+        tab1, tab2 = st.tabs(["🔬 ANOVA", "💻 Permutation Testing"])
         with tab1:
             st.markdown("##### **Classical: Analysis of Variance (ANOVA)**")
-            st.info("A test to determine if significant differences exist between the mean yields of different reagent lots. Assumes normality and equal variances.")
+            st.info("Tests if significant differences exist between group means. Assumes normality and equal variances.")
             fig_anova, p_val = plot_anova_groups(anova_data)
             st.plotly_chart(fig_anova, use_container_width=True)
-            if p_val < 0.05: st.error(f"P-value is {p_val:.4f}. Reject the null hypothesis: A statistically significant difference exists.", icon="🚨")
-            else: st.success(f"P-value is {p_val:.4f}. Fail to reject null: No significant difference detected.", icon="✅")
+            if p_val < 0.05: st.error(f"P-value is {p_val:.4f}. A statistically significant difference exists.", icon="🚨")
+            else: st.success(f"P-value is {p_val:.4f}. No significant difference detected.", icon="✅")
         with tab2:
             st.markdown("##### **ML Augmentation: Permutation Testing**")
-            st.info("A non-parametric, computational method that makes no assumptions about the data's distribution. More robust for the often non-normal, small-sample data common in biotech R&D.")
+            st.info("A non-parametric method that makes no assumptions about data distribution. More robust for non-normal, small-sample biotech data.")
             st.plotly_chart(plot_permutation_test(anova_data), use_container_width=True)
 
     with st.container(border=True):
         st.subheader("3. Finding the Drivers: Modeling Assay Performance (Y = f(x))")
-        st.markdown("Finding which protocol parameters (X's like `Annealing Temp`, `Enzyme Conc.`) mathematically drive the key output (Y, e.g., `On-Target Rate`).")
-        
-        # BUG FIX: Was calling `generate_pcr_optimization_data`, now `generate_nonlinear_data`
+        st.markdown("This step finds which protocol parameters (X's like `Annealing Temp`) mathematically drive the key output (Y, e.g., `On-Target Rate`).")
         df_reg = generate_nonlinear_data()
-        
-        # BUG FIX: Was calling `plot_regression_comparison_pro`, now `train_and_plot_regression_models`
         fig_reg, model, X_reg = train_and_plot_regression_models(df_reg)
         
         col3, col4 = st.columns(2)
         with col3:
             st.markdown("##### **Classical vs. ML Model Fit**")
-            st.info("A linear model often fails to capture complex biology, while an ML model like Random Forest can fit the non-linear relationships. Higher R² indicates a better fit.")
+            st.info("A linear model often fails to capture complex biology. An ML model (Random Forest) can fit non-linear relationships, indicated by a higher R².")
             st.plotly_chart(fig_reg, use_container_width=True)
         with col4:
             st.markdown("##### **ML Augmentation: XAI to Find Root Cause**")
-            st.info("If the ML model is better, we can trust its interpretation. **SHAP** explains the model, revealing that `Annealing Temp` is the most important driver, even if its effect is non-linear.")
+            st.info("If the ML model is better, we trust its interpretation. **SHAP** explains the model, revealing the most important drivers of performance.")
             st.plotly_chart(plot_shap_summary(model, X_reg), use_container_width=True)
 
     st.success("""**🏆 Hybrid Strategy for the Analyze Phase:**\n1. **Structure & Prioritize (Classical):** Use a **Fishbone** diagram to brainstorm causes and a **Pareto** chart on QC failures to identify which modes to investigate first.\n2. **Verify Group Differences (Hybrid):** Use **ANOVA** as a first step but default to a more robust **Permutation Test** given the small sample sizes and potential for non-normal data in R&D.\n3. **Model Relationships (Hybrid):** Fit both **Linear Regression** and an **Ensemble ML model**. If the ML model is more accurate (check R²), its **SHAP** rankings are a more reliable guide to the true root causes.""")
@@ -225,15 +241,12 @@ def show_analyze_phase():
 # ==============================================================================
 # PAGE 4: IMPROVE PHASE - ASSAY & WORKFLOW OPTIMIZATION
 # ==============================================================================
-# DX Fix: Move the true_func definition out of the page function so it's
-# defined only once and can be cached effectively by Streamlit.
 @st.cache_data
 def get_true_bo_func(x):
-    """A sample 'true' function for the Bayesian Optimization simulator."""
     return (np.sin(x*0.8)*15) + (np.cos(x*2.5)*5) - (x/10)**3
 
 def show_improve_phase():
-    st.title("⚙️ Improve: Assay & Workflow Optimization")
+    st.title("Improve: Assay & Workflow Optimization")
     st.markdown("**Objective:** To identify, test, and implement solutions that address validated root causes. For assays, this involves finding the optimal settings for critical protocol parameters to maximize performance.")
     st.markdown("---")
 
@@ -241,10 +254,10 @@ def show_improve_phase():
         st.subheader("1. Finding Optimal Protocol Settings")
         st.markdown("Once we know which parameters are critical, we need to find their optimal settings to maximize our output (e.g., `On-Target Reads`).")
         
-        tab1, tab2 = st.tabs(["🧪 Classical: Design of Experiments (DOE)", "🤖 ML Augmentation: Bayesian Optimization"])
+        tab1, tab2 = st.tabs(["🧪 Design of Experiments (DOE)", "🤖 Bayesian Optimization"])
         with tab1:
             st.markdown("##### **Classical: Design of Experiments (DOE)**")
-            st.info("A structured method for efficiently changing multiple parameters simultaneously to determine their main and interaction effects. The gold standard for physical lab experimentation, but impractical for high-dimensional problems.")
+            st.info("A structured method for efficiently changing multiple parameters simultaneously to determine their main and interaction effects. Gold standard for physical lab work.")
             doe_data = generate_doe_data()
             fig_doe_main, fig_doe_interaction = plot_doe_effects(doe_data)
             col1, col2 = st.columns(2)
@@ -252,17 +265,16 @@ def show_improve_phase():
             with col2: st.plotly_chart(fig_doe_main, use_container_width=True); st.plotly_chart(fig_doe_interaction, use_container_width=True)
         with tab2:
             st.markdown("##### **ML Augmentation: Bayesian Optimization**")
-            st.info("An intelligent search algorithm for finding the global optimum of an expensive-to-evaluate function (e.g., a full NGS run). It builds a model of the assay's performance and uses it to intelligently select the most informative next experiment to run.")
+            st.info("An intelligent search algorithm for finding the global optimum of an expensive-to-evaluate function (e.g., a full NGS run). It intelligently selects the most informative next experiment to run.")
             
             st.sidebar.header("🔬 Simulators")
             st.sidebar.markdown("---")
             st.sidebar.subheader("Bayesian Optimization")
-            st.sidebar.markdown("Let the algorithm choose the next experiment to run to find the maximum on-target rate.")
+            st.sidebar.markdown("Let the algorithm choose the next experiment to find the maximum on-target rate.")
             
             x_range = np.linspace(0, 20, 400)
             true_func = get_true_bo_func
 
-            # DX Fix: Clearer session state logic
             if 'sampled_points' not in st.session_state:
                 st.session_state.sampled_points = {'x': [2.0, 18.0], 'y': [true_func(2.0), true_func(18.0)]}
             
@@ -272,7 +284,6 @@ def show_improve_phase():
                 st.session_state.sampled_points['y'].append(true_func(next_point))
             
             if st.sidebar.button("Reset Simulation", key='bo_reset'):
-                # Reset to initial state
                 st.session_state.sampled_points = {'x': [2.0, 18.0], 'y': [true_func(2.0), true_func(18.0)]}
             
             fig_bo, _ = plot_bayesian_optimization_interactive(true_func, x_range, st.session_state.sampled_points)
@@ -283,11 +294,11 @@ def show_improve_phase():
         col3, col4 = st.columns(2)
         with col3:
             st.markdown("##### **Classical: FMEA**")
-            st.info("Failure Mode and Effects Analysis is a systematic, team-based risk assessment of the assay protocol. It brainstorms failure modes (e.g., 'Reagent Contamination') and ranks them by a **Risk Priority Number (RPN)**.")
+            st.info("Failure Mode and Effects Analysis is a systematic, team-based risk assessment of the assay protocol, ranking risks by a Risk Priority Number (RPN).")
             st.plotly_chart(plot_fmea_table(), use_container_width=True)
         with col4:
-            st.markdown("##### **ML Augmentation: Predictive Instrument Maintenance**")
-            st.info("Using ML models trained on sensor data from lab equipment (e.g., sequencer laser power) to predict degradation and estimate **Remaining Useful Life (RUL)** before a failure compromises an entire batch.")
+            st.markdown("##### **ML Augmentation: Predictive Maintenance**")
+            st.info("Using ML models trained on sensor data (e.g., sequencer laser power) to predict degradation and estimate Remaining Useful Life (RUL) before a failure occurs.")
             st.plotly_chart(plot_rul_prediction(generate_sensor_degradation_data()), use_container_width=True)
 
     st.success("""**🏆 Hybrid Strategy for the Improve Phase:**\n1. **Optimize with the Right Tool:** For optimizing a few (<5) parameters, **DOE** is the gold standard. For high-dimensional protocols, use **Bayesian Optimization** for its superior sample efficiency.\n2. **Mitigate Risks (Hybrid):** Use a classical **FMEA** to identify the highest-risk failure modes. For top risks related to equipment, build a **predictive maintenance (RUL) model**.\n3. **The Ultimate Hybrid ("Digital Twin"):** Use data from a space-filling **DOE** to train an ML model of your assay. Then, use **Bayesian Optimization** on this *in silico* twin to find the global optimum before one final confirmation experiment.""")
@@ -296,12 +307,12 @@ def show_improve_phase():
 # PAGE 5: CONTROL PHASE - LAB OPERATIONS & QC
 # ==============================================================================
 def show_control_phase():
-    st.title("📡 Control: Lab Operations & QC")
+    st.title("Control: Lab Operations & QC")
     st.markdown("**Objective:** To implement a robust Quality Control (QC) system to monitor the optimized assay in routine use, ensuring performance remains stable and that improvements are sustained.")
     st.markdown("---")
 
     with st.container(border=True):
-        st.subheader("1. Monitoring for Stability: Statistical Process Control (SPC) for QC")
+        st.subheader("1. Monitoring for Stability: Statistical Process Control (SPC)")
         st.markdown("Control charts monitor positive/negative controls over time, distinguishing 'common cause' variation from 'special cause' variation that signals a problem.")
         
         st.sidebar.header("🔬 Simulators")
@@ -311,13 +322,12 @@ def show_control_phase():
         shift_mag = st.sidebar.slider("Magnitude of Shift (in Std Devs)", 0.2, 3.0, 0.8, 0.1, key="ctrl_shift_mag")
         ewma_lambda = st.sidebar.slider("EWMA Lambda (λ)", 0.1, 0.5, 0.2, 0.05, help="Higher λ reacts faster to shifts.")
         
-        # BUG FIX: Was calling `generate_qc_control_data`, now `generate_control_chart_data`
         chart_data = generate_control_chart_data(shift_magnitude=shift_mag)
         
-        tab1, tab2, tab3 = st.tabs(["📊 Classical: Levey-Jennings Chart", "📈 Advanced Classical: EWMA/CUSUM", "🤖 ML: Multivariate QC"])
+        tab1, tab2, tab3 = st.tabs(["📊 Levey-Jennings", "📈 EWMA/CUSUM", "🤖 Multivariate QC"])
         with tab1:
             st.markdown("##### **Classical: Levey-Jennings Chart (Shewhart)**")
-            st.info("The standard QC chart in clinical labs. It plots QC measurements over time with control limits at ±3σ. Excellent for detecting large, sudden shifts.")
+            st.info("The standard QC chart in clinical labs. Excellent for detecting large, sudden shifts.")
             st.plotly_chart(plot_shewhart_chart(chart_data), use_container_width=True)
         with tab2:
             st.markdown("##### **Advanced Classical: EWMA & CUSUM Charts**")
@@ -326,7 +336,7 @@ def show_control_phase():
             st.plotly_chart(plot_cusum_chart(chart_data), use_container_width=True)
         with tab3:
             st.markdown("##### **ML Augmentation: Multivariate QC**")
-            st.info("An NGS assay has many correlated QC metrics (e.g., `% Mapped Reads`, `% Duplication`). ML can monitor the 'health' of the entire QC profile at once, flagging abnormalities even if each individual metric is within its own limits.")
+            st.info("Monitors the 'health' of the entire QC profile at once, flagging abnormalities even if each individual metric is within its own limits.")
             st.plotly_chart(plot_hotelling_t2_chart(), use_container_width=True)
 
     with st.container(border=True):
@@ -340,7 +350,7 @@ def show_control_phase():
 # PAGE 6: METHODOLOGY COMPARISON
 # ==============================================================================
 def show_comparison_matrix():
-    st.title("⚔️ Head-to-Head: Classical DOE vs. ML/Bioinformatics")
+    st.title("Head-to-Head: Classical DOE vs. ML/Bioinformatics")
     st.markdown("A visual comparison of the core philosophies and practical strengths of the two approaches, tailored for biotech R&D tasks.")
     st.markdown("---")
 
@@ -358,7 +368,7 @@ def show_comparison_matrix():
 # PAGE 7: HYBRID STRATEGY
 # ==============================================================================
 def show_hybrid_strategy():
-    st.title("🤝 The Hybrid Lab Manifesto: The Future of Assay Development")
+    st.title("The Hybrid Lab Manifesto: The Future of Assay Development")
     st.markdown("The most competitive biotech organizations do not choose one over the other; they build a **Bio-AI framework** that fuses statistical rigor with machine learning's predictive power.")
     st.markdown("---")
 
@@ -381,7 +391,6 @@ def show_hybrid_strategy():
         st.subheader("A Unified, Modern R&D Workflow")
         st.markdown("This workflow demonstrates how to embed ML augmentation at each step of the traditional assay development cycle.")
         st.markdown(get_workflow_css(), unsafe_allow_html=True)
-        # The following block uses raw HTML for a more complex layout than native Streamlit allows.
         st.markdown('<div class="workflow-container">', unsafe_allow_html=True)
         st.markdown(render_workflow_step(phase_name="🌀 1. Define", phase_class="step-define", classical_tools=["Assay Design Plan", "SIPOC of Workflow", "Kano Model", "CTQ Tree (TPP)"], ml_tools=["NLP for Literature Review", "Causal Discovery from Pilot Data", "Patient Stratification"]), unsafe_allow_html=True)
         st.markdown('<div class="workflow-arrow">⬇️</div>', unsafe_allow_html=True)
