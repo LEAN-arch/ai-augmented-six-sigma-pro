@@ -39,7 +39,7 @@ st.set_page_config(
         Navigate through the R&D lifecycle (framed as DMAIC) to see classical methods presented 
         alongside their AI-augmented counterparts for the modern biotech lab.
         
-        **Version:** 7.0 (Commercial Grade UX Release)
+        **Version:** 8.0 (Scientific Visualization Release)
         """
     }
 )
@@ -51,11 +51,8 @@ st.markdown(get_custom_css(), unsafe_allow_html=True)
 # ==============================================================================
 # 2. APPLICATION NAVIGATION (Modern Streamlit Approach)
 # ==============================================================================
-# UX/DX Enhancement: Uses st.navigation for robust, stateful, and idiomatic
-# multi-page app experience with URL routing.
-
-# FIX: Emojis are removed from the `title` and kept only in the `icon`
-# parameter to prevent the "double icon" bug in the sidebar.
+# Uses st.navigation for robust, stateful, and idiomatic multi-page app experience.
+# The page definitions are clean, with icons handled correctly by the `icon` parameter.
 PAGES = [
     st.Page(show_welcome_page, title="Welcome & Framework", icon="🏠"),
     st.Page(show_define_phase, title="Define: Clinical Need", icon="🌀"),
