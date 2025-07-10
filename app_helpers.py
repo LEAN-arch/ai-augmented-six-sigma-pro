@@ -3,6 +3,7 @@
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
+import plotly.express as px
 from plotly.subplots import make_subplots
 import graphviz
 import shap
@@ -193,157 +194,179 @@ def generate_causal_data(size: int = 500) -> pd.DataFrame:
 # SECTION 3: VISUALIZATION HELPERS
 # ==============================================================================
 
-# --- DEFINE PHASE PLOTS ---
+# --- ENHANCED DEFINE PHASE VISUALS ---
 
-def plot_project_charter() -> go.Figure:
-    """Creates a Gantt chart visualization of a project charter timeline."""
-    df = pd.DataFrame([
-        dict(Task="Define", Start='2024-01-01', Finish='2024-01-15', Phase='Define'),
-        dict(Task="Measure", Start='2024-01-16', Finish='2024-02-15', Phase='Measure'),
-        dict(Task="Analyze", Start='2024-02-16', Finish='2024-03-15', Phase='Analyze'),
-        dict(Task="Improve", Start='2024-03-16', Finish='2024-04-15', Phase='Improve'),
-        dict(Task="Control", Start='2024-04-16', Finish='2024-04-30', Phase='Control'),
-    ])
-    phase_colors = {
-        'Define': COLORS['primary'], 'Measure': COLORS['secondary'], 'Analyze': COLORS['accent'],
-        'Improve': COLORS['neutral_yellow'], 'Control': COLORS['neutral_pink']
-    }
+def plot_project_charter_visual() -> go.Figure:
+    """Creates a dashboard-style visual summary of a Project Charter."""
     fig = go.Figure()
-    for i, phase in enumerate(df['Phase'].unique()):
-        df_phase = df[df['Phase'] == phase]
-        fig.add_trace(go.Bar(
-            y=df_phase['Task'],
-            x=pd.to_datetime(df_phase['Finish']) - pd.to_datetime(df_phase['Start']),
-            base=pd.to_datetime(df_phase['Start']),
-            orientation='h',
-            name=phase,
-            marker_color=phase_colors[phase],
-            text=df_phase['Task'],
-            textposition='inside',
-            insidetextanchor='middle'
-        ))
+
+    # Background Shapes
+    fig.add_shape(type="rect", x0=0, y0=0, x1=1, y1=1, fillcolor=COLORS['background'], line_width=0)
+    fig.add_shape(type="rect", x0=0.02, y0=0.02, x1=0.98, y1=0.98, fillcolor='white', line=dict(color=COLORS['light_gray'], width=2))
+    
+    # Header
+    fig.add_annotation(x=0.5, y=0.9, text="<b>Project Charter: Reduce Delivery Time</b>", showarrow=False, font=dict(size=20, color=COLORS['primary']))
+
+    # Key Metrics (KPIs)
+    kpis = {
+        "Avg Delivery Time": ("72h → <36h", COLORS['danger']),
+        "Customer Complaints": ("-50% 📉", COLORS['success']),
+        "Annual Savings": ("$2M+ 💰", COLORS['success'])
+    }
+    for i, (k, (v, color)) in enumerate(kpis.items()):
+        fig.add_annotation(x=0.2 + i*0.3, y=0.75, text=f"<b>{k}</b>", showarrow=False, font=dict(size=14, color=COLORS['dark_gray']))
+        fig.add_annotation(x=0.2 + i*0.3, y=0.65, text=v, showarrow=False, font=dict(size=18, color=color))
+
+    # Statement Boxes
+    statements = {
+        "Problem Statement": (0.05, 0.45, "Avg delivery time has increased by 150% in 6 months,<br>leading to a rise in complaints and order cancellations."),
+        "Goal Statement": (0.55, 0.45, "Reduce average end-to-end delivery time from 72 hours<br>to 36 hours by the end of Q3, for all domestic orders."),
+        "In Scope": (0.05, 0.2, "✅ Order processing<br>✅ Warehouse picking<br>✅ Local courier logistics"),
+        "Out of Scope": (0.55, 0.2, "❌ International shipping<br>❌ Product manufacturing<br>❌ Supplier intake process")
+    }
+    for title, (x_pos, y_pos, text) in statements.items():
+        fig.add_shape(type="rect", x0=x_pos, y0=y_pos-0.18, x1=x_pos+0.4, y1=y_pos+0.1, fillcolor=f"{COLORS['primary']}10", line=dict(color=COLORS['primary'], width=1, dash='dot'))
+        fig.add_annotation(x=x_pos+0.02, y=y_pos+0.08, text=f"<b>{title}</b>", showarrow=False, align='left', xanchor='left')
+        fig.add_annotation(x=x_pos+0.02, y=y_pos-0.05, text=text, showarrow=False, align='left', xanchor='left')
+
     fig.update_layout(
-        title_text="<b>Project Charter:</b> High-Level Timeline (Gantt Chart)",
-        plot_bgcolor='white', paper_bgcolor='white', font_color=COLORS['text'],
-        barmode='stack', yaxis_visible=False,
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        xaxis=dict(showgrid=False, zeroline=False, visible=False),
+        yaxis=dict(showgrid=False, zeroline=False, visible=False),
+        plot_bgcolor=COLORS['background'],
+        margin=dict(t=20, b=20, l=20, r=20),
+        height=400
     )
     return fig
 
-def plot_sipoc_diagram() -> go.Figure:
-    """Creates a SIPOC diagram using Plotly shapes and annotations."""
-    cats = ['Suppliers', 'Inputs', 'Process', 'Outputs', 'Customers']
+def plot_sipoc_visual() -> go.Figure:
+    """Creates an enhanced, icon-driven SIPOC diagram."""
+    cats = ['🏭<br>Suppliers', '📝<br>Inputs', '⚙️<br>Process', '📦<br>Outputs', '👤<br>Customers']
     content = {
-        'Suppliers': '• Component Fab<br>• Logistics Inc.<br>• Software Dev LLC',
-        'Inputs': '• Silicon Wafers<br>• Assembly Instructions<br>• Firmware v2.1',
-        'Process': '1. Receive Materials<br>2. Assemble Unit<br>3. Flash Firmware<br>4. Quality Test<br>5. Pack & Ship',
-        'Outputs': '• Assembled Product<br>• Quality Report<br>• Shipping Manifest',
-        'Customers': '• End Users<br>• Distributors<br>• Service Centers',
+        '🏭<br>Suppliers': '• Component Fab<br>• Logistics Inc.<br>• Software Dev LLC',
+        '📝<br>Inputs': '• Silicon Wafers<br>• Assembly Instructions<br>• Firmware v2.1',
+        '⚙️<br>Process': '1. Receive Materials<br>2. Assemble Unit<br>3. Flash Firmware<br>4. Quality Test<br>5. Pack & Ship',
+        '📦<br>Outputs': '• Assembled Product<br>• Quality Report<br>• Shipping Manifest',
+        '👤<br>Customers': '• End Users<br>• Distributors<br>• Service Centers',
     }
+    colors = [COLORS['primary'], COLORS['secondary'], COLORS['accent'], COLORS['neutral_yellow'], COLORS['neutral_pink']]
+    
     fig = go.Figure()
     for i, cat in enumerate(cats):
-        fig.add_shape(type="rect", x0=i+0.1, y0=0.1, x1=i+0.9, y1=0.9, line=dict(color=COLORS['dark_gray']), fillcolor=COLORS['light_gray'], opacity=0.3)
-        fig.add_annotation(x=i+0.5, y=0.95, text=f"<b>{cat}</b>", showarrow=False, font=dict(size=14, color=COLORS['primary']))
+        fig.add_shape(type="rect", x0=i+0.1, y0=0.1, x1=i+0.9, y1=0.9,
+                      line=dict(color=colors[i], width=3), fillcolor=f"{colors[i]}33")
+        fig.add_annotation(x=i+0.5, y=0.95, text=f"<b>{cat}</b>", showarrow=False, font=dict(size=18, color=colors[i]))
         fig.add_annotation(x=i+0.5, y=0.5, text=content[cat], showarrow=False, align='left', font=dict(size=11))
     
-    # Add arrows
     for i in range(len(cats) - 1):
-        fig.add_annotation(x=i+1, y=0.5, ax=i+1, ay=0.5, xref="x", yref="y", axref="x", ayref="y", showarrow=True, arrowhead=2, arrowsize=1.5, arrowwidth=2, arrowcolor=COLORS['secondary'])
+        fig.add_annotation(x=i+1, y=0.5, ax=i+1, ay=0.5, xref="x", yref="y", axref="x", ayref="y", showarrow=True, arrowhead=2, arrowsize=2, arrowwidth=2.5, arrowcolor=COLORS['dark_gray'])
 
     fig.update_layout(
-        title_text="<b>SIPOC Diagram:</b> Defining Process Boundaries",
+        title_text="<b>SIPOC Diagram:</b> An Icon-Driven View",
         xaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[0, 5]),
         yaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[0, 1]),
-        plot_bgcolor='white', paper_bgcolor='white',
-        margin=dict(t=50, b=20)
+        plot_bgcolor='white', paper_bgcolor='white', margin=dict(t=50, b=20), height=300
     )
     return fig
 
-def plot_causal_discovery_graph() -> graphviz.Digraph:
-    """Creates a sample causal graph visualization."""
+def plot_causal_discovery_visual() -> graphviz.Digraph:
+    """Creates a more realistic and visually distinct causal graph."""
     dot = graphviz.Digraph(comment='Causal Graph')
-    dot.attr('node', shape='ellipse', style='filled', fillcolor=f"{COLORS['primary']}20", color=COLORS['primary'])
-    dot.attr('edge', color=COLORS['dark_gray'])
-    dot.attr(rankdir='LR')
-    dot.node('A', 'Setting A')
-    dot.node('B', 'Sensor 1')
-    dot.node('C', 'Sensor 2')
-    dot.node('D', 'Output Y')
-    dot.edge('A', 'B')
-    dot.edge('A', 'C')
-    dot.edge('B', 'D')
-    dot.edge('C', 'D')
-    return dot
-
-def plot_ctq_tree() -> graphviz.Digraph:
-    """Creates a CTQ Tree diagram."""
-    dot = graphviz.Digraph(comment='CTQ Tree')
-    dot.attr('node', shape='box', style='rounded,filled', fontname="helvetica")
-    dot.attr(rankdir='LR')
+    dot.attr('node', shape='box', style='rounded,filled')
+    dot.attr('edge', color=COLORS['dark_gray'], penwidth='1.5')
+    dot.attr(rankdir='LR', splines='spline')
     
-    # Nodes
-    dot.node('Need', 'Fast<br>Pizza Delivery', fillcolor=f"{COLORS['secondary']}99")
-    dot.node('D1', 'Short Order<br>Time', fillcolor=f"{COLORS['primary']}60")
-    dot.node('D2', 'Short<br>Cook Time', fillcolor=f"{COLORS['primary']}60")
-    dot.node('D3', 'Short<br>Delivery Time', fillcolor=f"{COLORS['primary']}60")
-    dot.node('CTQ1', 'Time to place order<br><b>< 2 mins</b>', fillcolor=f"{COLORS['accent']}50")
-    dot.node('CTQ2', 'Time from order to ready<br><b>< 15 mins</b>', fillcolor=f"{COLORS['accent']}50")
-    dot.node('CTQ3', 'Time from ready to doorstep<br><b>< 10 mins</b>', fillcolor=f"{COLORS['accent']}50")
+    # Input/Cause nodes
+    dot.node('Region', 'Supplier<br>Region', fillcolor=f"{COLORS['primary']}30", color=COLORS['primary'])
+    dot.node('Complexity', 'Order<br>Complexity', fillcolor=f"{COLORS['primary']}30", color=COLORS['primary'])
+    dot.node('Method', 'Shipping<br>Method', fillcolor=f"{COLORS['primary']}30", color=COLORS['primary'])
+    
+    # Intermediate nodes
+    dot.node('Inv', 'Inventory<br>Check', fillcolor=f"{COLORS['secondary']}30", color=COLORS['secondary'])
+    
+    # Effect/Problem node
+    dot.node('Late', 'Late<br>Delivery', shape='ellipse', fillcolor=f"{COLORS['danger']}50", color=COLORS['danger'], penwidth='2')
 
     # Edges
+    dot.edge('Region', 'Inv')
+    dot.edge('Complexity', 'Inv')
+    dot.edge('Inv', 'Late')
+    dot.edge('Method', 'Late')
+    return dot
+
+def plot_ctq_tree_visual() -> graphviz.Digraph:
+    """Creates an improved CTQ Tree with a top-down hierarchy and better styling."""
+    dot = graphviz.Digraph(comment='CTQ Tree')
+    dot.attr('node', shape='box', style='rounded,filled', fontname="helvetica")
+    dot.attr(rankdir='TB') # Top-to-Bottom layout
+    
+    dot.node('Need', 'Fast & Hot Pizza', fillcolor=COLORS['secondary'], fontcolor='white')
+    dot.node('D1', 'Short Total Time', fillcolor=f"{COLORS['primary']}90")
+    dot.node('D2', 'High Temp on Arrival', fillcolor=f"{COLORS['primary']}90")
+    dot.node('CTQ1', 'Total Time from Order to Door<br><b>< 30 minutes</b>', fillcolor=f"{COLORS['accent']}70")
+    dot.node('CTQ2', 'Pizza Internal Temperature<br><b>> 140°F</b>', fillcolor=f"{COLORS['accent']}70")
+
     dot.edge('Need', 'D1')
     dot.edge('Need', 'D2')
-    dot.edge('Need', 'D3')
     dot.edge('D1', 'CTQ1')
     dot.edge('D2', 'CTQ2')
-    dot.edge('D3', 'CTQ3')
     
     return dot
 
-def plot_kano_model() -> go.Figure:
-    """Creates an enhanced Kano model plot."""
+def plot_kano_visual() -> go.Figure:
+    """Creates a visually enhanced Kano plot with satisfaction zones and examples."""
     df = generate_kano_data()
     fig = go.Figure()
+
+    # Shaded Zones
+    fig.add_shape(type="rect", x0=0, y0=0, x1=10, y1=10, fillcolor=f"{COLORS['success']}22", line_width=0, layer='below', name='Delight Zone')
+    fig.add_shape(type="rect", x0=0, y0=-10, x1=10, y1=0, fillcolor=f"{COLORS['danger']}22", line_width=0, layer='below', name='Dissatisfaction Zone')
+
+    # Curves
     colors = {'Basic (Must-be)': COLORS['accent'], 'Performance': COLORS['primary'], 'Excitement (Delighter)': COLORS['secondary']}
     for cat in df['category'].unique():
         subset = df[df['category'] == cat]
-        fig.add_trace(go.Scatter(x=subset['functionality'], y=subset['satisfaction'], mode='lines+markers', name=cat, line=dict(color=colors[cat], width=3), marker=dict(size=8, symbol='circle-open', line_width=2)))
+        fig.add_trace(go.Scatter(x=subset['functionality'], y=subset['satisfaction'], mode='lines', name=cat, line=dict(color=colors[cat], width=4)))
+    
+    # Annotations with examples
+    fig.add_annotation(x=8, y=8, text="<b>Delighter</b><br>e.g., Free dessert", showarrow=True, arrowhead=2, ax=-40, ay=-40, font_color=COLORS['secondary'])
+    fig.add_annotation(x=8, y=4, text="<b>Performance</b><br>e.g., Pizza taste", showarrow=True, arrowhead=2, ax=0, ay=-40, font_color=COLORS['primary'])
+    fig.add_annotation(x=8, y=-1, text="<b>Basic</b><br>e.g., Correct toppings", showarrow=True, arrowhead=2, ax=0, ay=40, font_color=COLORS['accent'])
+
     fig.add_hline(y=0, line_width=1, line_color='black')
-    fig.add_vline(x=5, line_width=1, line_color='black', line_dash='dash')
     fig.update_layout(
-        title='<b>Kano Model:</b> Understanding Non-Linear Customer Satisfaction',
-        xaxis_title='Degree of Functionality (Provided)', yaxis_title='Customer Satisfaction',
+        title='<b>Kano Model:</b> Visualizing Customer Satisfaction Drivers',
+        xaxis_title='Functionality Provided →', yaxis_title='← Satisfaction →',
         plot_bgcolor='white', paper_bgcolor='white',
         legend=dict(x=0.01, y=0.99, bgcolor='rgba(255,255,255,0.7)'),
-        annotations=[
-            dict(x=7.5, y=-8, text="Dissatisfaction", showarrow=False, font_color=COLORS['dark_gray']),
-            dict(x=7.5, y=8, text="Satisfaction", showarrow=False, font_color=COLORS['dark_gray']),
-            dict(x=2.5, y=2.5, text="Not Provided", showarrow=False, font_color=COLORS['dark_gray']),
-            dict(x=7.5, y=2.5, text="Fully Provided", showarrow=False, font_color=COLORS['dark_gray']),
-        ]
     )
     return fig
 
-def plot_voc_nlp_summary() -> go.Figure:
-    """Creates a horizontal bar chart for NLP topic modeling results."""
-    topics = ['Pricing & Value', 'Feature Requests', 'Customer Support', 'UI & Usability', 'Reliability & Bugs']
-    counts = [120, 250, 180, 90, 150]
-    sentiments = [-0.2, 0.5, -0.4, 0.1, -0.8]  # Average sentiment per topic
-    df = pd.DataFrame({'Topic': topics, 'Count': counts, 'Sentiment': sentiments}).sort_values('Count', ascending=True)
+def plot_voc_treemap() -> go.Figure:
+    """Creates a treemap to visualize customer feedback topics and sentiment."""
+    data = {
+        'Category': ['Product', 'Product', 'Service', 'Service', 'Website'],
+        'Topic': ['Reliability & Bugs', 'Feature Requests', 'Support Experience', 'Shipping Time', 'UI & Usability'],
+        'Count': [150, 250, 180, 80, 90],
+        'Sentiment': [-0.8, 0.5, -0.4, -0.6, 0.1]
+    }
+    df = pd.DataFrame(data)
     
-    df['Color'] = [f'rgba({int(COLORS["accent"][1:3], 16)}, {int(COLORS["accent"][3:5], 16)}, {int(COLORS["accent"][5:7], 16)}, {abs(s)})' if s < 0 else f'rgba({int(COLORS["secondary"][1:3], 16)}, {int(COLORS["secondary"][3:5], 16)}, {int(COLORS["secondary"][5:7], 16)}, {s})' for s in df['Sentiment']]
-
-    fig = go.Figure(go.Bar(
-        x=df['Count'], y=df['Topic'], orientation='h', 
-        marker_color=df['Color'], marker_line_color=COLORS['dark_gray'], marker_line_width=1,
-        text=df['Count'], textposition='outside'
-    ))
+    fig = px.treemap(
+        df,
+        path=[px.Constant("All Feedback"), 'Category', 'Topic'],
+        values='Count',
+        color='Sentiment',
+        color_continuous_scale='RdBu',
+        color_continuous_midpoint=0,
+        custom_data=['Sentiment']
+    )
+    fig.update_traces(
+        textinfo='label+value',
+        hovertemplate='<b>%{label}</b><br>Mentions: %{value}<br>Avg. Sentiment: %{customdata[0]:.2f}'
+    )
     fig.update_layout(
-        title_text="<b>ML-Powered VOC:</b> Customer Feedback Topics & Sentiment",
-        xaxis_title="Mention Count", yaxis_title=None,
-        plot_bgcolor='white', paper_bgcolor='white', font_color=COLORS['text'],
-        xaxis=dict(showgrid=True, gridcolor=COLORS['light_gray']), yaxis=dict(showgrid=False),
-        annotations=[dict(x=0.95, y=-0.15, showarrow=False, text="Color intensity indicates sentiment (Green=Positive, Orange=Negative)", xref="paper", yref="paper")]
+        title_text="<b>ML-Powered VOC:</b> Feedback Treemap (Size=Volume, Color=Sentiment)",
+        margin=dict(t=50, l=10, r=10, b=10)
     )
     return fig
 
@@ -933,7 +956,7 @@ def plot_control_plan() -> go.Figure:
     )
     return fig
 
-# --- NEW VISUALIZATIONS FOR COMPARISON & HYBRID PAGES ---
+# --- VISUALIZATIONS FOR COMPARISON & HYBRID PAGES ---
 
 def plot_comparison_radar() -> go.Figure:
     """Creates a radar chart comparing Classical Stats and ML."""
