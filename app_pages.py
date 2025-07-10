@@ -30,16 +30,6 @@ def show_define_phase():
         - **Strength:** Creates alignment and clarity from the outset. It provides a constant reference point to prevent "scope creep" and ensures everyone agrees on what "success" looks like.
         - **Caveat:** It's a static document. While it shouldn't change frequently, it must be revisited if major discoveries in later phases fundamentally alter the project's direction.
         """)
-        with st.expander("🔍 Technical Deep Dive: Key Charter Components"):
-            st.markdown("""
-            A robust charter contains several key sections:
-            - **Business Case:** Why is this project worth doing? What is the financial or strategic impact? (e.g., "Reduce customer churn by 15%, saving $2M annually.")
-            - **Problem Statement:** A concise, data-driven description of the problem. (e.g., "Customer service resolution time has increased from 24h to 72h over the last 6 months, leading to a 50% rise in complaints.")
-            - **Goal Statement (SMART):** The project's primary objective, which must be Specific, Measurable, Achievable, Relevant, and Time-bound. (e.g., "Reduce average customer service resolution time from 72h to 36h by the end of Q3.")
-            - **Scope:** Defines the project boundaries. What processes, departments, and products are "in-scope" vs. "out-of-scope"?
-            - **Team Roles:** Who is the sponsor, champion, team lead, and what are the team members' responsibilities?
-            - **High-Level Timeline (Milestones):** Key project milestones for each DMAIC phase.
-            """)
         st.plotly_chart(plot_project_charter(), use_container_width=True)
 
     # --- Tool 2: SIPOC & Causal Discovery ---
@@ -127,17 +117,6 @@ def show_measure_phase():
             - **Strength:** A standardized, rigorous, and universally accepted method for qualifying a measurement system.
             - **Caveat:** Requires a planned, often disruptive, experiment. Can be costly and time-consuming to execute.
             """)
-            with st.expander("🔍 Technical Deep Dive: Gage R&R Acceptance Criteria"):
-                st.markdown("""
-                The total Gage R&R variation is expressed as a percentage of the total process variation or tolerance.
-                - **< 10% Variation:** ✅ Excellent. The measurement system is acceptable.
-                - **10% - 30% Variation:** ⚠️ Marginal. May be acceptable depending on the application's criticality.
-                - **> 30% Variation:** 🚨 Unacceptable. The measurement system must be fixed before proceeding.
-                
-                The analysis is typically performed using ANOVA, which separates the variance components:
-                $ \sigma^2_{Total} = \sigma^2_{Process} + \sigma^2_{Gage R\&R} $
-                $ \sigma^2_{Gage R\&R} = \sigma^2_{Repeatability} + \sigma^2_{Reproducibility} $
-                """)
         with col2:
             st.plotly_chart(plot_gage_rr_variance_components(), use_container_width=True)
 
@@ -161,7 +140,6 @@ def show_measure_phase():
             - **Caveat:** Requires clean, structured event log data with three key elements: a **Case ID**, an **Activity Name**, and a **Timestamp**. Data quality is paramount.
             """)
             st.graphviz_chart(plot_process_mining_graph())
-            st.caption("A process mining graph showing the main 'happy path' (thick lines) and a costly rework loop (red lines) with average cycle times.")
 
     # --- Tool 3: Process Capability ---
     with st.container(border=True):
@@ -179,13 +157,6 @@ def show_measure_phase():
         with col3:
             st.markdown("##### **Classical: Cp & Cpk**")
             st.info("Industry-standard indices that summarize capability into a single number, assuming the data is normally distributed.")
-            with st.expander("🔍 Technical Deep Dive: Formulas & Interpretation"):
-                st.latex(r''' \text{Voice of Customer (Tolerance)} = USL - LSL ''')
-                st.latex(r''' \text{Voice of Process (Spread)} = 6\sigma ''')
-                st.latex(r''' C_p = \frac{USL - LSL}{6\sigma} \quad (\text{Potential Capability}) ''')
-                st.latex(r''' C_{pk} = \min\left(\frac{USL - \mu}{3\sigma}, \frac{\mu - LSL}{3\sigma}\right) \quad (\text{Actual Capability}) ''')
-                st.markdown("**Rule of Thumb:** A Cpk of **1.33** is a common minimum target, representing a 4-sigma process level.")
-            
             data = generate_process_data(process_mean, process_std, 1000, lsl, usl)
             fig_cap, cp, cpk = plot_capability_analysis_pro(data, lsl, usl)
             st.metric("Process Potential (Cp)", f"{cp:.2f}")
@@ -224,7 +195,7 @@ def show_analyze_phase():
         with col1:
             st.markdown("##### **Classical Tool: Fishbone (Ishikawa) Diagram**")
             st.info("""
-            **What is it?** A structured brainstorming tool used to visually organize potential causes of a specific problem (the "effect"). Causes are grouped into major categories (e.g., Manpower, Machine, Method, Material, Measurement, Environment).
+            **What is it?** A structured brainstorming tool used to visually organize potential causes of a specific problem (the "effect"). Causes are grouped into major categories.
             - **Strength:** Promotes comprehensive, systematic thinking. Excellent for team collaboration and ensuring all possible avenues are explored.
             - **Caveat:** It's a qualitative tool that generates *potential* causes. Each hypothesized cause must be validated with data.
             """)
@@ -258,29 +229,18 @@ def show_analyze_phase():
             - **Strength:** A rigorous, standard method for comparing groups (e.g., yield from different machines, shifts, or suppliers).
             - **Caveat:** Assumes the data within each group is normally distributed and has equal variances. Can be sensitive to outliers.
             """)
-            with st.expander("🔍 Technical Deep Dive: The F-Statistic"):
-                st.markdown("""
-                ANOVA works by comparing the variance *between* the groups to the variance *within* the groups.
-                - **Null Hypothesis (H₀):** All group means are equal ($ \mu_1 = \mu_2 = \dots = \mu_k $).
-                - **Alternative Hypothesis (Hₐ):** At least one group mean is different.
-                """)
-                st.latex(r''' F = \frac{\text{Variance between groups}}{\text{Variance within groups}} ''')
-                st.markdown("""
-                A large F-statistic (leading to a small p-value) suggests the difference between the groups is much larger than the random noise within them, allowing us to reject the null hypothesis.
-                """)
             fig_anova, p_val = plot_anova_groups(anova_data)
             st.plotly_chart(fig_anova, use_container_width=True)
-            if p_val < 0.05: st.error(f"P-value is {p_val:.4f}. We reject the null hypothesis: there is a significant difference between suppliers.", icon="🚨")
-            else: st.success(f"P-value is {p_val:.4f}. We fail to reject the null hypothesis: no significant difference detected.", icon="✅")
+            if p_val < 0.05: st.error(f"P-value is {p_val:.4f}. Reject the null hypothesis: a significant difference exists.", icon="🚨")
+            else: st.success(f"P-value is {p_val:.4f}. Fail to reject the null hypothesis: no significant difference detected.", icon="✅")
         with tab2:
             st.markdown("##### **ML Counterpart: Permutation Testing**")
             st.info("""
-            **What is it?** A non-parametric, computational method. It works by shuffling the group labels thousands of times and recalculating the statistic (e.g., difference in means). This builds an empirical distribution of what's possible by pure chance (i.e., under the null hypothesis).
+            **What is it?** A non-parametric, computational method. It works by shuffling the group labels thousands of times and recalculating the statistic (e.g., difference in means). This builds an empirical distribution of what's possible by pure chance.
             - **Strength:** Makes no assumptions about the data's distribution (normality, etc.). It's more robust, intuitive, and often more reliable than classical tests, especially with complex data.
             - **Caveat:** Can be computationally intensive for very large datasets.
             """)
-            fig_perm = plot_permutation_test(anova_data)
-            st.plotly_chart(fig_perm, use_container_width=True)
+            st.plotly_chart(plot_permutation_test(anova_data), use_container_width=True)
 
     # --- Tool 3: Finding Relationships ---
     with st.container(border=True):
@@ -291,22 +251,11 @@ def show_analyze_phase():
         with col3:
             st.markdown("##### **Classical: Linear Regression**")
             st.info("Models the linear relationship between inputs (X) and an output (Y). Simple, highly interpretable, but often fails to capture real-world complexity.")
-            with st.expander("🔍 Technical Deep Dive: The Linear Model"):
-                st.latex(r''' Y = \beta_0 + \beta_1X_1 + \beta_2X_2 + \dots + \epsilon ''')
-                st.markdown("The model's power and validity rest on several key assumptions:")
-                st.markdown("- **L**inearity: The relationship between X and Y is linear.")
-                st.markdown("- **I**ndependence: The errors ($ \epsilon $) are independent.")
-                st.markdown("- **N**ormality: The errors are normally distributed.")
-                st.markdown("- **E**qual Variance (Homoscedasticity): The errors have constant variance.")
-                st.markdown("Violation of these assumptions invalidates the model's conclusions.")
             fig_reg, _, _ = plot_regression_comparison_pro(df_reg)
             st.plotly_chart(fig_reg, use_container_width=True)
         with col4:
             st.markdown("##### **ML: Ensemble Models & Explainability (SHAP)**")
             st.info("Ensemble models like **Random Forest** or **Gradient Boosting** capture complex, non-linear relationships with high accuracy. We then use explainability tools like **SHAP** to understand the 'black box' model.")
-            with st.expander("🔍 Technical Deep Dive: How They Work"):
-                st.markdown("- **Random Forest:** Builds hundreds of de-correlated decision trees on different subsets of the data and averages their predictions. This reduces variance and improves accuracy.")
-                st.markdown("- **SHAP (SHapley Additive exPlanations):** A game theory approach to explain any model's output. It computes the marginal contribution of each feature to each individual prediction, providing a powerful, granular view of feature importance.")
             _, model, X_reg = plot_regression_comparison_pro(df_reg)
             fig_shap = plot_shap_summary(model, X_reg)
             st.plotly_chart(fig_shap, use_container_width=True)
@@ -359,12 +308,6 @@ def show_improve_phase():
             - **Strength:** Extremely sample-efficient, especially in high-dimensional spaces. It intelligently balances exploiting known good solutions and exploring new, uncertain areas.
             - **Caveat:** Can be sensitive to initial parameters and may struggle with very 'spiky', discontinuous functions.
             """)
-            with st.expander("🔍 Technical Deep Dive: Surrogate Model & Acquisition Function"):
-                st.markdown("""
-                Bayesian Optimization has two core components:
-                1.  **Surrogate Model (The Brain):** A cheap probabilistic model, typically a Gaussian Process (GP), that approximates the true, expensive function. The GP provides both a mean prediction (the model's best guess) and an uncertainty estimate (where the model is least sure).
-                2.  **Acquisition Function (The Strategy):** A function (e.g., Upper Confidence Bound - UCB, Expected Improvement - EI) that uses the surrogate's output to decide where to sample next. It finds a balance between areas with a high predicted mean (**exploitation**) and areas with high uncertainty (**exploration**).
-                """)
             st.sidebar.header("Bayesian Opt. Simulator")
             st.sidebar.markdown("Click the button to let the algorithm intelligently choose the next best point to sample.")
             # Define the true function to optimize (cached for performance)
@@ -399,13 +342,6 @@ def show_improve_phase():
             - **Strength:** A powerful, systematic way to force a team to think about what *could* go wrong and prioritize preventative actions.
             - **Caveat:** The RPN scores are subjective, qualitative, and based on team consensus, not always on hard data. It can be prone to bias.
             """)
-            with st.expander("🔍 Technical Deep Dive: The RPN Formula"):
-                st.latex(r''' \text{RPN} = \text{Severity} \times \text{Occurrence} \times \text{Detection} ''')
-                st.markdown("""
-                - **Severity (S):** How badly does this failure impact the customer? (Scale of 1-10)
-                - **Occurrence (O):** How often is this failure likely to happen? (Scale of 1-10)
-                - **Detection (D):** How likely are we to detect the failure before it reaches the customer? (Scale of 1-10, where 1 is 'very likely to detect' and 10 is 'impossible to detect')
-                """)
             st.plotly_chart(plot_fmea_table(), use_container_width=True)
         with col4:
             st.markdown("##### **ML: Prognostics & Health Management (PHM)**")
@@ -414,12 +350,6 @@ def show_improve_phase():
             - **Strength:** Moves risk management from a qualitative exercise to a quantitative, predictive capability, enabling condition-based maintenance instead of scheduled maintenance.
             - **Caveat:** Requires high-quality, high-frequency sensor data, including run-to-failure examples, which can be difficult or expensive to obtain.
             """)
-            with st.expander("🔍 Technical Deep Dive: Common PHM Models"):
-                st.markdown("""
-                - **Regression Models:** Simple models (Linear, Polynomial) can track linear or simple non-linear degradation trends.
-                - **Survival Models:** Techniques like Cox Proportional Hazards models can estimate the probability of failure over time.
-                - **Recurrent Neural Networks (RNN/LSTM):** Ideal for time-series data, these models can learn complex temporal patterns in sensor readings that precede a failure.
-                """)
             st.plotly_chart(plot_rul_prediction(generate_sensor_degradation_data()), use_container_width=True)
 
     st.success("""
@@ -468,10 +398,8 @@ def show_control_phase():
             - **Strength:** Significantly more sensitive to small shifts than a Shewhart chart.
             - **Limitation:** Can be more complex to set up and interpret. The choice of parameters (λ for EWMA, k for CUSUM) is a trade-off between sensitivity and false alarms.
             """)
-            fig_ewma = plot_ewma_chart(chart_data, lambda_val=ewma_lambda)
-            fig_cusum = plot_cusum_chart(chart_data)
-            st.plotly_chart(fig_ewma, use_container_width=True)
-            st.plotly_chart(fig_cusum, use_container_width=True)
+            st.plotly_chart(plot_ewma_chart(chart_data, lambda_val=ewma_lambda), use_container_width=True)
+            st.plotly_chart(plot_cusum_chart(chart_data), use_container_width=True)
         with tab3:
             st.markdown("##### **ML: Multivariate Anomaly Detection**")
             st.info("""
@@ -503,93 +431,102 @@ def show_control_phase():
 
 
 # ==============================================================================
-# PAGE 6: COMPARISON MATRIX
+# PAGE 6: COMPARISON MATRIX (VISUALLY ENHANCED)
 # ==============================================================================
 def show_comparison_matrix():
-    st.title("⚔️ Head-to-Head: Classical Stats vs. Machine Learning")
-    st.markdown("A summary of the core philosophical and practical differences between the two approaches, helping you choose the right tool for the right job.")
+    st.title("⚔️ Head-to-Head: Classical vs. Machine Learning")
+    st.markdown("A visual comparison of the core philosophies and practical strengths of the two approaches.")
     st.markdown("---")
 
-    st.subheader("Attribute Comparison Matrix")
-    st.dataframe(get_comparison_data(), use_container_width=True, hide_index=True, column_config={
-        "Dimension": st.column_config.TextColumn("Dimension", help="The attribute being compared.", width="medium"),
-        "Classical Stats": st.column_config.TextColumn("Classical Statistics (e.g., ANOVA, DOE)", help="The traditional, inference-focused approach."),
-        "Machine Learning": st.column_config.TextColumn("Machine Learning (e.g., Random Forest, NLP)", help="The modern, prediction-focused approach."),
-    })
+    # --- Radar Chart Visualization ---
+    with st.container(border=True):
+        st.subheader("Approach DNA: A Multi-Dimensional View")
+        st.markdown("""
+        This radar chart provides an at-a-glance comparison of the two methodologies across key attributes. 
+        A larger area for a given approach indicates a greater strength in those dimensions. Notice the different "shapes" of their capabilities.
+        """)
+        st.plotly_chart(plot_comparison_radar(), use_container_width=True)
 
-    st.subheader("🏁 The Verdict: Which Approach Wins?")
-    st.dataframe(get_verdict_data(), use_container_width=True, hide_index=True, column_config={
-        "Metric": st.column_config.TextColumn("Evaluation Metric", width="medium"),
-        "Winner": st.column_config.TextColumn("🏆 Winner"),
-        "Rationale": st.column_config.TextColumn("Rationale", width="large"),
-    })
-
+    # --- Diverging Bar Chart ---
+    with st.container(border=True):
+        st.subheader("The Verdict: Who Wins for Which Task?")
+        st.markdown("""
+        This chart visualizes which approach is generally superior for specific, common tasks in process improvement. 
+        The direction and color of the bar indicate the winner, providing a clear, decisive verdict for each use case.
+        """)
+        st.plotly_chart(plot_verdict_barchart(), use_container_width=True)
 
 # ==============================================================================
-# PAGE 7: HYBRID STRATEGY
+# PAGE 7: HYBRID STRATEGY (VISUALLY ENHANCED)
 # ==============================================================================
 def show_hybrid_strategy():
     st.title("🤝 The Hybrid Manifesto: The Future of Process Excellence")
     st.markdown("The most competitive organizations do not choose one over the other; they build an **AI-Augmented Six Sigma** program that fuses statistical rigor with machine learning's predictive power. This is not about replacement; it's about augmentation.")
     st.markdown("---")
-    
-    st.subheader("Scenario-Based Recommendations")
-    st.info("💡 The key is to match the tool to the task's complexity, data availability, and regulatory requirements.")
-    st.dataframe(get_guidance_data(), use_container_width=True, hide_index=True, column_config={
-         "Scenario": st.column_config.TextColumn("Scenario", width="large"),
-        "Recommended Approach": st.column_config.TextColumn("Recommended Approach"),
-        "Why?": st.column_config.TextColumn("Why?", width="large"),
-    })
-    st.markdown("<br>", unsafe_allow_html=True) 
 
-    st.header("A Unified, Modern DMAIC Workflow")
-    st.markdown(get_workflow_css(), unsafe_allow_html=True)
+    # --- Synergy Diagram ---
+    with st.container(border=True):
+        st.subheader("The Philosophy of Synergy")
+        st.markdown("""
+        Neither methodology is a silver bullet. The true power lies in their integration. Classical statistics provides the **rigor for inference and causality**, while machine learning provides the **power for prediction and scale**. This diagram illustrates their complementary nature, with the greatest value found in the overlap.
+        """)
+        st.plotly_chart(plot_synergy_diagram(), use_container_width=True)
+    
+    # --- Interactive Recommender ---
+    with st.container(border=True):
+        st.subheader("Interactive Solution Recommender")
+        st.info("💡 Select a common business scenario to see the recommended approach and rationale.")
+        
+        guidance_data = get_guidance_data()
+        scenarios = list(guidance_data.keys())
+        
+        selected_scenario = st.selectbox("Choose your scenario:", scenarios, label_visibility="collapsed")
+        
+        if selected_scenario:
+            recommendation = guidance_data[selected_scenario]['approach']
+            rationale = guidance_data[selected_scenario]['rationale']
+            
+            st.markdown(f"##### Recommended Approach: {recommendation}")
+            st.markdown(f"**Why?** {rationale}")
 
-    # --- Workflow Diagram using Streamlit Components ---
-    st.markdown('<div class="workflow-container">', unsafe_allow_html=True)
-    
-    # --- Define ---
-    st.markdown(render_workflow_step(
-        phase_name="🌀 1. Define",
-        phase_class="step-define",
-        classical_tools=["Project Charter", "SIPOC", "Kano Model", "CTQ Tree"],
-        ml_tools=["NLP for VOC at Scale", "Causal Discovery", "Automated Customer Segmentation"]
-    ), unsafe_allow_html=True)
-    st.markdown('<div class="workflow-arrow">⬇️</div>', unsafe_allow_html=True)
-    
-    # --- Measure ---
-    st.markdown(render_workflow_step(
-        phase_name="🔬 2. Measure",
-        phase_class="step-measure",
-        classical_tools=["Gage R&R (MSA)", "Process Capability (Cp, Cpk)", "Value Stream Mapping"],
-        ml_tools=["Process Mining", "Kernel Density Estimation (KDE)", "Uncertainty Quantification"]
-    ), unsafe_allow_html=True)
-    st.markdown('<div class="workflow-arrow">⬇️</div>', unsafe_allow_html=True)
-    
-    # --- Analyze ---
-    st.markdown(render_workflow_step(
-        phase_name="📈 3. Analyze",
-        phase_class="step-analyze",
-        classical_tools=["Hypothesis Testing (ANOVA)", "Pareto Analysis", "Fishbone Diagram", "Linear Regression"],
-        ml_tools=["Feature Importance (SHAP)", "Ensemble Models (Random Forest)", "Permutation Testing"]
-    ), unsafe_allow_html=True)
-    st.markdown('<div class="workflow-arrow">⬇️</div>', unsafe_allow_html=True)
-    
-    # --- Improve ---
-    st.markdown(render_workflow_step(
-        phase_name="⚙️ 4. Improve",
-        phase_class="step-improve",
-        classical_tools=["Design of Experiments (DOE)", "FMEA", "Pilot Testing"],
-        ml_tools=["Bayesian Optimization", "Prognostics (PHM/RUL)", "Simulation & Digital Twins"]
-    ), unsafe_allow_html=True)
-    st.markdown('<div class="workflow-arrow">⬇️</div>', unsafe_allow_html=True)
-
-    # --- Control ---
-    st.markdown(render_workflow_step(
-        phase_name="📡 5. Control",
-        phase_class="step-control",
-        classical_tools=["Control Charts (SPC, EWMA)", "Control Plan", "Standard Operating Procedures (SOPs)"],
-        ml_tools=["Multivariate Anomaly Detection", "Real-time Predictive Models", "Automated Alerting"]
-    ), unsafe_allow_html=True)
-
-    st.markdown('</div>', unsafe_allow_html=True)
+    # --- Existing Workflow Diagram ---
+    with st.container(border=True):
+        st.subheader("A Unified, Modern DMAIC Workflow")
+        st.markdown("This workflow demonstrates how to embed ML augmentation at each step of the traditional DMAIC cycle.")
+        st.markdown(get_workflow_css(), unsafe_allow_html=True)
+        st.markdown('<div class="workflow-container">', unsafe_allow_html=True)
+        st.markdown(render_workflow_step(
+            phase_name="🌀 1. Define",
+            phase_class="step-define",
+            classical_tools=["Project Charter", "SIPOC", "Kano Model", "CTQ Tree"],
+            ml_tools=["NLP for VOC at Scale", "Causal Discovery", "Automated Customer Segmentation"]
+        ), unsafe_allow_html=True)
+        st.markdown('<div class="workflow-arrow">⬇️</div>', unsafe_allow_html=True)
+        st.markdown(render_workflow_step(
+            phase_name="🔬 2. Measure",
+            phase_class="step-measure",
+            classical_tools=["Gage R&R (MSA)", "Process Capability (Cp, Cpk)", "Value Stream Mapping"],
+            ml_tools=["Process Mining", "Kernel Density Estimation (KDE)", "Uncertainty Quantification"]
+        ), unsafe_allow_html=True)
+        st.markdown('<div class="workflow-arrow">⬇️</div>', unsafe_allow_html=True)
+        st.markdown(render_workflow_step(
+            phase_name="📈 3. Analyze",
+            phase_class="step-analyze",
+            classical_tools=["Hypothesis Testing (ANOVA)", "Pareto Analysis", "Fishbone Diagram", "Linear Regression"],
+            ml_tools=["Feature Importance (SHAP)", "Ensemble Models (Random Forest)", "Permutation Testing"]
+        ), unsafe_allow_html=True)
+        st.markdown('<div class="workflow-arrow">⬇️</div>', unsafe_allow_html=True)
+        st.markdown(render_workflow_step(
+            phase_name="⚙️ 4. Improve",
+            phase_class="step-improve",
+            classical_tools=["Design of Experiments (DOE)", "FMEA", "Pilot Testing"],
+            ml_tools=["Bayesian Optimization", "Prognostics (PHM/RUL)", "Simulation & Digital Twins"]
+        ), unsafe_allow_html=True)
+        st.markdown('<div class="workflow-arrow">⬇️</div>', unsafe_allow_html=True)
+        st.markdown(render_workflow_step(
+            phase_name="📡 5. Control",
+            phase_class="step-control",
+            classical_tools=["Control Charts (SPC, EWMA)", "Control Plan", "Standard Operating Procedures (SOPs)"],
+            ml_tools=["Multivariate Anomaly Detection", "Real-time Predictive Models", "Automated Alerting"]
+        ), unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
