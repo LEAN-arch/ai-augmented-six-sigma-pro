@@ -318,7 +318,7 @@ def show_control_phase():
     st.success("""
     **🏆 Verdict & Hybrid Strategy:**
     1.  **Monitor CTQs with SPC:** Keep a classical Shewhart chart on your final Critical-to-Quality (CTQ) output for simple, robust monitoring.
-    2.  **Monitor Critical Inputs with Advanced SPC/ML:** For the critical input variables (Xs) that drive your process, use more sensitive charts like **EWMA** or **CUSUM**.
+    2.  **Monitor Critical Inputs with Advanced SPC:** For the critical input variables (Xs) that drive your process, use more sensitive charts like **EWMA** or **CUSUM**.
     3.  **Create an Early Warning System with ML:** For the most complex, multivariate interactions, deploy an ML anomaly detection model (like an LSTM or Autoencoder) that learns the normal 'heartbeat' of your process across all sensor inputs. This model doesn't just detect shifts; it predicts them, enabling true proactive control.
     """)
 
@@ -361,62 +361,26 @@ def show_hybrid_strategy():
                  "Simple, highly effective, and provides clear, interpretable results with minimal setup.", "ML builds the accurate simulation; Bayesian Opt. finds the peak efficiency in the vast parameter space.", "Predicts the outcome of the current settings and suggests optimal adjustments to the operator."]
     })
     st.dataframe(guidance_data, use_container_width=True, hide_index=True)
-    st.markdown("<br>", unsafe_allow_html=True) # Add some space
+    st.markdown("<br>", unsafe_allow_html=True) 
 
     st.header("A Unified, Modern DMAIC Workflow")
 
     # --- Custom CSS for the workflow diagram ---
     st.markdown("""
     <style>
-    .workflow-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        width: 100%;
-    }
-    .workflow-step {
-        background-color: #FFFFFF;
-        border: 1px solid #DDDDDD;
-        border-radius: 10px;
-        padding: 20px;
-        margin-bottom: 20px;
-        width: 90%;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        border-left: 5px solid;
-    }
-    .workflow-arrow {
-        font-size: 24px;
-        color: #AAAAAA;
-        margin-bottom: 20px;
-        font-weight: bold;
-    }
+    .workflow-container { display: flex; flex-direction: column; align-items: center; width: 100%; }
+    .workflow-step { background-color: #FFFFFF; border: 1px solid #DDDDDD; border-radius: 10px; padding: 20px; margin-bottom: 20px; width: 90%; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 5px solid; }
+    .workflow-arrow { font-size: 24px; color: #AAAAAA; margin-bottom: 20px; font-weight: bold; }
     .step-define { border-left-color: #0072B2; }
     .step-measure { border-left-color: #009E73; }
     .step-analyze { border-left-color: #D55E00; }
     .step-improve { border-left-color: #F0E442; }
-    .step-control { border-left-color: #CC79A7; } /* A new color for control */
-    .workflow-step h4 {
-        margin-top: 0;
-        margin-bottom: 15px;
-        font-size: 1.5em;
-        color: #333333;
-    }
-    .workflow-step .tool-col {
-        padding: 0 15px;
-    }
-    .workflow-step .tool-col h5 {
-        color: #555555;
-        border-bottom: 2px solid #EEEEEE;
-        padding-bottom: 5px;
-        margin-bottom: 10px;
-    }
-    .workflow-step .tool-col ul {
-        padding-left: 20px;
-        margin: 0;
-    }
-    .workflow-step .tool-col li {
-        margin-bottom: 5px;
-    }
+    .step-control { border-left-color: #CC79A7; }
+    .workflow-step h4 { margin-top: 0; margin-bottom: 15px; font-size: 1.5em; color: #333333; }
+    .workflow-step .tool-col { padding: 0 15px; }
+    .workflow-step .tool-col h5 { color: #555555; border-bottom: 2px solid #EEEEEE; padding-bottom: 5px; margin-bottom: 10px; }
+    .workflow-step .tool-col ul { padding-left: 20px; margin: 0; }
+    .workflow-step .tool-col li { margin-bottom: 5px; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -427,10 +391,8 @@ def show_hybrid_strategy():
     st.markdown('<div class="workflow-step step-define">', unsafe_allow_html=True)
     st.markdown("<h4>🌀 1. Define</h4>", unsafe_allow_html=True)
     col1, col2 = st.columns(2)
-    with col1:
-        st.markdown("<div class='tool-col'><h5>Classical Tools</h5><ul><li>SIPOC</li><li>Project Charter</li><li>Kano Model</li></ul></div>", unsafe_allow_html=True)
-    with col2:
-        st.markdown("<div class='tool-col'><h5>ML Augmentation</h5><ul><li>NLP for VOC at scale</li><li>Causal Discovery for initial hypotheses</li></ul></div>", unsafe_allow_html=True)
+    with col1: st.markdown("<div class='tool-col'><h5>Classical Tools</h5><ul><li>SIPOC</li><li>Project Charter</li><li>Kano Model</li></ul></div>", unsafe_allow_html=True)
+    with col2: st.markdown("<div class='tool-col'><h5>ML Augmentation</h5><ul><li>NLP for VOC at scale</li><li>Causal Discovery for initial hypotheses</li></ul></div>", unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
     st.markdown('<div class="workflow-arrow">↓</div>', unsafe_allow_html=True)
 
@@ -438,10 +400,8 @@ def show_hybrid_strategy():
     st.markdown('<div class="workflow-step step-measure">', unsafe_allow_html=True)
     st.markdown("<h4>🔬 2. Measure</h4>", unsafe_allow_html=True)
     col1, col2 = st.columns(2)
-    with col1:
-        st.markdown("<div class='tool-col'><h5>Classical Tools</h5><ul><li>Gage R&R (MSA)</li><li>Process Capability (Cp, Cpk)</li><li>Value Stream Mapping</li></ul></div>", unsafe_allow_html=True)
-    with col2:
-        st.markdown("<div class='tool-col'><h5>ML Augmentation</h5><ul><li>Process Mining</li><li>Kernel Density Estimation (KDE)</li></ul></div>", unsafe_allow_html=True)
+    with col1: st.markdown("<div class='tool-col'><h5>Classical Tools</h5><ul><li>Gage R&R (MSA)</li><li>Process Capability (Cp, Cpk)</li><li>Value Stream Mapping</li></ul></div>", unsafe_allow_html=True)
+    with col2: st.markdown("<div class='tool-col'><h5>ML Augmentation</h5><ul><li>Process Mining</li><li>Kernel Density Estimation (KDE)</li></ul></div>", unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
     st.markdown('<div class="workflow-arrow">↓</div>', unsafe_allow_html=True)
     
@@ -449,10 +409,8 @@ def show_hybrid_strategy():
     st.markdown('<div class="workflow-step step-analyze">', unsafe_allow_html=True)
     st.markdown("<h4>📈 3. Analyze</h4>", unsafe_allow_html=True)
     col1, col2 = st.columns(2)
-    with col1:
-        st.markdown("<div class='tool-col'><h5>Classical Tools</h5><ul><li>Hypothesis Testing (t-test, ANOVA)</li><li>Pareto Analysis</li><li>Fishbone Diagram</li></ul></div>", unsafe_allow_html=True)
-    with col2:
-        st.markdown("<div class='tool-col'><h5>ML Augmentation</h5><ul><li>Feature Importance (SHAP)</li><li>Ensemble Models (Random Forest)</li><li>Permutation Testing</li></ul></div>", unsafe_allow_html=True)
+    with col1: st.markdown("<div class='tool-col'><h5>Classical Tools</h5><ul><li>Hypothesis Testing (t-test, ANOVA)</li><li>Pareto Analysis</li><li>Fishbone Diagram</li></ul></div>", unsafe_allow_html=True)
+    with col2: st.markdown("<div class='tool-col'><h5>ML Augmentation</h5><ul><li>Feature Importance (SHAP)</li><li>Ensemble Models (Random Forest)</li><li>Permutation Testing</li></ul></div>", unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
     st.markdown('<div class="workflow-arrow">↓</div>', unsafe_allow_html=True)
 
@@ -460,10 +418,8 @@ def show_hybrid_strategy():
     st.markdown('<div class="workflow-step step-improve">', unsafe_allow_html=True)
     st.markdown("<h4>⚙️ 4. Improve</h4>", unsafe_allow_html=True)
     col1, col2 = st.columns(2)
-    with col1:
-        st.markdown("<div class='tool-col'><h5>Classical Tools</h5><ul><li>Design of Experiments (DOE)</li><li>Failure Mode & Effects Analysis (FMEA)</li></ul></div>", unsafe_allow_html=True)
-    with col2:
-        st.markdown("<div class='tool-col'><h5>ML Augmentation</h5><ul><li>Bayesian Optimization</li><li>Prognostics & Health Mgmt. (PHM)</li></ul></div>", unsafe_allow_html=True)
+    with col1: st.markdown("<div class='tool-col'><h5>Classical Tools</h5><ul><li>Design of Experiments (DOE)</li><li>Failure Mode & Effects Analysis (FMEA)</li></ul></div>", unsafe_allow_html=True)
+    with col2: st.markdown("<div class='tool-col'><h5>ML Augmentation</h5><ul><li>Bayesian Optimization</li><li>Prognostics & Health Mgmt. (PHM)</li></ul></div>", unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
     st.markdown('<div class="workflow-arrow">↓</div>', unsafe_allow_html=True)
 
@@ -471,10 +427,8 @@ def show_hybrid_strategy():
     st.markdown('<div class="workflow-step step-control">', unsafe_allow_html=True)
     st.markdown("<h4>📡 5. Control</h4>", unsafe_allow_html=True)
     col1, col2 = st.columns(2)
-    with col1:
-        st.markdown("<div class='tool-col'><h5>Classical Tools</h5><ul><li>Control Charts (SPC, EWMA)</li><li>Control Plan</li></ul></div>", unsafe_allow_html=True)
-    with col2:
-        st.markdown("<div class='tool-col'><h5>ML Augmentation</h5><ul><li>Multivariate Anomaly Detection</li><li>Real-time Predictive Models</li></ul></div>", unsafe_allow_html=True)
+    with col1: st.markdown("<div class='tool-col'><h5>Classical Tools</h5><ul><li>Control Charts (SPC, EWMA)</li><li>Control Plan</li></ul></div>", unsafe_allow_html=True)
+    with col2: st.markdown("<div class='tool-col'><h5>ML Augmentation</h5><ul><li>Multivariate Anomaly Detection</li><li>Real-time Predictive Models</li></ul></div>", unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('</div>', unsafe_allow_html=True)
