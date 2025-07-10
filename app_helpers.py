@@ -239,17 +239,20 @@ def plot_project_charter() -> go.Figure:
 def plot_sipoc_diagram() -> go.Figure:
     """Creates a SIPOC diagram using Plotly shapes and annotations."""
     cats = ['Suppliers', 'Inputs', 'Process', 'Outputs', 'Customers']
+    
+    # CORRECTED: The values are now strings, not lists of strings.
     content = {
-        'Suppliers': ['• Component Fab<br>• Logistics Inc.<br>• Software Dev LLC'],
-        'Inputs': ['• Silicon Wafers<br>• Assembly Instructions<br>• Firmware v2.1'],
-        'Process': ['1. Receive Materials<br>2. Assemble Unit<br>3. Flash Firmware<br>4. Quality Test<br>5. Pack & Ship'],
-        'Outputs': ['• Assembled Product<br>• Quality Report<br>• Shipping Manifest'],
-        'Customers': ['• End Users<br>• Distributors<br>• Service Centers'],
+        'Suppliers': '• Component Fab<br>• Logistics Inc.<br>• Software Dev LLC',
+        'Inputs': '• Silicon Wafers<br>• Assembly Instructions<br>• Firmware v2.1',
+        'Process': '1. Receive Materials<br>2. Assemble Unit<br>3. Flash Firmware<br>4. Quality Test<br>5. Pack & Ship',
+        'Outputs': '• Assembled Product<br>• Quality Report<br>• Shipping Manifest',
+        'Customers': '• End Users<br>• Distributors<br>• Service Centers',
     }
     fig = go.Figure()
     for i, cat in enumerate(cats):
         fig.add_shape(type="rect", x0=i+0.1, y0=0.1, x1=i+0.9, y1=0.9, line=dict(color=COLORS['dark_gray']), fillcolor=COLORS['light_gray'], opacity=0.3)
         fig.add_annotation(x=i+0.5, y=0.95, text=f"<b>{cat}</b>", showarrow=False, font=dict(size=14, color=COLORS['primary']))
+        # This line will now work correctly as content[cat] is a string.
         fig.add_annotation(x=i+0.5, y=0.5, text=content[cat], showarrow=False, align='left', font=dict(size=11))
     
     # Add arrows
