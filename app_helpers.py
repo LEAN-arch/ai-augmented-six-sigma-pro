@@ -9,9 +9,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
 import graphviz
-
-# ***** BUG FIX 1: 'f_oneway' is now imported *****
-from scipy.stats import norm, gaussian_kde, f, f_oneway
+from scipy.stats import norm, gaussian_kde, f_oneway
 
 # --- START of config.py content ---
 COLORS = {
@@ -25,7 +23,6 @@ COLORS = {
     "dark_gray": "#555555"
 }
 
-# ***** BUG FIX 3: 'get_custom_css' function is present and correct *****
 def get_custom_css():
     return f"""
     <style>
@@ -221,7 +218,6 @@ def plot_control_chart_pro(df):
     fig.add_trace(go.Scatter(x=df['Time'], y=df['Value'], mode='lines+markers', name='Process Data', marker_color=COLORS['primary']), row=1, col=1); fig.add_hline(y=ucl, line=dict(color=COLORS['accent'], width=2, dash='dash'), name="UCL", row=1, col=1); fig.add_hline(y=mean, line=dict(color=COLORS['dark_gray'], width=2, dash='dot'), name="Center Line", row=1, col=1); fig.add_hline(y=lcl, line=dict(color=COLORS['accent'], width=2, dash='dash'), name="LCL", row=1, col=1); fig.add_trace(go.Scatter(x=spc_violations['Time'], y=spc_violations['Value'], mode='markers', name='SPC Violation', marker=dict(color=COLORS['accent'], size=12, symbol='x')), row=1, col=1)
     fig.add_trace(go.Scatter(x=df['Time'], y=df['Z_Score'].abs(), mode='lines', name='ML Anomaly Score', line=dict(color=COLORS['secondary']), fill='tozeroy', fillcolor=f'rgba({int(COLORS["secondary"][1:3], 16)}, {int(COLORS["secondary"][3:5], 16)}, {int(COLORS["secondary"][5:7], 16)}, 0.2)'), row=2, col=1); fig.add_hline(y=2.5, line=dict(color=COLORS['accent'], width=2, dash='dash'), name="ML Threshold", row=2, col=1); fig.add_trace(go.Scatter(x=ml_anomalies['Time'], y=ml_anomalies['Z_Score'].abs(), mode='markers', name='ML Anomaly Detected', marker=dict(color=COLORS['accent'], size=10, symbol='star')), row=2, col=1)
     fig.update_layout(title_text="<b>Control Phase:</b> Classical SPC vs. Predictive ML Anomaly Detection", plot_bgcolor='white', paper_bgcolor='white', font_color=COLORS['text'], showlegend=False, margin=dict(t=50, l=10, r=10, b=10)); fig.update_yaxes(title_text="Measurement", row=1, col=1, showgrid=True, gridcolor=COLORS['light_gray']); fig.update_yaxes(title_text="Anomaly Score", row=2, col=1, showgrid=True, gridcolor=COLORS['light_gray']); fig.update_xaxes(title_text="Time / Sample Number", row=2, col=1, showgrid=True, gridcolor=COLORS['light_gray'])
-    # ***** BUG FIX 2: This function now only returns one value *****
     return fig
 
 def plot_doe_cube(df):
