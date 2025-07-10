@@ -1,0 +1,21 @@
+# requirements.txt
+
+# Core framework for building the web application
+streamlit==1.33.0
+
+# Essential libraries for data manipulation and numerical operations
+pandas==2.2.1
+numpy==1.26.4
+
+# Library for scientific and technical computing (used for KDE and stats)
+scipy==1.13.0
+
+# Machine learning library for regression, classification, and other models
+scikit-learn==1.4.2
+
+# Library for creating interactive, publication-quality visualizations
+plotly==5.20.0
+
+# Library for rendering graph-based visualizations (e.g., causal networks)
+# Note: Requires system-level installation of the Graphviz engine.
+graphviz==0.20.3
