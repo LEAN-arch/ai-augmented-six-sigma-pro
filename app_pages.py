@@ -351,29 +351,130 @@ def show_comparison_matrix():
 def show_hybrid_strategy():
     st.title("🧠 The Hybrid Strategy: The Future of Quality")
     st.markdown("The most competitive organizations do not choose one over the other; they build an **AI-Augmented Six Sigma** program that fuses statistical rigor with machine learning's predictive power.")
+
     st.subheader("Scenario-Based Recommendations")
     guidance_data = pd.DataFrame({
-        "Scenario": ["Validating a change for FDA/FAA compliance", "Monitoring a semiconductor fab with 1000s of sensors", "Understanding why customers are churning by analyzing support emails", "Optimizing a simple, 3-factor physical mixing process", "Building a 'digital twin' of a chemical reactor", "Providing real-time operator guidance"],
+        "Scenario": ["Validating a change for FDA/FAA compliance", "Monitoring a semiconductor fab with 1000s of sensors", "Understanding why customers are churning by analyzing support emails",
+                     "Optimizing a simple, 3-factor physical mixing process", "Building a 'digital twin' of a chemical reactor", "Providing real-time operator guidance"],
         "Recommended Approach": ["**Classical Stats** (Hypothesis Testing, DOE)", "**ML + SPC** (Multivariate Anomaly Detection)", "**ML NLP** (Topic Modeling & Sentiment Analysis)", "**Classical DOE**", "**Hybrid:** ML Model + Bayesian Opt.", "**ML** (Real-time Predictive Model)"],
-        "Why?": ["Methods are traceable, validated, and legally defensible.", "Detects subtle, multivariate sensor drifts that individual SPC charts would miss.", "Processes and extracts actionable themes from massive, unstructured text data.", "Simple, highly effective, and provides clear, interpretable results with minimal setup.", "ML builds the accurate simulation; Bayesian Opt. finds the peak efficiency in the vast parameter space.", "Predicts the outcome of the current settings and suggests optimal adjustments to the operator."]
+        "Why?": ["Methods are traceable, validated, and legally defensible.", "Detects subtle, multivariate sensor drifts that individual SPC charts would miss.", "Processes and extracts actionable themes from massive, unstructured text data.",
+                 "Simple, highly effective, and provides clear, interpretable results with minimal setup.", "ML builds the accurate simulation; Bayesian Opt. finds the peak efficiency in the vast parameter space.", "Predicts the outcome of the current settings and suggests optimal adjustments to the operator."]
     })
     st.dataframe(guidance_data, use_container_width=True, hide_index=True)
+    st.markdown("<br>", unsafe_allow_html=True) # Add some space
+
     st.header("A Unified, Modern DMAIC Workflow")
-    st.image("https://i.imgur.com/rS2Mtn1.png", caption="An integrated workflow where classical and ML tools support each other at every stage.")
+
+    # --- Custom CSS for the workflow diagram ---
     st.markdown("""
-    #### 1. **Define: Scope with Clarity, Validate with Data**
-       - **Classical:** Use SIPOC to align stakeholders and define project boundaries. Use the Kano Model to prioritize features.
-       - **ML:** Use NLP on customer feedback to provide a data-driven business case and quantify the problem's impact. Use Causal Discovery to form initial hypotheses.
-    #### 2. **Measure: Baseline with Rigor, Diagnose with Insight**
-       - **Classical:** Use Gage R&R to validate the measurement system, then calculate Cpk to establish the official process baseline.
-       - **ML:** Use Process Mining to discover the true process flow and KDE plots to diagnose the *nature* of poor capability.
-    #### 3. **Analyze: Hypothesize with Experience, Discover with ML**
-       - **Classical:** Use Fishbone diagrams and ANOVA to test hypotheses about known potential root causes.
-       - **ML:** Use a powerful model (e.g., XGBoost) and SHAP explainability on historical data to identify and rank the most impactful, often non-obvious, process drivers.
-    #### 4. **Improve: Experiment Physically with DOE, Proactively with FMEA/PHM**
-       - **Classical:** Use FMEA to brainstorm risks. Use DOE on the vital few factors identified by SHAP to efficiently optimize physical processes.
-       - **ML:** Use PHM/RUL models to predict failures. Use Bayesian Optimization to optimize complex digital systems or simulations ("digital twins").
-    #### 5. **Control: Monitor Outputs with SPC, Predict with ML**
-       - **Classical:** Use advanced SPC charts (EWMA/CUSUM) on the final CTQ output for robust, sensitive monitoring.
-       - **ML:** Use multivariate anomaly detection on process inputs (Xs) as an early warning system to predict and prevent defects before they happen.
-    """)
+    <style>
+    .workflow-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+    }
+    .workflow-step {
+        background-color: #FFFFFF;
+        border: 1px solid #DDDDDD;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+        width: 90%;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        border-left: 5px solid;
+    }
+    .workflow-arrow {
+        font-size: 24px;
+        color: #AAAAAA;
+        margin-bottom: 20px;
+        font-weight: bold;
+    }
+    .step-define { border-left-color: #0072B2; }
+    .step-measure { border-left-color: #009E73; }
+    .step-analyze { border-left-color: #D55E00; }
+    .step-improve { border-left-color: #F0E442; }
+    .step-control { border-left-color: #CC79A7; } /* A new color for control */
+    .workflow-step h4 {
+        margin-top: 0;
+        margin-bottom: 15px;
+        font-size: 1.5em;
+        color: #333333;
+    }
+    .workflow-step .tool-col {
+        padding: 0 15px;
+    }
+    .workflow-step .tool-col h5 {
+        color: #555555;
+        border-bottom: 2px solid #EEEEEE;
+        padding-bottom: 5px;
+        margin-bottom: 10px;
+    }
+    .workflow-step .tool-col ul {
+        padding-left: 20px;
+        margin: 0;
+    }
+    .workflow-step .tool-col li {
+        margin-bottom: 5px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # --- Workflow Diagram using Streamlit Components ---
+    st.markdown('<div class="workflow-container">', unsafe_allow_html=True)
+
+    # Step 1: Define
+    st.markdown('<div class="workflow-step step-define">', unsafe_allow_html=True)
+    st.markdown("<h4>🌀 1. Define</h4>", unsafe_allow_html=True)
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("<div class='tool-col'><h5>Classical Tools</h5><ul><li>SIPOC</li><li>Project Charter</li><li>Kano Model</li></ul></div>", unsafe_allow_html=True)
+    with col2:
+        st.markdown("<div class='tool-col'><h5>ML Augmentation</h5><ul><li>NLP for VOC at scale</li><li>Causal Discovery for initial hypotheses</li></ul></div>", unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('<div class="workflow-arrow">↓</div>', unsafe_allow_html=True)
+
+    # Step 2: Measure
+    st.markdown('<div class="workflow-step step-measure">', unsafe_allow_html=True)
+    st.markdown("<h4>🔬 2. Measure</h4>", unsafe_allow_html=True)
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("<div class='tool-col'><h5>Classical Tools</h5><ul><li>Gage R&R (MSA)</li><li>Process Capability (Cp, Cpk)</li><li>Value Stream Mapping</li></ul></div>", unsafe_allow_html=True)
+    with col2:
+        st.markdown("<div class='tool-col'><h5>ML Augmentation</h5><ul><li>Process Mining</li><li>Kernel Density Estimation (KDE)</li></ul></div>", unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('<div class="workflow-arrow">↓</div>', unsafe_allow_html=True)
+    
+    # Step 3: Analyze
+    st.markdown('<div class="workflow-step step-analyze">', unsafe_allow_html=True)
+    st.markdown("<h4>📈 3. Analyze</h4>", unsafe_allow_html=True)
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("<div class='tool-col'><h5>Classical Tools</h5><ul><li>Hypothesis Testing (t-test, ANOVA)</li><li>Pareto Analysis</li><li>Fishbone Diagram</li></ul></div>", unsafe_allow_html=True)
+    with col2:
+        st.markdown("<div class='tool-col'><h5>ML Augmentation</h5><ul><li>Feature Importance (SHAP)</li><li>Ensemble Models (Random Forest)</li><li>Permutation Testing</li></ul></div>", unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('<div class="workflow-arrow">↓</div>', unsafe_allow_html=True)
+
+    # Step 4: Improve
+    st.markdown('<div class="workflow-step step-improve">', unsafe_allow_html=True)
+    st.markdown("<h4>⚙️ 4. Improve</h4>", unsafe_allow_html=True)
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("<div class='tool-col'><h5>Classical Tools</h5><ul><li>Design of Experiments (DOE)</li><li>Failure Mode & Effects Analysis (FMEA)</li></ul></div>", unsafe_allow_html=True)
+    with col2:
+        st.markdown("<div class='tool-col'><h5>ML Augmentation</h5><ul><li>Bayesian Optimization</li><li>Prognostics & Health Mgmt. (PHM)</li></ul></div>", unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('<div class="workflow-arrow">↓</div>', unsafe_allow_html=True)
+
+    # Step 5: Control
+    st.markdown('<div class="workflow-step step-control">', unsafe_allow_html=True)
+    st.markdown("<h4>📡 5. Control</h4>", unsafe_allow_html=True)
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("<div class='tool-col'><h5>Classical Tools</h5><ul><li>Control Charts (SPC, EWMA)</li><li>Control Plan</li></ul></div>", unsafe_allow_html=True)
+    with col2:
+        st.markdown("<div class='tool-col'><h5>ML Augmentation</h5><ul><li>Multivariate Anomaly Detection</li><li>Real-time Predictive Models</li></ul></div>", unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown('</div>', unsafe_allow_html=True)
