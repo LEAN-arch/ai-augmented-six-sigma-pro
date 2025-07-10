@@ -183,7 +183,7 @@ def show_measure_phase():
     st.success("""
     **🏆 Hybrid Strategy for the Measure Phase:**
     1.  **Validate (Classical):** Always perform a **Gage R&R** on critical instruments (e.g., qPCR machine, sequencer) and assess inter-operator variability before baselining performance. This is a non-negotiable prerequisite for valid data.
-    2.  **Discover (ML):** Begin by running **Process Mining** on LIMS event logs. This provides an objective map of the lab workflow, immediately highlighting QC failure loops, re-test rates, and true instrument/personnel bottlenecks.
+    2.  **Discover (ML):** Begin by running **Process Mining** on LIMS event logs. This provides an objective, data-driven map of the lab workflow, immediately highlighting QC failure loops, re-test rates, and true instrument/personnel bottlenecks.
     3.  **Detail (Classical):** Use the insights from process mining to guide a targeted, physical **VSM** exercise, focusing on areas with high wait times or rework to understand the physical-world causes.
     4.  **Baseline & Diagnose (Hybrid):** Report the official **Cpk** baseline against the TPP specifications. Internally, use the **KDE plot** to diagnose the *reason* for poor capability (e.g., a shifted mean, excessive noise, or batch effects causing bimodality).
     """)
@@ -353,6 +353,7 @@ def show_control_phase():
             st.markdown("##### **Advanced Classical: EWMA & CUSUM Charts**")
             st.info("These charts have 'memory', making them highly effective at detecting small, sustained drifts (e.g., slow reagent degradation) that Levey-Jennings charts would miss. EWMA is generally preferred for this.")
             st.plotly_chart(plot_ewma_chart(chart_data, lambda_val=ewma_lambda), use_container_width=True)
+            st.plotly_chart(plot_cusum_chart(chart_data), use_container_width=True) # Added back in
         with tab3:
             st.markdown("##### **ML Augmentation: Multivariate QC**")
             st.info("""
