@@ -36,6 +36,7 @@ def show_define_phase():
     
     with st.container(border=True):
         st.subheader("1. The Mandate: Assay Design & Development Plan")
+        # CRITICAL FIX: This call now works because the function was restored in app_helpers.py
         st.plotly_chart(plot_project_charter_visual(), use_container_width=True)
 
     with st.container(border=True):
@@ -43,10 +44,10 @@ def show_define_phase():
         col1, col2 = st.columns(2)
         with col1:
             st.markdown("##### **Classical Tool: SIPOC**")
+            # CRITICAL FIX: This call now works because the function was restored in app_helpers.py
             st.plotly_chart(plot_sipoc_visual(), use_container_width=True)
         with col2:
             st.markdown("##### **ML Augmentation: Causal Discovery**")
-            # OVERHAUL: Replaced graphviz with reliable Plotly implementation
             st.plotly_chart(plot_causal_discovery_plotly(), use_container_width=True)
 
     with st.container(border=True):
@@ -54,10 +55,10 @@ def show_define_phase():
         tab1, tab2, tab3 = st.tabs(["📊 CTQ Tree", "💖 Kano Model", "🤖 NLP Review"])
         with tab1:
             st.markdown("##### **Classical Tool: CTQ Tree**")
-            # OVERHAUL: Replaced graphviz with reliable Plotly implementation
             st.plotly_chart(plot_ctq_tree_plotly(), use_container_width=True)
         with tab2:
             st.markdown("##### **Classical Tool: Kano Model**")
+            # CRITICAL FIX: This call now works because the function was restored in app_helpers.py
             st.plotly_chart(plot_kano_visual(), use_container_width=True)
         with tab3:
             st.markdown("##### **ML Augmentation: NLP on Scientific Literature**")
@@ -131,6 +132,7 @@ def show_measure_phase():
             st.markdown(f'<hr style="margin-top:0; margin-bottom:0.5rem; border-color:{COLORS[cp_color]}">', unsafe_allow_html=True)
             st.metric(label="Process Capability (Cpk)", value=f"{cpk:.2f}", help=cpk_help)
             st.markdown(f'<hr style="margin-top:0; margin-bottom:0.5rem; border-color:{COLORS[cpk_color]}">', unsafe_allow_html=True)
+            
         with st.expander("📊 How to Interpret This Chart"):
             st.markdown("""
             - **What it is:** A histogram of your assay's output compared to its required specification limits (LSL/USL).
@@ -244,10 +246,8 @@ def show_improve_phase():
     with st.container(border=True):
         st.subheader("2. Proactively Mitigating Risks")
         col3, col4 = st.columns(2)
-        with col3:
-            st.markdown("##### **Classical: FMEA**"); st.plotly_chart(plot_fmea_table(), use_container_width=True)
-        with col4:
-            st.markdown("##### **ML Augmentation: Predictive Maintenance**"); st.plotly_chart(plot_rul_prediction(generate_sensor_degradation_data()), use_container_width=True)
+        with col3: st.markdown("##### **Classical: FMEA**"); st.plotly_chart(plot_fmea_table(), use_container_width=True)
+        with col4: st.markdown("##### **ML Augmentation: Predictive Maintenance**"); st.plotly_chart(plot_rul_prediction(generate_sensor_degradation_data()), use_container_width=True)
 
     st.success("""**🏆 Hybrid Strategy for the Improve Phase:**\n1. **Optimize with the Right Tool:** For optimizing a few (<5) parameters, **DOE** is the gold standard. For high-dimensional protocols, use **Bayesian Optimization** for its superior sample efficiency.\n2. **Mitigate Risks (Hybrid):** Use a classical **FMEA** to identify the highest-risk failure modes. For top risks related to equipment, build a **predictive maintenance (RUL) model**.\n3. **The Ultimate Hybrid ("Digital Twin"):** Use data from a space-filling **DOE** to train an ML model of your assay. Then, use **Bayesian Optimization** on this *in silico* twin to find the global optimum before one final confirmation experiment.""")
 
@@ -290,7 +290,7 @@ def show_control_phase():
     st.success("""**🏆 Hybrid Strategy for the Control Phase:**\n1. **Monitor with Levey-Jennings:** Use a classical **Levey-Jennings chart** for primary positive/negative controls for simplicity and regulatory compliance.\n2. **Detect Drifts with EWMA:** For critical secondary metrics, use a more sensitive **EWMA chart** to detect slow reagent or instrument degradation.\n3. **Holistic QC with ML:** For each sample, run a **multivariate QC model** (like Hotelling's T²) on the full profile of NGS QC metrics to flag subtle issues.\n4. **Codify Everything:** The **Control Plan** and **SOPs** must document all charts, limits, and reaction plans.""")
 
 # ==============================================================================
-# PAGE 6: METHODOLOGY COMPARISON & PAGE 7: HYBRID STRATEGY (UNCHANGED)
+# PAGE 6 & 7: COMPARISON & MANIFESTO (UNCHANGED)
 # ==============================================================================
 def show_comparison_matrix():
     st.title("Head-to-Head: Classical DOE vs. ML/Bioinformatics")
