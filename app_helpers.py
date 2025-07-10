@@ -11,44 +11,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
-from scipy.stats import norm, gaussian_kde, f_oneway, t
-from typing import List, Dict, Any, Tuple
-
-# ==============================================================================
-# SECTION 1: CONFIGURATION & SECTION 2: DATA GENERATORS
-# (No changes in these sections - content omitted for brevity, it's the same as before)
-# ==============================================================================
-COLORS = {
-    "primary": "#0072B2",      # Muted Blue
-    "secondary": "#009E73",    # Muted Green
-    "accent": "#D55E00",       # Muted Orange
-    "neutral_yellow": "#F0E442",# Muted Yellow
-    "neutral_pink": "#CC79A7",  # Muted Pink
-    "background": "#F8F9FA",   # Very Light Gray
-    "text": "#212529",         # Dark Gray
-    "light_gray": "#DEE2E6",   # Light Gray for grids/borders
-    "dark_gray": "#495057",    # Medium-Dark Gray
-    "success": "#28A745",      # Green for success
-    "warning": "#FFC107",      # Yellow for warning
-    "danger": "#DC3545",       # Red for danger
-}
-
-def get_custom_css() -> str:
-    """Returns the custom CSS string for the Streamlit app."""
-    return f"""# app_helpers.py
-
-import numpy as np
-import pandas as pd
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
-import graphviz
-import shap
-
-from sklearn.linear_model import LinearRegression
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
-from scipy.stats import norm, gaussian_kde, f_oneway, t, f  # Added 'f' for the F-distribution
+from scipy.stats import norm, gaussian_kde, f_oneway, t, f
 from typing import List, Dict, Any, Tuple
 
 # ==============================================================================
@@ -70,23 +33,24 @@ COLORS = {
     "danger": "#DC3545",       # Red for danger
 }
 
+# CORRECTED: Rewritten using .format() for robustness to avoid f-string parsing issues.
 def get_custom_css() -> str:
     """Returns the custom CSS string for the Streamlit app."""
-    return f"""
+    css = """
     <style>
         /* General App Style */
         .stApp {{
-            background-color: {COLORS['background']};
-            color: {COLORS['text']};
+            background-color: {background};
+            color: {text};
         }}
         /* Main Headers */
         h1, h2 {{
-            color: {COLORS['dark_gray']};
-            border-bottom: 2px solid {COLORS['light_gray']};
+            color: {dark_gray};
+            border-bottom: 2px solid {light_gray};
             padding-bottom: 10px;
         }}
-        h3 {{ color: {COLORS['primary']}; }}
-        h4, h5 {{ color: {COLORS['dark_gray']}; }}
+        h3 {{ color: {primary}; }}
+        h4, h5 {{ color: {dark_gray}; }}
 
         /* Sidebar Style */
         .st-emotion-cache-16txtl3 {{
@@ -95,7 +59,7 @@ def get_custom_css() -> str:
 
         /* Container Borders */
         .st-emotion-cache-1r4qj8v, .st-emotion-cache-1kyxreq {{
-            border: 1px solid {COLORS['light_gray']};
+            border: 1px solid {light_gray};
             border-radius: 0.5rem;
             box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
         }}
@@ -103,16 +67,17 @@ def get_custom_css() -> str:
         /* Button Style */
         .stButton>button {{
             border-radius: 0.5rem;
-            border: 1px solid {COLORS['primary']};
-            color: {COLORS['primary']};
+            border: 1px solid {primary};
+            color: {primary};
         }}
         .stButton>button:hover {{
-            background-color: {COLORS['primary']};
+            background-color: {primary};
             color: white;
-            border: 1px solid {COLORS['primary']};
+            border: 1px solid {primary};
         }}
     </style>
-    """
+    """.format(**COLORS)
+    return css
 
 # ==============================================================================
 # SECTION 2: DATA GENERATORS
@@ -943,17 +908,17 @@ def plot_hotelling_t2_chart() -> go.Figure:
     # Calculate UCL using F-distribution
     n, p = X.shape
     alpha = 0.01 # Corresponds to 99% confidence level
-    # Corrected UCL formula using the F-distribution
+    # CORRECTED: The UCL formula now correctly uses f.ppf (from scipy.stats)
     ucl = (p * (n + 1) * (n - 1)) / (n * (n - p)) * f.ppf(1 - alpha, p, n - p)
 
     fig = go.Figure()
     fig.add_trace(go.Scatter(y=t_squared, mode='lines+markers', name="T² Statistic", line_color=COLORS['primary']))
     fig.add_hline(y=ucl, line=dict(color=COLORS['danger'], dash='dash'), name='UCL')
     
-    # Corrected fillcolor format using rgba
+    # CORRECTED: The fillcolor format now robustly uses rgba()
     hex_color = COLORS['accent']
     r, g, b = int(hex_color[1:3], 16), int(hex_color[3:5], 16), int(hex_color[5:7], 16)
-    rgba_fillcolor = f'rgba({r}, {g}, {b}, 0.2)' # Opacity of 0.2
+    rgba_fillcolor = f'rgba({r}, {g}, {b}, 0.2)'
     
     fig.add_vrect(x0=80, x1=100, fillcolor=rgba_fillcolor, line_width=0, name="Induced Shift")
     
