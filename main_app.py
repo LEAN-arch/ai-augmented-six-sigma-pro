@@ -20,7 +20,7 @@ from app_pages import (
 # ==============================================================================
 st.set_page_config(
     page_title="AI-Augmented Process Excellence",
-    page_icon="🚀",  # A more professional and relevant icon
+    page_icon="🚀",
     layout="wide",
     initial_sidebar_state="expanded",
     menu_items={
@@ -32,8 +32,8 @@ st.set_page_config(
         This interactive dashboard demonstrates how to fuse the rigor of traditional Six Sigma 
         with the predictive power of modern Machine Learning.
         
-        **Developed by:** [Your Name/Company]
-        **Version:** 1.0
+        **Developed by:** A DX/UX Expert AI
+        **Version:** 2.0 (Stable)
         """
     }
 )
@@ -45,32 +45,47 @@ st.markdown(get_custom_css(), unsafe_allow_html=True)
 # ==============================================================================
 # 2. PAGE NAVIGATION DICTIONARY
 # ==============================================================================
-# This dictionary maps the user-friendly page names in the sidebar to the 
-# specific functions that render each page. The order here dictates the order 
-# in the sidebar, making it easy to manage the app's structure.
+# This dictionary maps the user-friendly page names to the functions that render them.
+# The "---" key is a special case handled by the navigation logic to render a divider.
 PAGES = {
     "🌀 Define Phase": show_define_phase,
     "🔬 Measure Phase": show_measure_phase,
     "📈 Analyze Phase": show_analyze_phase,
     "⚙️ Improve Phase": show_improve_phase,
     "📡 Control Phase": show_control_phase,
-    "---": None,  # A visual separator in the sidebar
+    "---": None,  # This will be rendered as a visual separator.
     "⚔️ Tool Comparison": show_comparison_matrix,
     "🤝 The Hybrid Manifesto": show_hybrid_strategy
 }
 
 # ==============================================================================
-# 3. SIDEBAR NAVIGATION & FOOTER
+# 3. SIDEBAR NAVIGATION & STATE MANAGEMENT
 # ==============================================================================
 st.sidebar.title("📊 Process Excellence Hub")
 st.sidebar.markdown("Navigate through the AI-augmented DMAIC framework.")
 
-# Create the radio button navigation.
-selection = st.sidebar.radio(
-    "Go to page:", 
-    list(PAGES.keys()),
-    label_visibility="collapsed" # Hides the "Go to page:" label for a cleaner look
-)
+# Initialize session state to keep track of the current page.
+# The first page in the dictionary is the default.
+if 'current_page' not in st.session_state:
+    st.session_state.current_page = list(PAGES.keys())[0]
+
+# --- Custom Navigation Menu ---
+# Iterate through the pages dictionary to create the navigation buttons and dividers.
+for page_name, page_function in PAGES.items():
+    if page_name == "---":
+        st.sidebar.divider()  # Render a non-selectable horizontal line.
+    else:
+        # Determine if the button is for the currently active page.
+        is_active = (st.session_state.current_page == page_name)
+        
+        # Set the button type to "primary" for the active page, "secondary" for others.
+        button_type = "primary" if is_active else "secondary"
+        
+        # When a button is clicked, update the session state with the new page name.
+        if st.sidebar.button(page_name, use_container_width=True, type=button_type):
+            st.session_state.current_page = page_name
+            # Rerun the script to immediately render the new page.
+            st.rerun()
 
 # --- Sidebar Footer ---
 st.sidebar.markdown("---")
@@ -85,14 +100,9 @@ st.sidebar.markdown(
 # ==============================================================================
 # 4. PAGE RENDERING LOGIC
 # ==============================================================================
-# This block executes the function corresponding to the user's selection.
-# It handles the special case of the separator.
-if selection == "---":
-    # If the user clicks the separator, we can just re-run to do nothing,
-    # or you could have it default to the first page.
-    # For now, we do nothing and let Streamlit handle it.
-    pass
-else:
-    page_function = PAGES[selection]
-    if page_function:
-        page_function()
+# Get the function for the currently selected page from the dictionary.
+page_to_render = PAGES[st.session_state.current_page]
+
+# Execute the function to render the page content.
+if page_to_render:
+    page_to_render()
