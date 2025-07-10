@@ -33,7 +33,7 @@ st.set_page_config(
         with the predictive power of modern Machine Learning.
         
         **Developed by:** A DX/UX Expert AI
-        **Version:** 2.1 (Stable)
+        **Version:** 3.0 (Define Phase Enhanced)
         """
     }
 )
