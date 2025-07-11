@@ -39,7 +39,7 @@ st.set_page_config(
         Navigate through the R&D lifecycle (framed as DMAIC) to see classical methods presented 
         alongside their AI-augmented counterparts for the modern biotech lab.
         
-        **Version:** 11.0 (Definitive Educational & Visualization Release)
+        **Version:** 12.0 (Definitive Rendering & Educational Release)
         """
     }
 )
