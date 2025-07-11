@@ -3,7 +3,7 @@
 import streamlit as st
 import numpy as np
 
-# Import all necessary helper functions from the single, corrected helper file.
+# Import all necessary helper functions from the single, definitive helper file.
 from app_helpers import *
 
 
@@ -36,7 +36,6 @@ def show_define_phase():
     
     with st.container(border=True):
         st.subheader("1. The Mandate: Assay Design & Development Plan")
-        # CRITICAL FIX: This call now works because the function was restored in app_helpers.py
         st.plotly_chart(plot_project_charter_visual(), use_container_width=True)
 
     with st.container(border=True):
@@ -44,7 +43,6 @@ def show_define_phase():
         col1, col2 = st.columns(2)
         with col1:
             st.markdown("##### **Classical Tool: SIPOC**")
-            # CRITICAL FIX: This call now works because the function was restored in app_helpers.py
             st.plotly_chart(plot_sipoc_visual(), use_container_width=True)
         with col2:
             st.markdown("##### **ML Augmentation: Causal Discovery**")
@@ -58,7 +56,6 @@ def show_define_phase():
             st.plotly_chart(plot_ctq_tree_plotly(), use_container_width=True)
         with tab2:
             st.markdown("##### **Classical Tool: Kano Model**")
-            # CRITICAL FIX: This call now works because the function was restored in app_helpers.py
             st.plotly_chart(plot_kano_visual(), use_container_width=True)
         with tab3:
             st.markdown("##### **ML Augmentation: NLP on Scientific Literature**")
@@ -96,8 +93,8 @@ def show_measure_phase():
         with st.expander("📊 How to Interpret This Chart"):
             st.markdown("""
             - **What it is:** A Pareto chart of the sources of variation in your measurement system.
-            - **Blue Bars (Contribution):** Shows the percentage of total measurement error attributable to each source.
-            - **Grey Line (Cumulative %):** Shows the cumulative contribution, highlighting the "vital few" sources.
+            - **Bars (Contribution):** Shows the percentage of total measurement error attributable to each source.
+            - **Line (Cumulative %):** Shows the cumulative contribution, highlighting the "vital few" sources.
             - **Takeaway:** In this example, the vast majority (92%) of variation is from the assay itself, which is ideal. The measurement system (Repeatability and Reproducibility) contributes very little error, meaning we can trust our measurements. If `Reproducibility (Operator)` were high, it would signal a need for better training.
             """)
 
@@ -182,9 +179,7 @@ def show_analyze_phase():
 
     with st.container(border=True):
         st.subheader("3. Finding the Drivers: Modeling Assay Performance (Y = f(x))")
-        df_reg = generate_nonlinear_data()
-        fig_reg, model, X_reg = train_and_plot_regression_models(df_reg)
-        
+        df_reg = generate_nonlinear_data(); fig_reg, model, X_reg = train_and_plot_regression_models(df_reg)
         col3, col4 = st.columns(2)
         with col3:
             st.markdown("##### **Classical vs. ML Model Fit**")
