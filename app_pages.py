@@ -57,16 +57,28 @@ def show_define_phase():
         with tab2:
             st.markdown("##### **Classical Tool: Kano Model**")
             st.plotly_chart(plot_kano_visual(), use_container_width=True)
+            with st.expander("📊 Methodology & Interpretation"):
+                st.markdown("""
+                **Methodology:** The Kano model is a framework for categorizing product or service features based on how they impact customer satisfaction. It helps prioritize development efforts.
+                - **Basic (Must-be):** Features that are taken for granted. Their absence causes dissatisfaction, but their presence doesn't increase satisfaction (e.g., a car having brakes).
+                - **Performance:** Features for which more is better. Satisfaction is proportional to how well they are implemented (e.g., a car's fuel efficiency).
+                - **Excitement (Delighter):** Unexpected features that create high satisfaction when present, but their absence does not cause dissatisfaction (e.g., the first time a car had a built-in GPS).
+                
+                **Interpretation:** The chart shows the relationship between feature implementation (x-axis) and customer satisfaction (y-axis) for each category. This model is crucial for defining the Target Product Profile (TPP) and ensuring resources are focused on features that deliver the most value to the user (e.g., the clinician).
+                """)
         with tab3:
             st.markdown("##### **ML Augmentation: NLP on Scientific Literature**")
             st.plotly_chart(plot_voc_bubble_chart(), use_container_width=True)
-            with st.expander("📊 How to Interpret This Chart"):
+            with st.expander("📊 Methodology & Interpretation"):
                 st.markdown("""
-                - **What it is:** This bubble chart visualizes topics extracted from scientific literature.
-                - **Y-Axis (Sentiment):** Higher values indicate more positive language associated with a topic.
-                - **X-Axis (Topic):** The specific biomarker or methodology identified.
-                - **Bubble Size (Count):** Larger bubbles mean the topic was mentioned more frequently in publications.
-                - **Takeaway:** We can quickly see that `LOD <0.1%` is a highly desirable and frequently mentioned performance characteristic. `ddPCR` and `Shallow WGS` are mentioned less and have negative sentiment, suggesting they may be viewed as less favorable or have known issues.
+                **Methodology:** Natural Language Processing (NLP) models, like transformers (e.g., SciBERT), are used to parse thousands of scientific publications. They perform two key tasks:
+                1.  **Topic Modeling:** Identify and group recurring themes, such as biomarkers (`EGFR`, `KRAS`) or lab methods (`ddPCR`).
+                2.  **Sentiment Analysis:** Score the context around each topic to determine if it's discussed positively (e.g., "highly effective") or negatively (e.g., "prone to artifacts").
+
+                **Interpretation:**
+                - **Y-Axis (Sentiment):** Higher values indicate more positive language.
+                - **Bubble Size (Count):** Larger bubbles mean the topic was mentioned more frequently.
+                - **Takeaway:** This allows a rapid, data-driven survey of the scientific landscape. Here, we see that `LOD <0.1%` is a highly desirable and frequently mentioned performance goal. `ddPCR` and `Shallow WGS` are mentioned less and have negative sentiment, suggesting they may be viewed as less favorable or have known issues in the literature.
                 """)
 
     st.success("""**🏆 Hybrid Strategy for the Define Phase:**\n1. **Mandate & Scope (Classical):** Begin with a formal **Assay Design Plan** and a team-based **SIPOC** of the lab workflow to establish clear boundaries and alignment.\n2. **Discover at Scale (ML):** Deploy **NLP Topic Modeling** on scientific literature to generate a data-driven list of critical biomarkers and performance benchmarks.\n3. **Translate & Prioritize (Hybrid):** Use the NLP outputs to build a data-grounded **CTQ Tree**, ensuring it reflects the current scientific landscape and defines the **Target Product Profile (TPP)**.""")
@@ -90,12 +102,14 @@ def show_measure_phase():
         st.subheader("1. Prerequisite: Measurement System Analysis (MSA)")
         st.warning("**You cannot trust your assay data until you trust your measurement system.** MSA ensures observed variability comes from the biology, not the lab process.")
         st.plotly_chart(plot_gage_rr_pareto(), use_container_width=True)
-        with st.expander("📊 How to Interpret This Chart"):
+        with st.expander("📊 Methodology & Interpretation"):
             st.markdown("""
-            - **What it is:** A Pareto chart of the sources of variation in your measurement system.
-            - **Bars (Contribution):** Shows the percentage of total measurement error attributable to each source.
-            - **Line (Cumulative %):** Shows the cumulative contribution, highlighting the "vital few" sources.
-            - **Takeaway:** In this example, the vast majority (92%) of variation is from the assay itself, which is ideal. The measurement system (Repeatability and Reproducibility) contributes very little error, meaning we can trust our measurements. If `Reproducibility (Operator)` were high, it would signal a need for better training.
+                **Methodology:** A Gage R&R (Repeatability & Reproducibility) study is a designed experiment to quantify the amount of variation in a measurement system. It partitions the total observed variance into its components. The goal is for the vast majority of variation to come from the parts being measured (the 'Assay Variation'), not the measurement system itself.
+                
+                **Interpretation:**
+                - **Bars (Contribution):** Shows the percentage of total measurement error attributable to each source.
+                - **Line (Cumulative %):** Shows the cumulative contribution, highlighting the "vital few" sources according to the 80/20 rule.
+                - **Takeaway:** Here, 92% of variation is from the assay itself (good). The measurement system (`Repeatability` from the sequencer and `Reproducibility` between operators) contributes very little error. This gives us confidence to proceed. If `Reproducibility` were high, it would signal a need for better operator training.
             """)
 
     with st.container(border=True):
@@ -130,14 +144,23 @@ def show_measure_phase():
             st.metric(label="Process Capability (Cpk)", value=f"{cpk:.2f}", help=cpk_help)
             st.markdown(f'<hr style="margin-top:0; margin-bottom:0.5rem; border-color:{COLORS[cpk_color]}">', unsafe_allow_html=True)
             
-        with st.expander("📊 How to Interpret This Chart"):
-            st.markdown("""
-            - **What it is:** A histogram of your assay's output compared to its required specification limits (LSL/USL).
-            - **Cp (Potential):** Asks, "Is the process variation *narrow enough* to fit within the spec window?" A value > 1.33 is good.
-            - **Cpk (Capability):** Asks, "Is the process *actually centered* and performing within the spec window?" A value > 1.33 is good. Cpk is the true measure of performance.
-            - **Takeaway:** You can have a good Cp (low variation) but a bad Cpk if your process mean is not centered between the spec limits. This chart helps diagnose whether you need to reduce variation, shift the mean, or both.
-            """)
-
+        with st.expander("📊 Methodology & Interpretation"):
+            st.subheader("Methodology")
+            st.markdown("Capability analysis measures how well a process can meet its specification limits. It compares the 'Voice of the Process' (the actual distribution of your data) to the 'Voice of the Customer' (the required specification limits).")
+            st.subheader("The Math Behind It")
+            st.markdown("Two key metrics are calculated:")
+            st.latex(r'''
+            C_p = \frac{\text{Specification Width}}{\text{Process Width}} = \frac{USL - LSL}{6\sigma}
+            ''')
+            st.markdown("- **Cp (Process Potential):** Measures if the process variation is *narrow enough* to fit. It ignores the process average.")
+            st.latex(r'''
+            C_{pk} = \min\left(\frac{USL - \mu}{3\sigma}, \frac{\mu - LSL}{3\sigma}\right)
+            ''')
+            st.markdown("- **Cpk (Process Capability):** Measures if the process is *actually capable and centered*. This is the true measure of performance. It accounts for both variation and centering.")
+            st.markdown("Where: $USL$ = Upper Spec Limit, $LSL$ = Lower Spec Limit, $\mu$ = Process Mean, $\sigma$ = Process Standard Deviation.")
+            st.subheader("Interpretation")
+            st.markdown("- A value > 1.33 is generally considered capable for most processes. \n- A high Cp but a low Cpk indicates that your process has low variation but is off-center. You need to shift the mean. \n- A low Cp and low Cpk indicates that your process has too much variation. You need to investigate root causes to reduce it.")
+            
     st.success("""**🏆 Hybrid Strategy for the Measure Phase:**\n1. **Validate (Classical):** Always perform a **Gage R&R** on critical instruments and operators before baselining performance.\n2. **Discover (ML):** Run **Process Mining** on LIMS event logs to get an objective map of the real lab workflow and its bottlenecks.\n3. **Detail (Classical):** Use insights from process mining to guide a targeted, physical **VSM** exercise.\n4. **Baseline & Diagnose (Hybrid):** Report the official **Cpk** baseline. Internally, use the **KDE plot** and **Metric Visuals** to diagnose the *reason* for poor capability.""")
 
 # ==============================================================================
@@ -173,9 +196,24 @@ def show_analyze_phase():
             st.plotly_chart(fig_anova, use_container_width=True)
             if p_val < 0.05: st.error(f"P-value is {p_val:.4f}. A statistically significant difference exists.", icon="🚨")
             else: st.success(f"P-value is {p_val:.4f}. No significant difference detected.", icon="✅")
+            with st.expander("📊 Methodology & Interpretation"):
+                st.subheader("Methodology")
+                st.markdown("ANOVA is a statistical test used to determine whether there are any statistically significant differences between the means of two or more independent groups. It works by partitioning the total variance into variance *between* groups and variance *within* groups.")
+                st.subheader("The Math Behind It")
+                st.markdown("The core of ANOVA is the F-statistic:")
+                st.latex(r''' F = \frac{\text{Mean Square Between Groups (MSB)}}{\text{Mean Square Within Groups (MSW)}} = \frac{\text{Variance between groups}}{\text{Variance within groups}} ''')
+                st.markdown("- A large F-statistic suggests that the variation between the groups is greater than the variation within the groups, implying a real difference between the group means.")
+                st.subheader("Interpretation")
+                st.markdown("- **Null Hypothesis ($H_0$):** All group means are equal. \n- **P-value:** The probability of observing an F-statistic as large as the one calculated, assuming the null hypothesis is true. \n- **Conclusion:** If the p-value is small (typically < 0.05), we reject the null hypothesis and conclude that at least one group mean is different from the others.")
         with tab2:
             st.markdown("##### **ML Augmentation: Permutation Testing**")
             st.plotly_chart(plot_permutation_test(anova_data), use_container_width=True)
+            with st.expander("📊 Methodology & Interpretation"):
+                st.subheader("Methodology")
+                st.markdown("A permutation test is a non-parametric method that does not rely on assumptions about the data's distribution (like normality). It directly simulates the null hypothesis.")
+                st.markdown("1. Calculate the observed difference between the means of two groups. \n2. Pool all the data together. \n3. Repeatedly (e.g., 1000 times) shuffle the pooled data and randomly re-assign it to the two groups. \n4. Calculate the difference in means for each shuffled permutation to create a distribution of differences under the null hypothesis. \n5. The p-value is the proportion of permuted differences that are at least as extreme as the observed difference.")
+                st.subheader("Interpretation")
+                st.markdown("- The histogram shows the distribution of mean differences that could occur by chance alone. \n- The dashed red line shows the actual difference you observed in your experiment. \n- **Takeaway:** If your observed difference is far out in the tails of the histogram, it's unlikely to have occurred by chance, resulting in a small p-value.")
 
     with st.container(border=True):
         st.subheader("3. Finding the Drivers: Modeling Assay Performance (Y = f(x))")
@@ -210,13 +248,16 @@ def show_improve_phase():
             col1, col2 = st.columns(2)
             with col1: st.plotly_chart(plot_doe_cube(doe_data), use_container_width=True)
             with col2: st.plotly_chart(fig_doe_main, use_container_width=True); st.plotly_chart(fig_doe_interaction, use_container_width=True)
-            with st.expander("📊 How to Interpret These Charts"):
-                st.markdown("""
-                - **3D Cube Plot:** Visualizes the design space. Each corner is an experimental run. The color shows the measured `Library Yield`.
-                - **Main Effects Plot:** Shows the average effect of each factor. A large bar (positive or negative) indicates a strong influence. Here, `Anneal Temp` has the largest (negative) effect.
-                - **Interaction Plot:** Checks if the effect of one factor depends on the level of another. **Non-parallel lines indicate an interaction.** Here, the lines are not parallel, showing a strong interaction between `Anneal Temp` and `PCR Cycles`.
-                - **Takeaway:** To maximize yield, we need to set `Anneal Temp` to Low (-1) and `PCR Cycles` to High (+1), and also consider their interaction.
-                """)
+            with st.expander("📊 Methodology & Interpretation"):
+                st.subheader("Methodology")
+                st.markdown("Design of Experiments (DOE) is a systematic method to determine the relationship between factors affecting a process and the output of that process. It is far more efficient than changing one factor at a time.")
+                st.subheader("The Math Behind It")
+                st.markdown("- **Main Effect:** The average change in the output (response) when a factor is changed from its low level to its high level.")
+                st.latex(r''' \text{Effect}_A = \bar{y}_{A, \text{high}} - \bar{y}_{A, \text{low}} ''')
+                st.markdown("- **Interaction Effect:** Occurs when the effect of one factor depends on the level of another factor.")
+                st.latex(r''' \text{Interaction}_{AB} = \frac{\text{Effect}_A(\text{at } B_{high}) - \text{Effect}_A(\text{at } B_{low})}{2} ''')
+                st.subheader("Interpretation")
+                st.markdown("- **3D Cube Plot:** Visualizes the design space. Each corner is an experimental run. The color shows the measured `Library Yield`. \n- **Main Effects Plot:** Shows the average effect of each factor. A large bar (positive or negative) indicates a strong influence. Here, `Anneal Temp` has the largest (negative) effect. \n- **Interaction Plot:** Checks for interactions. **Non-parallel lines indicate a significant interaction.** Here, the lines are not parallel, showing a strong interaction between `Anneal Temp` and `PCR Cycles`. \n- **Takeaway:** To maximize yield, we should set `Anneal Temp` to Low (-1) and `PCR Cycles` to High (+1), a conclusion that would be difficult to reach by testing one factor at a time.")
         with tab2:
             st.markdown("##### **ML Augmentation: Bayesian Optimization**")
             st.sidebar.header("🔬 Simulators"); st.sidebar.markdown("---"); st.sidebar.subheader("Bayesian Optimization")
@@ -228,21 +269,40 @@ def show_improve_phase():
             if st.sidebar.button("Reset Simulation", key='bo_reset'): st.session_state.sampled_points = {'x': [2.0, 18.0], 'y': [true_func(2.0), true_func(18.0)]}
             fig_bo, _ = plot_bayesian_optimization_interactive(true_func, x_range, st.session_state.sampled_points)
             st.plotly_chart(fig_bo, use_container_width=True)
-            with st.expander("📊 How to Interpret This Chart"):
-                st.markdown("""
-                - **What it is:** A simulation of an intelligent search for an optimal parameter setting.
-                - **True Performance Curve (dashed grey):** The "real" assay performance, which is unknown to the algorithm.
-                - **Experiments Run (red 'x'):** The actual experiments performed.
-                - **GP Model of Assay (blue line):** The algorithm's current belief about how the assay behaves, based on the experiments.
-                - **Acquisition Fn (green line):** The algorithm's strategy for picking the next experiment. It balances exploring uncertain regions (wide confidence interval) and exploiting known high-performing regions.
-                - **Takeaway:** The algorithm avoids wasting experiments on regions it knows are poor. It intelligently chooses points to quickly find the peak of the hidden performance curve, saving time and resources compared to a brute-force search.
-                """)
+            with st.expander("📊 Methodology & Interpretation"):
+                st.subheader("Methodology")
+                st.markdown("Bayesian Optimization is an intelligent search algorithm for finding the optimum of an expensive-to-evaluate function. It works in a loop:")
+                st.markdown("1. **Build a surrogate model:** Fit a probabilistic model (like a Gaussian Process) to all the data collected so far. \n2. **Define an acquisition function:** Use the model's predictions and uncertainty to decide where to sample next. \n3. **Run the experiment:** Perform the experiment at the new point and add the result to the dataset.")
+                st.subheader("The Math Behind It")
+                st.markdown("A common acquisition function is Upper Confidence Bound (UCB):")
+                st.latex(r''' \text{UCB}(x) = \mu(x) + \kappa\sigma(x) ''')
+                st.markdown("Where $\mu(x)$ is the model's mean prediction at point $x$, $\sigma(x)$ is the standard deviation (uncertainty), and $\kappa$ is a parameter that balances **exploitation** (sampling where the mean is high) and **exploration** (sampling where uncertainty is high).")
+                st.subheader("Interpretation")
+                st.markdown("- **Takeaway:** The algorithm avoids wasting experiments on regions it knows are poor. It intelligently chooses points to quickly find the peak of the hidden performance curve, saving time and resources compared to a brute-force search or a full DOE.")
 
     with st.container(border=True):
         st.subheader("2. Proactively Mitigating Risks")
         col3, col4 = st.columns(2)
-        with col3: st.markdown("##### **Classical: FMEA**"); st.plotly_chart(plot_fmea_table(), use_container_width=True)
-        with col4: st.markdown("##### **ML Augmentation: Predictive Maintenance**"); st.plotly_chart(plot_rul_prediction(generate_sensor_degradation_data()), use_container_width=True)
+        with col3:
+            st.markdown("##### **Classical: FMEA**")
+            st.plotly_chart(plot_fmea_table(), use_container_width=True)
+            with st.expander("📊 Methodology & Interpretation"):
+                st.subheader("Methodology")
+                st.markdown("Failure Mode and Effects Analysis (FMEA) is a systematic, team-based activity to identify and prevent potential process failures. Each potential failure mode is scored on three criteria:")
+                st.markdown("- **Severity (S):** How severe is the effect of the failure? (1-10) \n- **Occurrence (O):** How frequently is the failure likely to occur? (1-10) \n- **Detection (D):** How likely are we to detect the failure before it reaches the customer? (1-10, where 1 is very likely to detect)")
+                st.subheader("The Math Behind It")
+                st.latex(r''' \text{Risk Priority Number (RPN)} = S \times O \times D ''')
+                st.markdown("- The RPN is used to rank and prioritize the failure modes for corrective action.")
+        with col4:
+            st.markdown("##### **ML Augmentation: Predictive Maintenance**")
+            st.plotly_chart(plot_rul_prediction(generate_sensor_degradation_data()), use_container_width=True)
+            with st.expander("📊 Methodology & Interpretation"):
+                st.subheader("Methodology")
+                st.markdown("Predictive maintenance uses sensor data from equipment to predict when a component is likely to fail. In this case, we model the degradation of a sequencer's laser power over time.")
+                st.subheader("The Math Behind It")
+                st.markdown("The degradation is modeled as an exponential decay process:")
+                st.latex(r''' P(t) = P_0 e^{-kt} ''')
+                st.markdown("Where $P(t)$ is the power at time $t$, $P_0$ is the initial power, and $k$ is the decay constant. We fit this model to historical data to predict the Remaining Useful Life (RUL) before the power drops below a failure threshold.")
 
     st.success("""**🏆 Hybrid Strategy for the Improve Phase:**\n1. **Optimize with the Right Tool:** For optimizing a few (<5) parameters, **DOE** is the gold standard. For high-dimensional protocols, use **Bayesian Optimization** for its superior sample efficiency.\n2. **Mitigate Risks (Hybrid):** Use a classical **FMEA** to identify the highest-risk failure modes. For top risks related to equipment, build a **predictive maintenance (RUL) model**.\n3. **The Ultimate Hybrid ("Digital Twin"):** Use data from a space-filling **DOE** to train an ML model of your assay. Then, use **Bayesian Optimization** on this *in silico* twin to find the global optimum before one final confirmation experiment.""")
 
@@ -261,22 +321,36 @@ def show_control_phase():
         ewma_lambda = st.sidebar.slider("EWMA Lambda (λ)", 0.1, 0.5, 0.2, 0.05, help="Higher λ reacts faster to shifts.")
         chart_data = generate_control_chart_data(shift_magnitude=shift_mag)
         
-        tab1, tab2, tab3 = st.tabs(["📊 Levey-Jennings", "📈 EWMA", "📉 CUSUM"])
+        tab1, tab2, tab3, tab4 = st.tabs(["📊 Levey-Jennings", "📈 EWMA", "📉 CUSUM", "🤖 Multivariate QC"])
         with tab1:
             st.markdown("##### **Classical: Levey-Jennings Chart (Shewhart)**")
             st.plotly_chart(plot_shewhart_chart(chart_data), use_container_width=True)
-            with st.expander("📊 How to Interpret This Chart"):
-                st.markdown("- **What it is:** The standard QC chart. It plots individual QC measurements against control limits set at ±3 standard deviations from the mean. \n- **Best for:** Detecting large, sudden process shifts. \n- **Limitation:** It is not sensitive to small, gradual drifts.")
+            with st.expander("📊 Methodology & Interpretation"):
+                st.subheader("Methodology"); st.markdown("The most common SPC chart. It plots individual QC measurements against control limits derived from the process's historical mean and standard deviation.")
+                st.subheader("The Math Behind It"); st.latex(r''' \text{UCL/LCL} = \mu \pm 3\sigma '''); st.markdown("Where $\mu$ is the historical mean and $\sigma$ is the historical standard deviation.")
+                st.subheader("Interpretation"); st.markdown("- **Best for:** Detecting large, sudden process shifts. \n- **Limitation:** It is not sensitive to small, gradual drifts, as it has no 'memory' of past data points.")
         with tab2:
             st.markdown("##### **Advanced: EWMA Chart**")
             st.plotly_chart(plot_ewma_chart(chart_data, lambda_val=ewma_lambda), use_container_width=True)
-            with st.expander("📊 How to Interpret This Chart"):
-                st.markdown("- **What it is:** An Exponentially Weighted Moving Average chart. It gives more weight to recent data points, essentially having a 'memory'. \n- **Best for:** Detecting small, sustained drifts in the process mean (e.g., slow reagent degradation). \n- **Takeaway:** The EWMA chart (green line) will often detect a small shift much earlier than a standard Levey-Jennings chart.")
+            with st.expander("📊 Methodology & Interpretation"):
+                st.subheader("Methodology"); st.markdown("An Exponentially Weighted Moving Average chart gives more weight to recent data points, essentially having a 'memory'.")
+                st.subheader("The Math Behind It"); st.latex(r''' E_t = \lambda y_t + (1-\lambda)E_{t-1} '''); st.markdown("Where $E_t$ is the EWMA value at time $t$, $y_t$ is the current observation, and $\lambda$ (lambda) is a smoothing constant (0 < $\lambda$ ≤ 1).")
+                st.subheader("Interpretation"); st.markdown("- **Best for:** Detecting small, sustained drifts in the process mean (e.g., slow reagent degradation). \n- **Takeaway:** The EWMA chart (green line) will often detect a small shift much earlier than a standard Levey-Jennings chart. A smaller $\lambda$ is more sensitive to smaller shifts.")
         with tab3:
             st.markdown("##### **Advanced: CUSUM Chart**")
             st.plotly_chart(plot_cusum_chart(chart_data), use_container_width=True)
-            with st.expander("📊 How to Interpret This Chart"):
-                st.markdown("- **What it is:** A Cumulative Sum chart. It plots the cumulative sum of deviations from a target value. \n- **Best for:** Detecting very small, persistent shifts in the process mean. It is the most sensitive of the three charts to tiny drifts. \n- **Takeaway:** When a process has a very small shift, the CUSUM value will steadily increase (or decrease) until it crosses the control limit (H), signaling a problem.")
+            with st.expander("📊 Methodology & Interpretation"):
+                st.subheader("Methodology"); st.markdown("A Cumulative Sum chart plots the cumulative sum of deviations from a target value. It is extremely sensitive to small, persistent shifts.")
+                st.subheader("The Math Behind It"); st.latex(r''' S_H(i) = \max(0, S_H(i-1) + (y_i - \mu_0) - k) '''); st.latex(r''' S_L(i) = \min(0, S_L(i-1) + (y_i - \mu_0) + k) '''); st.markdown("Where $S_H$ and $S_L$ are the upper and lower CUSUMs, $k$ is an allowance or 'slack' value, and an out-of-control signal occurs if $S_H$ or $S_L$ cross a control limit $H$.")
+                st.subheader("Interpretation"); st.markdown("- **Best for:** Detecting very small, persistent shifts in the process mean. \n- **Takeaway:** When a process has a very small shift, the CUSUM value will steadily increase (or decrease) until it crosses the control limit, signaling a problem often invisible to other charts.")
+        with tab4:
+            st.markdown("##### **ML Augmentation: Multivariate QC**")
+            st.plotly_chart(plot_hotelling_t2_chart(), use_container_width=True)
+            with st.expander("📊 Methodology & Interpretation"):
+                st.subheader("Methodology"); st.markdown("Monitors multiple correlated variables at once. Instead of separate charts for `% Mapped` and `% Duplication`, it combines them into a single statistic that represents the overall 'health' of the QC profile.")
+                st.subheader("The Math Behind It"); st.markdown("Hotelling's T² statistic measures the statistical distance of a data point from the center of a multivariate distribution, accounting for the covariance between variables."); st.latex(r''' T^2 = (\mathbf{x} - \bar{\mathbf{x}})^T \mathbf{S}^{-1} (\mathbf{x} - \bar{\mathbf{x}}) '''); st.markdown("Where $\mathbf{x}$ is the vector of current observations, $\bar{\mathbf{x}}$ is the vector of historical means, and $\mathbf{S}^{-1}$ is the inverse of the covariance matrix.")
+                st.subheader("Interpretation"); st.markdown("- **Takeaway:** A single point on this chart can be out of control even if all individual metrics are within their own limits. This is powerful for detecting subtle, correlated shifts that would otherwise be missed.")
+
 
     with st.container(border=True):
         st.subheader("2. Formalizing the Gains: The Control Plan & SOPs")
