@@ -93,40 +93,37 @@ def generate_hotelling_data() -> pd.DataFrame:
     return pd.DataFrame(np.vstack((data_in, data_out)), columns=['Pct_Mapped', 'Pct_Duplication'])
 
 # ==============================================================================
-# SECTION 3: VISUALIZATION HELPERS (DEFINITIVE OVERHAUL)
+# SECTION 3: VISUALIZATION HELPERS (DEFINITIVE PROFESSIONAL OVERHAUL)
 # ==============================================================================
 
-def _create_network_fig(height=400) -> go.Figure:
+def _create_network_fig(height=400, x_range=None, y_range=None) -> go.Figure:
     """Helper to create a blank, styled Plotly figure for network graphs."""
     fig = go.Figure()
     fig.update_layout(
         showlegend=False, plot_bgcolor='white', height=height,
-        xaxis=dict(showgrid=False, zeroline=False, visible=False),
-        yaxis=dict(showgrid=False, zeroline=False, visible=False),
+        xaxis=dict(showgrid=False, zeroline=False, visible=False, range=x_range),
+        yaxis=dict(showgrid=False, zeroline=False, visible=False, range=y_range),
         margin=dict(t=20, b=20, l=20, r=20),
     )
     return fig
 
 def _add_network_nodes_and_edges(fig: go.Figure, nodes: Dict, edges: List[Tuple]):
-    """Helper to add styled annotations as nodes and lines as edges."""
-    # Add Edges
+    """SME Overhaul: Uses annotations as nodes for auto-sizing and professional styling."""
+    # Add Edges first so they are in the background
     for edge in edges:
         start_node, end_node = nodes[edge[0]], nodes[edge[1]]
         fig.add_trace(go.Scatter(
-            x=[start_node['x'], end_node['x']],
-            y=[start_node['y'], end_node['y']],
-            mode='lines',
-            line=dict(color=COLORS['light_gray'], width=2),
-            hoverinfo='none'
+            x=[start_node['x'], end_node['x']], y=[start_node['y'], end_node['y']],
+            mode='lines', line=dict(color=COLORS['light_gray'], width=2), hoverinfo='none'
         ))
 
-    # Add Nodes (as annotations for auto-sizing and better styling)
+    # Add Nodes using annotations for robust, auto-sizing text boxes
     for node_id, node_data in nodes.items():
         fig.add_annotation(
             x=node_data['x'], y=node_data['y'],
             text=f"<b>{node_data['text'].replace('<br>', '<br>')}</b>",
             showarrow=False,
-            font=dict(color=COLORS['text'], size=11),
+            font=dict(color=COLORS['text'], size=11, family="Arial"),
             bgcolor=hex_to_rgba(node_data.get('color', COLORS['primary']), 0.15),
             bordercolor=node_data.get('color', COLORS['primary']),
             borderwidth=2,
@@ -135,7 +132,6 @@ def _add_network_nodes_and_edges(fig: go.Figure, nodes: Dict, edges: List[Tuple]
         )
 
 def plot_ctq_tree_plotly() -> go.Figure:
-    """OVERHAUL: Re-implemented CTQ Tree using Plotly annotations for robust rendering."""
     fig = _create_network_fig(height=450)
     nodes = {
         'Need':    {'x': 0, 'y': 2, 'text': 'Clinician Need<br>Reliable Early CRC Detection', 'color': COLORS['accent']},
@@ -152,24 +148,24 @@ def plot_ctq_tree_plotly() -> go.Figure:
     return fig
 
 def plot_causal_discovery_plotly() -> go.Figure:
-    """OVERHAUL: Re-implemented Causal Discovery graph using Plotly annotations."""
     fig = _create_network_fig(height=350)
     nodes = {
         'ReagentLot':   {'x': 0, 'y': 1.5, 'text': 'Reagent Lot', 'color': COLORS['primary']},
         'DNAnq':        {'x': 0, 'y': 0.5, 'text': 'DNA Input (ng)', 'color': COLORS['primary']},
-        'LigationTime': {'x': 1, 'y': 1, 'text': 'Ligation Time', 'color': COLORS['secondary']},
-        'AdapterDimer': {'x': 2, 'y': 1, 'text': 'Adapter-Dimer %', 'color': COLORS['accent']}
+        'LigationTime': {'x': 1.2, 'y': 1, 'text': 'Ligation Time', 'color': COLORS['secondary']},
+        'AdapterDimer': {'x': 2.4, 'y': 1, 'text': 'Adapter-Dimer %', 'color': COLORS['accent']}
     }
     edges = [('ReagentLot', 'LigationTime'), ('DNAnq', 'LigationTime'), ('LigationTime', 'AdapterDimer')]
     _add_network_nodes_and_edges(fig, nodes, edges)
-    # Add arrows
+    # Add arrows separately for better control
     for start, end in edges:
-        fig.add_annotation(x=nodes[end]['x'], y=nodes[end]['y'], ax=nodes[start]['x'], ay=nodes[start]['y'], xref='x', yref='y', axref='x', ayref='y', showarrow=True, arrowhead=2, arrowsize=1.2, arrowwidth=1.5, arrowcolor=COLORS['dark_gray'])
+        fig.add_annotation(x=nodes[end]['x'], y=nodes[end]['y'], ax=nodes[start]['x'], ay=nodes[start]['y'],
+                           xref='x', yref='y', axref='x', ayref='y', showarrow=True, arrowhead=2,
+                           arrowsize=1.2, arrowwidth=1.5, arrowcolor=COLORS['dark_gray'])
     return fig
 
 def plot_process_mining_plotly() -> go.Figure:
-    """OVERHAUL: Re-implemented Process Mining map using Plotly annotations."""
-    fig = _create_network_fig(height=450)
+    fig = _create_network_fig(height=450, x_range=[-0.5, 5.5], y_range=[0.5, 2.5])
     nodes = {
         'start': {'x': 0.0, 'y': 2.0, 'text': 'Sample<br>Received', 'color': COLORS['success']},
         'A':     {'x': 1.0, 'y': 2.0, 'text': 'DNA Extraction', 'color': COLORS['primary']},
@@ -181,44 +177,65 @@ def plot_process_mining_plotly() -> go.Figure:
     }
     edges = [('start', 'A'), ('A', 'B'), ('B', 'C'), ('C', 'D'), ('D', 'end'), ('B', 'E'), ('E', 'B')]
     _add_network_nodes_and_edges(fig, nodes, edges)
-    # Add edge labels
-    edge_labels = { 'start-A': ('start', 'A', '20 Samples', 0.15), 'A-B': ('A', 'B', '20 Samples', 0.15),
-                    'B-C': ('B', 'C', '18 Samples<br>Avg 5h', 0.15), 'C-D': ('C', 'D', '18 Samples<br>Avg 26h', 0.15),
-                    'D-end': ('D', 'end', '18 Samples<br>Avg 4h', 0.15), 'B-E': ('B', 'E', '2 Samples (10%)', -0.15),
-                    'E-B': ('E', 'B', 'Avg 8h Delay', 0.15) }
+    # Add edge labels with arrows
+    edge_labels = {
+        'start-A': ('start', 'A', '20 Samples', 0.15), 'A-B': ('A', 'B', '20 Samples', 0.15),
+        'B-C': ('B', 'C', '18 Samples<br>Avg 5h', 0.15), 'C-D': ('C', 'D', '18 Samples<br>Avg 26h', 0.15),
+        'D-end': ('D', 'end', '18 Samples<br>Avg 4h', 0.15), 'B-E': ('B', 'E', '2 Samples (10%)', -0.15),
+        'E-B': ('E', 'B', 'Avg 8h Delay', 0.15)
+    }
     for start, end, text, offset in edge_labels.values():
-        fig.add_annotation(x=(nodes[start]['x'] + nodes[end]['x']) / 2, y=(nodes[start]['y'] + nodes[end]['y']) / 2 + offset, text=text, showarrow=False, font=dict(size=9), bgcolor='rgba(255,255,255,0.7)')
+        fig.add_annotation(x=(nodes[start]['x'] + nodes[end]['x']) / 2, y=(nodes[start]['y'] + nodes[end]['y']) / 2 + offset,
+                           text=text, showarrow=False, font=dict(size=9), bgcolor='rgba(255,255,255,0.7)')
     return fig
 
 def plot_fishbone_plotly() -> go.Figure:
-    """OVERHAUL: Re-implemented Fishbone diagram using pure Plotly for robust rendering."""
-    fig = _create_network_fig(height=500)
-    # Head and Spine
-    fig.add_annotation(x=8.5, y=5, text="<b>Low Library<br>Yield</b>", showarrow=False, font=dict(color=COLORS['text'], size=14), bgcolor=hex_to_rgba(COLORS['danger'], 0.15), bordercolor=COLORS['danger'], borderwidth=2, borderpad=10, align="center")
-    fig.add_trace(go.Scatter(x=[0, 8], y=[5, 5], mode='lines', line=dict(color=COLORS['dark_gray'], width=3), hoverinfo='none'))
-    
+    """SME Overhaul: Re-engineered Fishbone using Plotly shapes for a professional, clean design."""
+    fig = _create_network_fig(height=500, x_range=[-1, 10], y_range=[0, 10])
+    # Effect
+    fig.add_annotation(x=8.5, y=5, text="<b>Low Library<br>Yield</b>", showarrow=False,
+                       font=dict(color=COLORS['text'], size=14), bgcolor=hex_to_rgba(COLORS['danger'], 0.15),
+                       bordercolor=COLORS['danger'], borderwidth=2, borderpad=10, align="center")
+    # Spine
+    fig.add_shape(type="line", x0=0, y0=5, x1=8.2, y1=5, line=dict(color=COLORS['dark_gray'], width=3))
+
     bones = {
-        'Reagents': {'pos': 1, 'causes': ['Enzyme Inactivity'], 'angle': 45}, 'Equipment': {'pos': 3, 'causes': ['Pipette Out of Cal'], 'angle': 45},
-        'Method': {'pos': 5, 'causes': ['Incorrect Incubation Time'], 'angle': 45}, 'Technician': {'pos': 2, 'causes': ['Inconsistent Pipetting'], 'angle': -45},
-        'Sample': {'pos': 4, 'causes': ['Low DNA Input'], 'angle': -45}, 'Environment': {'pos': 6, 'causes': ['High Humidity'], 'angle': -45} }
-    
+        'Reagents': {'pos': 1, 'causes': ['Enzyme Inactivity'], 'angle': 45},
+        'Equipment': {'pos': 3, 'causes': ['Pipette Out of Cal'], 'angle': 45},
+        'Method': {'pos': 5, 'causes': ['Incorrect Incubation Time'], 'angle': 45},
+        'Technician': {'pos': 2, 'causes': ['Inconsistent Pipetting'], 'angle': -45},
+        'Sample': {'pos': 4, 'causes': ['Low DNA Input'], 'angle': -45},
+        'Environment': {'pos': 6, 'causes': ['High Humidity'], 'angle': -45},
+    }
+
     for name, data in bones.items():
-        angle_rad = np.deg2rad(data['angle']); x_start, y_start = data['pos'], 5
-        x_end = x_start + 2.5 * np.cos(angle_rad); y_end = y_start + 2.5 * np.sin(angle_rad)
-        # Main bone
-        fig.add_trace(go.Scatter(x=[x_start, x_end], y=[y_start, y_end], mode='lines', line=dict(color=COLORS['dark_gray'], width=1.5), hoverinfo='none'))
-        fig.add_annotation(x=x_end, y=y_end, text=f"<b>{name}</b>", showarrow=False, font=dict(color=COLORS['primary']))
-        # Cause sub-bones and text
+        angle_rad = np.deg2rad(data['angle'])
+        x_start, y_start = data['pos'], 5
+        x_end = x_start + 2.5 * np.cos(angle_rad)
+        y_end = y_start + 2.5 * np.sin(angle_rad)
+
+        # Main bone shape
+        fig.add_shape(type="line", x0=x_start, y0=y_start, x1=x_end, y1=y_end, line=dict(color=COLORS['dark_gray'], width=1.5))
+        # Category annotation
+        fig.add_annotation(x=x_end, y=y_end + 0.4 * np.sign(y_end - 5), text=f"<b>{name}</b>", showarrow=False, font=dict(color=COLORS['primary']))
+
+        # Cause sub-bones and annotations
         for i, cause in enumerate(data['causes']):
-            sub_x_start = x_start + 1.0 * np.cos(angle_rad); sub_y_start = y_start + 1.0 * np.sin(angle_rad)
-            sub_x_end = sub_x_start + 1.0 * np.cos(angle_rad); sub_y_end = sub_y_start + 1.0 * np.sin(angle_rad)
-            fig.add_trace(go.Scatter(x=[sub_x_start, sub_x_end], y=[sub_y_start, sub_y_end], mode='lines', line=dict(color='grey', width=1), hoverinfo='none'))
-            fig.add_annotation(x=sub_x_end, y=sub_y_end, text=cause, ax=15*np.sign(x_end-x_start), ay=-30*np.sign(y_end-y_start), font=dict(size=10, color=COLORS['text']))
-    
-    fig.update_layout(yaxis_range=[0,10], xaxis_range=[-1, 11])
+            sub_x_start = x_start + (1.2 + i*1.0) * np.cos(angle_rad)
+            sub_y_start = y_start + (1.2 + i*1.0) * np.sin(angle_rad)
+            sub_x_end = sub_x_start + 1.0 * np.cos(angle_rad)
+            sub_y_end = sub_y_start + 1.0 * np.sin(angle_rad)
+            
+            # Position cause text away from the sub-bone
+            text_x = sub_x_start + 0.6 * np.cos(angle_rad + np.pi/2)
+            text_y = sub_y_start + 0.6 * np.sin(angle_rad + np.pi/2)
+            
+            fig.add_shape(type="line", x0=sub_x_start, y0=sub_y_start, x1=sub_x_end, y1=sub_y_end, line=dict(color='grey', width=1))
+            fig.add_annotation(x=text_x, y=text_y, text=cause, showarrow=False, font=dict(size=10, color=COLORS['text']))
+
     return fig
 
-# --- RESTORED & CONFIRMED ROBUST FUNCTIONS ---
+# --- REST OF THE FUNCTIONS (RESTORED & VERIFIED) ---
 def plot_project_charter_visual() -> go.Figure:
     fig = go.Figure(); fig.add_shape(type="rect", x0=0, y0=0, x1=1, y1=1, fillcolor='white', line_width=0)
     fig.add_annotation(x=0.5, y=0.92, text="<b>Assay Development Plan: Liquid Biopsy for CRC</b>", showarrow=False, font=dict(size=22, color=COLORS['primary']))
