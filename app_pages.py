@@ -351,7 +351,6 @@ def show_control_phase():
                 st.subheader("The Math Behind It"); st.markdown("Hotelling's T² statistic measures the statistical distance of a data point from the center of a multivariate distribution, accounting for the covariance between variables."); st.latex(r''' T^2 = (\mathbf{x} - \bar{\mathbf{x}})^T \mathbf{S}^{-1} (\mathbf{x} - \bar{\mathbf{x}}) '''); st.markdown("Where $\mathbf{x}$ is the vector of current observations, $\bar{\mathbf{x}}$ is the vector of historical means, and $\mathbf{S}^{-1}$ is the inverse of the covariance matrix.")
                 st.subheader("Interpretation"); st.markdown("- **Takeaway:** A single point on this chart can be out of control even if all individual metrics are within their own limits. This is powerful for detecting subtle, correlated shifts that would otherwise be missed.")
 
-
     with st.container(border=True):
         st.subheader("2. Formalizing the Gains: The Control Plan & SOPs")
         st.plotly_chart(plot_control_plan(), use_container_width=True)
@@ -359,7 +358,7 @@ def show_control_phase():
     st.success("""**🏆 Hybrid Strategy for the Control Phase:**\n1. **Monitor with Levey-Jennings:** Use a classical **Levey-Jennings chart** for primary positive/negative controls for simplicity and regulatory compliance.\n2. **Detect Drifts with EWMA:** For critical secondary metrics, use a more sensitive **EWMA chart** to detect slow reagent or instrument degradation.\n3. **Holistic QC with ML:** For each sample, run a **multivariate QC model** (like Hotelling's T²) on the full profile of NGS QC metrics to flag subtle issues.\n4. **Codify Everything:** The **Control Plan** and **SOPs** must document all charts, limits, and reaction plans.""")
 
 # ==============================================================================
-# PAGE 6 & 7: COMPARISON & MANIFESTO (UNCHANGED)
+# PAGE 6 & 7: COMPARISON & MANIFESTO
 # ==============================================================================
 def show_comparison_matrix():
     st.title("Head-to-Head: Classical DOE vs. ML/Bioinformatics")
@@ -372,7 +371,36 @@ def show_hybrid_strategy():
     st.title("The Hybrid Lab Manifesto: The Future of Assay Development")
     st.markdown("The most competitive biotech organizations do not choose one over the other; they build a **Bio-AI framework** that fuses statistical rigor with machine learning's predictive power.")
     st.markdown("---")
-    with st.container(border=True): st.subheader("The Philosophy of Synergy: Inference + Prediction"); st.plotly_chart(plot_synergy_diagram(), use_container_width=True)
+    
+    with st.container(border=True):
+        st.subheader("The Philosophy of Synergy: Inference + Prediction")
+        st.plotly_chart(plot_synergy_diagram(), use_container_width=True)
+
+    with st.container(border=True):
+        st.subheader("A Granular, Head-to-Head Comparison")
+        
+        st.markdown("##### Attribute Comparison Matrix")
+        st.plotly_chart(plot_attribute_matrix(), use_container_width=True)
+        
+        st.markdown("##### The Verdict: Strengths at a Glance")
+        col1, col2 = st.columns(2)
+        with col1:
+            with st.container(border=True):
+                st.markdown("<h5 style='text-align: center; color: #0072B2;'>🏆 Classical Statistics' Core Strengths</h5>", unsafe_allow_html=True)
+                st.markdown("""
+                - **Interpretability:** Models and outputs are easier to explain and defend without extra tools.
+                - **Ease of Implementation:** Tools (like Excel/Minitab) and training are widely available and simpler for basic analyses.
+                - **Auditability & Compliance:** Methods are standardized and preferred in regulated industries (e.g., FDA, CLIA).
+                """)
+        with col2:
+            with st.container(border=True):
+                st.markdown("<h5 style='text-align: center; color: #009E73;'>🏆 Machine Learning's Core Strengths</h5>", unsafe_allow_html=True)
+                st.markdown("""
+                - **Scalability:** Natively handles larger, messier, and higher-dimensional datasets.
+                - **Accuracy in Complex Systems:** Effectively captures nonlinear patterns and complex interactions.
+                - **Proactive Detection:** Designed to predict future outcomes, not just describe past events.
+                """)
+
     with st.container(border=True):
         st.subheader("Interactive Solution Recommender")
         guidance_data = get_guidance_data(); scenarios = list(guidance_data.keys())
@@ -380,6 +408,7 @@ def show_hybrid_strategy():
         if selected_scenario:
             st.markdown(f"##### Recommended Approach: {guidance_data[selected_scenario]['approach']}")
             st.markdown(f"**Rationale:** {guidance_data[selected_scenario]['rationale']}")
+            
     with st.container(border=True):
         st.subheader("A Unified, Modern R&D Workflow")
         st.markdown(get_workflow_css(), unsafe_allow_html=True)
