@@ -12,7 +12,7 @@ A global Plotly template ('bio_ai_theme') is defined and applied to ensure
 a consistent and professional look and feel across all visualizations.
 
 Author: AI Engineering SME
-Version: 23.1 (Commercial Grade Refactor)
+Version: 23.3 (API Hotfix)
 Date: 2023-10-26
 """
 
@@ -20,6 +20,7 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
+import plotly.io as pio  # <--- FIX: IMPORT THE CORRECT MODULE FOR TEMPLATING
 from plotly.subplots import make_subplots
 from scipy.stats import gaussian_kde, f_oneway, f as f_dist
 from sklearn.gaussian_process import GaussianProcessRegressor
@@ -35,7 +36,10 @@ from .styling import COLORS, hex_to_rgba
 # consistency. It avoids repeating layout settings in every plotting function.
 # This adheres to the DRY (Don't Repeat Yourself) principle.
 # Reference: https://plotly.com/python/templates/
-go.templates["bio_ai_theme"] = go.layout.Template(
+#
+# FIX: Use pio.templates (from plotly.io) instead of go.templates
+# This is the correct API for accessing the template registry.
+pio.templates["bio_ai_theme"] = go.layout.Template(
     layout=go.Layout(
         plot_bgcolor="white",
         paper_bgcolor="white",
@@ -67,7 +71,8 @@ go.templates["bio_ai_theme"] = go.layout.Template(
         margin=dict(l=60, r=40, t=60, b=50)
     )
 )
-go.templates.default = "bio_ai_theme"
+# FIX: Set the default template using the correct API path.
+pio.templates.default = "bio_ai_theme"
 
 # ==============================================================================
 # SECTION 2: GENERIC HELPER FUNCTIONS
@@ -288,9 +293,6 @@ def plot_risk_signal_clusters(df_clustered: pd.DataFrame) -> go.Figure:
     )
     fig.update_traces(marker=dict(size=10, line=dict(width=1, color='DarkSlateGrey')))
     return fig
-
-# ... This pattern continues for ALL other plotting functions.
-# I will now include the full, unabridged list of refactored functions.
 
 # ==============================================================================
 # SECTION 4: MEASURE PHASE VISUALIZATIONS
@@ -567,6 +569,90 @@ def plot_nlp_on_capa_logs(df_topics: pd.DataFrame) -> go.Figure:
     fig.update_layout(showlegend=False, yaxis={'categoryorder':'total ascending'})
     return fig
 
+def plot_regression_comparison(model_results: dict) -> go.Figure:
+    X = model_results['X']
+    y = model_results['y']
+    y_pred_lin = model_results['linear_predictions']
+    y_pred_rf = model_results['rf_predictions']
+    r2_lin = model_results['linear_r2']
+    r2_rf = model_results['rf_oob_r2']
+    
+    primary_factor = 'Annealing_Temp' # Assume this is the main factor for plotting
+    sort_idx = X[primary_factor].argsort()
+    
+    fig = go.Figure()
+    # Actual data points
+    fig.add_trace(go.Scatter(
+        x=X[primary_factor].iloc[sort_idx], 
+        y=y.iloc[sort_idx], 
+        mode='markers', 
+        name='Actual Data', 
+        marker=dict(color=COLORS['dark_gray'], opacity=0.5)
+    ))
+    # Linear model fit
+    fig.add_trace(go.Scatter(
+        x=X[primary_factor].iloc[sort_idx], 
+        y=y_pred_lin[sort_idx], 
+        mode='lines', 
+        name=f'Linear Model (R²={r2_lin:.2f})', 
+        line=dict(color=COLORS['primary'], width=3)
+    ))
+    # Random Forest fit
+    fig.add_trace(go.Scatter(
+        x=X[primary_factor].iloc[sort_idx], 
+        y=y_pred_rf[sort_idx], 
+        mode='lines', 
+        name=f'Random Forest (OOB R²={r2_rf:.2f})', 
+        line=dict(color=COLORS['secondary'], width=3, dash='dot')
+    ))
+    
+    fig.update_layout(
+        title_text="<b>Regression:</b> Modeling Assay Performance",
+        xaxis_title=f"Primary Factor: {primary_factor.replace('_', ' ')} (°C)",
+        yaxis_title="On-Target Rate (%)"
+    )
+    return fig
+
+def plot_shap_summary(shap_values, X: pd.DataFrame) -> go.Figure:
+    fig = go.Figure()
+
+    # The beeswarm plot shows the SHAP value for every feature for every sample.
+    for i, feature in enumerate(X.columns):
+        y_jitter = np.random.uniform(-0.25, 0.25, len(shap_values))
+        y_pos = np.full(len(shap_values), i) + y_jitter
+        fig.add_trace(go.Scatter(
+            x=shap_values.values[:, i], 
+            y=y_pos, 
+            mode='markers',
+            marker=dict(
+                color=shap_values.data[:, i], 
+                colorscale='RdBu_r', 
+                showscale=(i == len(X.columns) - 1),  # Show colorbar only on the last trace
+                colorbar=dict(title="Feature Value<br>High / Low", x=1.02, y=0.5, len=0.75),
+                symbol='circle', size=6, opacity=0.7
+            ),
+            hoverinfo='text',
+            hovertext=[
+                f'<b>{feature}</b><br>Value: {val:.2f}<br>SHAP: {shap_val:.2f}' 
+                for val, shap_val in zip(shap_values.data[:, i], shap_values.values[:, i])
+            ],
+            showlegend=False
+        ))
+        
+    fig.update_layout(
+        title="<b>XAI with SHAP:</b> Parameter Impact on Outcome",
+        xaxis_title="SHAP Value (Impact on Model Output)",
+        yaxis=dict(
+            tickmode='array', 
+            tickvals=list(range(len(X.columns))), 
+            ticktext=[col.replace('_', ' ').title() for col in X.columns], 
+            autorange="reversed", # Puts most important feature on top
+            showgrid=True
+        ),
+        margin=dict(l=150)
+    )
+    return fig
+    
 # ==============================================================================
 # SECTION 6: IMPROVE PHASE VISUALIZATIONS
 # ==============================================================================
