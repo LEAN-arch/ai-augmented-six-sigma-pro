@@ -4,17 +4,12 @@ main_app.py
 Serves as the primary entry point and navigation controller for the Bio-AI
 Excellence Framework application.
 
-This script is responsible for:
-1.  Initializing global configurations (logging, page settings).
-2.  Loading external configurations and secrets with robust fallbacks.
-3.  Dynamically and safely importing page-rendering functions.
-4.  Constructing the application's navigation structure using Streamlit's
-    modern st.navigation API.
-5.  Rendering the main application layout, including the sidebar.
-6.  Executing the selected page's rendering logic.
+This simplified version removes all external URL dependencies from the page
+configuration to guarantee a successful launch by eliminating the source of
+the StreamlitInvalidURLError.
 
 Author: AI Engineering SME
-Version: 23.6 (Final Verification Build)
+Version: 23.7 (Simplified & URL-Free)
 Date: 2023-10-26
 """
 
@@ -30,8 +25,7 @@ def main():
     Main function to configure and run the Streamlit application.
     """
     # --- VERIFICATION STEP ---
-    # If you see balloons, you are running the correct version of this file.
-    # If the app crashes without showing balloons, the file was not updated.
+    # This will run to confirm you have successfully updated the file.
     st.balloons()
     
     # --- 0.1. Logging Configuration ---
@@ -43,7 +37,7 @@ def main():
         stream=sys.stdout,
     )
     logger = logging.getLogger(__name__)
-    logger.info("Application starting up. Verification build is running.")
+    logger.info("Application starting up. Simplified, URL-free build is running.")
 
     # --- 0.2. Dynamic & Resilient Module Imports ---
     try:
@@ -51,10 +45,7 @@ def main():
         logger.debug("Successfully imported 'helpers' modules.")
     except ImportError as e:
         logger.error(f"Fatal error: Failed to import critical helper modules. {e}")
-        st.error(
-            "Application startup failed: A critical component could not be loaded. "
-            "Please check the logs and file structure. The 'helpers' package may be missing."
-        )
+        st.error("Application startup failed: A critical component could not be loaded. Please check file structure.")
         st.stop()
 
     try:
@@ -75,42 +66,24 @@ def main():
         ]
         logger.debug("Successfully imported all page modules.")
     except ImportError as e:
-        logger.error(f"Error importing page modules: {e}. The app may be unstable.")
+        logger.error(f"Error importing page modules: {e}")
         st.error(f"Failed to load page definitions from app_pages.py. Error: {e}")
         st.stop()
 
     # ==============================================================================
-    # 1. GLOBAL PAGE CONFIGURATION (WITH GRACEFUL DEGRADATION)
+    # 1. GLOBAL PAGE CONFIGURATION (SIMPLIFIED)
     # ==============================================================================
     app_meta = st.secrets.get("app_meta", {})
     app_version = app_meta.get("version", "N/A")
 
-    # --- DEFINITIVE FIX: Dynamically build the menu_items dictionary ---
-    menu_items = {
-        'About': f"""
-        ## 🧬 The Bio-AI Excellence Framework
-        **An interactive playbook for optimizing genomic assays and devices.**
-        This application demonstrates a unified framework that fuses the statistical rigor of
-        **Six Sigma** with the predictive power of **Machine Learning**.
-        **Version:** {app_version}
-        """
-    }
-    url_config = st.secrets.get("urls", {})
-    help_url = url_config.get("help")
-    bug_report_url = url_config.get("bug_report")
-    source_code_url = url_config.get("source_code")
-
-    if help_url:
-        menu_items['Get Help'] = help_url
-    if bug_report_url:
-        menu_items['Report a bug'] = bug_report_url
-
+    # --- DEFINITIVE FIX: The menu_items argument has been removed entirely. ---
+    # This prevents the StreamlitInvalidURLError from ever being called.
     st.set_page_config(
         page_title="Bio-AI Excellence Framework",
         page_icon="🧬",
         layout="wide",
-        initial_sidebar_state="expanded",
-        menu_items=menu_items
+        initial_sidebar_state="expanded"
+        # The 'menu_items' argument is omitted. Streamlit will use its defaults.
     )
 
     # --- 1.1. Custom Styling ---
@@ -135,11 +108,9 @@ def main():
         pg = st.navigation(PAGES)
         st.divider()
         st.info(
-            "This app demonstrates integrating ML into the biotech R&D lifecycle "
-            "for superior performance and reliability."
+            "This app demonstrates integrating ML into the biotech R&D lifecycle."
         )
-        if source_code_url:
-            st.markdown(f"**[View Source on GitHub]({source_code_url})**")
+        # The external link to source code has been removed.
         st.caption(f"Version: {app_version}")
 
     # ==============================================================================
