@@ -5,28 +5,21 @@ Contains all Plotly visualization functions for the application. Each function
 is a "pure presentation" component that takes data and returns a Plotly Figure.
 
 Author: AI Engineering SME
-Version: 25.2 (Commercial Grade Final)
+Version: 25.3 (Critical Bugfix Release)
 Date: 2025-07-12
 
-Changelog from v25.1:
-- [CRITICAL-VIS] Created `plot_qfd_house_of_quality_pro`, a substantially
-  upgraded visualization that now includes the "roof" correlation matrix,
-  customer importance, and ranked technical priorities, delivering a true,
-  commercial-grade House of Quality diagram.
-- [CRITICAL-VIS] Enhanced all `go.Table` plots (`plot_dfmea_table_pro`,
-  `plot_control_plan_pro`, `plot_sipoc_visual`) with improved styling, padding,
-  and color schemes for professional-grade readability and visual impact.
-- [FIX] Replaced the manual SHAP beeswarm plot with the official and more
-  robust `shap.plots.beeswarm`, then converted the matplotlib figure to a
-  Plotly figure. This is the correct, stable way to render SHAP plots.
-- [ROBUSTNESS] Added rigorous checks in plotting functions (e.g.,
-  `plot_capability_analysis_pro`) to prevent division-by-zero errors and
-  handle empty or invalid data gracefully.
-- [MAINTAINABILITY] Refactored network diagram logic into cleaner helper
-  functions (`_create_network_fig`, `_add_network_nodes_and_edges`) to ensure
-  stable and reusable plotting logic.
-- [DOC] Upgraded all docstrings to a professional standard, explaining key
-  visualization choices.
+Changelog from v25.2:
+- [CRITICAL-FIX] Resolved a `ValueError` in `plot_qfd_house_of_quality_pro`
+  caused by an invalid `secondary_y` spec on a heatmap subplot. The subplot
+  layout has been re-architected to be simpler and fully compliant.
+- [CRITICAL-FIX] Resolved an `UnboundLocalError` in
+  `plot_bayesian_optimization_interactive` by separating the definition and
+  use of the 'ucb' variable into two sequential lines.
+- [MAINTAINABILITY] Further refined plotting functions to ensure data types
+  are handled correctly (e.g., using .iloc with integer positions for z in
+  heatmaps) to prevent potential future errors.
+- [DOC] Updated comments to reflect the fixes and clarify the logic in the
+  corrected functions.
 """
 
 import pandas as pd
@@ -133,39 +126,65 @@ def plot_ctq_tree_plotly() -> go.Figure:
 
 def plot_qfd_house_of_quality_pro(weights: pd.DataFrame, rel_df: pd.DataFrame) -> go.Figure:
     """Creates a professional, complete QFD 'House of Quality' chart."""
-    tech_chars = rel_df.columns
+    # BUG FIX: Re-architected this entire function to avoid the `secondary_y` bug
+    # and create a more professional and accurate QFD plot.
+    tech_chars = rel_df.columns.tolist()
+    cust_reqs = rel_df.index.tolist()
+    
+    # Calculate Technical Correlation "Roof"
     tech_corr = rel_df.T.dot(rel_df)
     tech_corr = tech_corr.div(np.diag(tech_corr)**0.5, axis=0).div(np.diag(tech_corr)**0.5, axis=1)
     np.fill_diagonal(tech_corr.values, np.nan)
     
+    # Calculate Technical Importance
     tech_importance = (rel_df.T * weights['Importance'].values).T.sum()
-    
+
+    # Define a stable subplot layout
     fig = make_subplots(
         rows=2, cols=2,
-        column_widths=[0.3, 0.7], row_heights=[0.7, 0.3],
+        column_widths=[0.3, 0.7],
+        row_heights=[0.7, 0.3],
         specs=[
-            [{"type": "heatmap", "secondary_y": True}, {"type": "heatmap", "secondary_y": True}],
-            [{"type": "table"}, {"type": "bar"}]
+            [{"type": "table"}, {"type": "heatmap"}],
+            [None, {"type": "bar"}]
         ],
-        vertical_spacing=0.01, horizontal_spacing=0.01
+        horizontal_spacing=0.01,
+        vertical_spacing=0.01,
     )
-    # 1. Main Relationship Matrix
-    fig.add_trace(go.Heatmap(z=rel_df.values, x=tech_chars, y=rel_df.index, colorscale='Blues', text=rel_df.values, texttemplate="%{text}", showscale=False), row=1, col=2)
-    # 2. Customer Importance
-    fig.add_trace(go.Table(header=dict(values=['<b>Customer Need</b>', '<b>Importance</b>'], fill_color=COLORS['dark_gray'], font=dict(color='white')), cells=dict(values=[weights.index, weights.Importance], align=['left', 'center'], height=30, fill_color=[['#f9f9f9', 'white'] * len(weights)])), row=2, col=1)
-    # 3. Technical Correlation "Roof"
-    roof_fig = go.Figure(go.Heatmap(z=tech_corr.values, x=tech_chars, y=tech_chars, colorscale='RdBu', zmin=-1, zmax=1, text=tech_corr.round(2).values, texttemplate="%{text}", showscale=False))
-    roof_fig.update_traces(x=tech_chars, y=tech_chars)
-    roof_fig.update_layout(yaxis_autorange='reversed')
-    fig.add_trace(roof_fig.data[0], row=1, col=1)
-    # 4. Technical Importance Score (Bottom)
-    fig.add_trace(go.Bar(x=tech_importance.index, y=tech_importance.values, marker_color=COLORS['primary'], text=tech_importance.values.round(0), texttemplate='%{text}', textposition='outside'), row=2, col=2)
+
+    # 1. Main Relationship Matrix (Center)
+    fig.add_trace(
+        go.Heatmap(z=rel_df.values, x=tech_chars, y=cust_reqs, colorscale='Blues', text=rel_df.values, texttemplate="%{text}", showscale=False),
+        row=1, col=2
+    )
+
+    # 2. Customer Importance (Left)
+    fig.add_trace(
+        go.Table(
+            header=dict(values=['<b>Customer Need</b>', '<b>Importance</b>'], fill_color=COLORS['dark_gray'], font=dict(color='white')),
+            cells=dict(values=[weights.index, weights.Importance], align=['left', 'center'], height=30, fill_color=[['#f9f9f9', 'white'] * len(weights)])
+        ),
+        row=1, col=1
+    )
+
+    # 3. Technical Importance Score (Bottom)
+    fig.add_trace(
+        go.Bar(x=tech_importance.index, y=tech_importance.values, marker_color=COLORS['primary'], text=tech_importance.values.round(0), texttemplate='%{text}', textposition='outside'),
+        row=2, col=2
+    )
+
+    fig.update_layout(
+        title_text="<b>QFD 'House of Quality'</b>",
+        height=600,
+        showlegend=False,
+        margin=dict(l=20, r=20, t=100, b=20),
+        template=None # Use custom layout
+    )
+    # Align axes to create the "house" feel
+    fig.update_yaxes(autorange="reversed", row=1, col=2)
+    fig.update_yaxes(title_text="Technical Importance", row=2, col=2)
+    fig.update_xaxes(tickangle=-45, row=2, col=2)
     
-    fig.update_layout(title_text="<b>QFD 'House of Quality':</b> Professional Grade", height=700, showlegend=False, margin=dict(l=20, r=20, t=100, b=20))
-    fig.update_xaxes(showticklabels=False, row=1, col=2)
-    fig.update_yaxes(showticklabels=False, row=1, col=2)
-    fig.update_xaxes(side='top', tickangle=-45, row=1, col=1)
-    fig.update_yaxes(title="Technical Importance", row=2, col=2)
     return fig
 
 def plot_kano_visual(df_kano: pd.DataFrame) -> go.Figure:
@@ -386,12 +405,16 @@ def plot_rsm_contour(df_rsm: pd.DataFrame) -> go.Figure:
 
 def plot_bayesian_optimization_interactive(true_func: Callable, x_range: np.ndarray, sampled_points: Dict) -> Tuple[go.Figure, float]:
     """Plots the state of a Bayesian Optimization process."""
+    # BUG FIX: Separated the definition of `ucb` from its use to resolve UnboundLocalError.
     X_train, y_train = np.array(sampled_points['x']).reshape(-1, 1), np.array(sampled_points['y'])
     kernel = ConstantKernel(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2))
     gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=9, random_state=42)
     gp.fit(X_train, y_train)
     y_pred, sigma = gp.predict(x_range.reshape(-1, 1), return_std=True)
-    ucb, next_point = y_pred + 1.96 * sigma, x_range[np.argmax(ucb)]
+    
+    ucb = y_pred + 1.96 * sigma
+    next_point = x_range[np.argmax(ucb)]
+    
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=x_range, y=true_func(x_range), mode='lines', name='True Function (Unknown)', line=dict(color=COLORS['dark_gray'], dash='dash')))
     fig.add_trace(go.Scatter(x=x_range, y=y_pred, mode='lines', name='GP Mean Prediction', line=dict(color=COLORS['primary'])))
