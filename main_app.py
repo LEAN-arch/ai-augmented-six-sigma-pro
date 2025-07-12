@@ -39,7 +39,7 @@ st.set_page_config(
         Navigate through the R&D lifecycle (framed as DMAIC) to see foundational methods presented 
         alongside their AI-augmented and regulatory-compliant counterparts for the modern biotech lab. This version integrates both the original educational examples and the advanced, expert-level QMS/regulatory tools.
         
-        **Version:** 21.0 (Definitive, Unabridged, Error-Free Release)
+        **Version:** 22.0 (Definitive Unabridged and Verified Release)
         """
     }
 )
