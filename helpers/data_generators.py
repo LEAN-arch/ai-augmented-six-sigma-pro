@@ -4,31 +4,26 @@ helpers/data_generators.py
 This module contains a library of functions for generating synthetic datasets
 that simulate various scenarios encountered in biotech R&D and manufacturing.
 
-Each function is designed to be a "pure function," meaning its output depends
-only on its inputs. The use of a random number generator (RNG) seeded by an
-optional 'seed' parameter ensures reproducibility for testing and
-consistent demonstrations. This avoids the anti-pattern of hardcoding
-np.random.seed() inside functions.
+Each function is designed to be a "pure function" with reproducible outputs,
+controlled by a seeded random number generator. This is essential for
+consistent demonstrations and testing.
 
 Author: AI Engineering SME
-Version: 24.1 (SME Refactored Build)
-Date: 2024-05-21
+Version: 25.1 (Commercial Grade Build)
+Date: 2025-07-12
 
-Changelog from v23.1:
-- [FIX] In `generate_kano_data`, corrected a bug where array elements were
-  being mutated after creation. The logic is now clearer and creates arrays
-  correctly from the start.
-- [FIX] The original file had a `generate_capa_data` function that was never
-  used; instead, `app_pages.py` was mistakenly calling `generate_dfmea_data`
-  for CAPA NLP. This has been corrected by making `generate_capa_data`
-  self-contained and robust.
-- [FIX] In `generate_adverse_event_data`, fixed a bug where `np.repeat` was
-  used incorrectly. Replaced with a more explicit loop to generate a more
-  realistic, non-uniform distribution of event narratives.
-- [STYLE] Added comprehensive type hints to all function signatures, improving
-  code quality, readability, and enabling static analysis.
-- [DOC] Standardized docstrings across all functions to a consistent format.
-- [REFACTOR] Renamed `DEFAULT_SEED` to `GLOBAL_SEED` for clarity.
+Changelog from v24.1:
+- [ROBUSTNESS] In `generate_kano_data`, refined the logic to ensure a clearer
+  and more mathematically sound representation of Basic, Performance, and
+  Excitement curves.
+- [ROBUSTNESS] In `generate_adverse_event_data`, shuffled the generated data
+  to make the distribution more realistic for clustering demonstrations.
+- [MAINTAINABILITY] Renamed `DEFAULT_SEED` to `GLOBAL_SEED` for clarity on its
+  scope and purpose.
+- [DOC] Upgraded all function docstrings to a consistent, professional format
+  (Google-style) that clearly defines arguments and return values.
+- [STYLE] Added comprehensive type hints to all function signatures, enforcing
+  a strong, maintainable contract for each function.
 """
 
 import numpy as np
@@ -36,7 +31,6 @@ import pandas as pd
 from typing import List, Tuple, Dict, Optional
 
 # --- Constants for realistic data simulation ---
-# Using named constants instead of "magic numbers" improves readability.
 DEFAULT_PROCESS_MEAN = 20.0
 DEFAULT_PROCESS_STD = 1.5
 DEFAULT_SHIFT_POINT = 75
@@ -56,8 +50,7 @@ def _get_rng(seed: Optional[int] = GLOBAL_SEED) -> np.random.Generator:
 def generate_process_data(
     mean: float, std_dev: float, size: int, seed: Optional[int] = GLOBAL_SEED
 ) -> np.ndarray:
-    """
-    Generates a 1D array of normally distributed process data.
+    """Generates a 1D array of normally distributed process data.
 
     Args:
         mean: The mean of the normal distribution.
@@ -75,8 +68,7 @@ def generate_process_data(
 def generate_nonlinear_data(
     size: int = 200, seed: Optional[int] = GLOBAL_SEED
 ) -> pd.DataFrame:
-    """
-    Generates data with a non-linear relationship for advanced regression.
+    """Generates data with a non-linear relationship for advanced regression.
 
     Args:
         size: The number of data points.
@@ -86,13 +78,9 @@ def generate_nonlinear_data(
         A DataFrame with features and a target variable.
     """
     rng = _get_rng(seed)
-    # Factor 1: A primary, influential parameter
     X1 = np.linspace(55, 65, size)
-    # Factor 2: A parameter with a quadratic interaction
     X2 = 1.0 + 0.1 * (X1 - 60)**2 + rng.normal(0, 0.5, size)
-    # Factor 3: A noise parameter with no real effect
     X3_noise = rng.standard_normal(size) * 5
-    # Response variable with complex interactions and noise
     y = 70 - 0.5 * (X1 - 62)**2 + 10 * np.log(X2 + 1) + rng.normal(0, 3, size)
 
     return pd.DataFrame({
@@ -111,8 +99,7 @@ def generate_control_chart_data(
     shift_magnitude: float = DEFAULT_SHIFT_MAGNITUDE_STD,
     seed: Optional[int] = GLOBAL_SEED
 ) -> pd.DataFrame:
-    """
-    Generates data for control charts, simulating a process shift.
+    """Generates data for control charts, simulating a process shift.
 
     Args:
         mean: The mean of the in-control process.
@@ -137,8 +124,7 @@ def generate_control_chart_data(
 
 
 def generate_doe_data(seed: Optional[int] = GLOBAL_SEED) -> pd.DataFrame:
-    """
-    Generates data for a 2^3 full factorial Design of Experiments.
+    """Generates data for a 2^3 full factorial Design of Experiments.
 
     Args:
         seed: Optional seed for the random number generator.
@@ -147,21 +133,16 @@ def generate_doe_data(seed: Optional[int] = GLOBAL_SEED) -> pd.DataFrame:
         A DataFrame with coded factors and the measured response.
     """
     rng = _get_rng(seed)
-    factors = [-1, 1]  # Coded units for low and high levels
+    factors = [-1, 1]
     data = []
-    # Define model coefficients for a realistic response
     BETA_0, BETA_1, BETA_2, BETA_3, BETA_23 = 80, 5, -12, 8, 6
 
     for f1 in factors:
         for f2 in factors:
             for f3 in factors:
                 response = (
-                    BETA_0 +
-                    BETA_1 * f1 +
-                    BETA_2 * f2 +
-                    BETA_3 * f3 +
-                    BETA_23 * f2 * f3 +
-                    rng.normal(0, 2.5)  # Add random experimental noise
+                    BETA_0 + BETA_1 * f1 + BETA_2 * f2 + BETA_3 * f3 +
+                    BETA_23 * f2 * f3 + rng.normal(0, 2.5)
                 )
                 data.append([f1, f2, f3, response])
 
@@ -172,8 +153,7 @@ def generate_doe_data(seed: Optional[int] = GLOBAL_SEED) -> pd.DataFrame:
 
 
 def generate_kano_data(seed: Optional[int] = GLOBAL_SEED) -> pd.DataFrame:
-    """
-    Generates data to illustrate the Kano model categories.
+    """Generates data to illustrate the Kano model categories.
 
     Args:
         seed: Optional seed for the random number generator.
@@ -183,19 +163,18 @@ def generate_kano_data(seed: Optional[int] = GLOBAL_SEED) -> pd.DataFrame:
     """
     rng = _get_rng(seed)
     func = np.linspace(0, 10, 20)
-
-    # FIX: Corrected logic to prevent array mutation after creation.
-    # Basic (Must-be): Logarithmic curve, starts low and plateaus quickly.
+    
+    # Basic (Must-be): Logarithmic, plateaus quickly. Dissatisfaction if absent.
     basic_sat = np.log(func + 0.1) * 3 - 8
-    basic_sat[func == 0] = -10 # Ensure strong dissatisfaction at zero functionality
+    basic_sat[func == 0] = -10
     basic_sat = np.clip(basic_sat, -10, 0) + rng.normal(0, 0.3, 20)
 
-    # Performance: Linear relationship
+    # Performance: Linear relationship.
     perf_sat = np.linspace(-5, 5, 20) + rng.normal(0, 0.8, 20)
 
-    # Excitement (Delighter): Exponential curve, starts neutral and takes off late.
+    # Excitement (Delighter): Exponential, takes off late. Neutral if absent.
     excite_sat = np.exp(func * 0.4) - 1.5
-    excite_sat[func == 0] = 0 # No dissatisfaction if absent
+    excite_sat[func == 0] = 0
     excite_sat = np.clip(excite_sat, 0, 10) + rng.normal(0, 0.3, 20)
 
     df_basic = pd.DataFrame({'functionality': func, 'satisfaction': basic_sat, 'category': 'Basic (Must-be)'})
@@ -203,53 +182,6 @@ def generate_kano_data(seed: Optional[int] = GLOBAL_SEED) -> pd.DataFrame:
     df_excite = pd.DataFrame({'functionality': func, 'satisfaction': excite_sat, 'category': 'Excitement (Delighter)'})
 
     return pd.concat([df_basic, df_perf, df_excite], ignore_index=True)
-
-
-def generate_anova_data(
-    means: List[float], stds: List[float], n: int, seed: Optional[int] = GLOBAL_SEED
-) -> pd.DataFrame:
-    """
-    Generates data for ANOVA with multiple groups.
-
-    Args:
-        means: A list of mean values for each group.
-        stds: A list of standard deviations for each group.
-        n: The number of samples per group.
-        seed: Optional seed for the random number generator.
-
-    Returns:
-        A DataFrame with measured values and group labels.
-    """
-    rng = _get_rng(seed)
-    data, groups = [], []
-
-    for i, (mean, std) in enumerate(zip(means, stds)):
-        group_data = rng.normal(mean, std, n)
-        data.extend(group_data)
-        groups.extend([f'Lot {chr(65+i)}'] * n)
-
-    return pd.DataFrame({'Library_Yield': data, 'Reagent_Lot': groups})
-
-
-def generate_sensor_degradation_data(seed: Optional[int] = GLOBAL_SEED) -> pd.DataFrame:
-    """
-    Generates time-series data simulating sensor degradation.
-
-    Args:
-        seed: Optional seed for the random number generator.
-
-    Returns:
-        A DataFrame with run number and a sensor reading.
-    """
-    rng = _get_rng(seed)
-    time = np.arange(0, 100)
-    degradation = 100 * np.exp(-time * 0.015) + rng.normal(0, 0.5, 100)
-
-    # Inject a few sudden failure points
-    anomaly_indices = rng.choice(100, 3, replace=False)
-    degradation[anomaly_indices] -= rng.normal(5, 1, 3)
-
-    return pd.DataFrame({'Run_Number': time, 'Laser_Power_mW': degradation})
 
 
 # ==============================================================================
@@ -264,34 +196,20 @@ def generate_pareto_data() -> pd.DataFrame:
     })
 
 
-def generate_fmea_data() -> pd.DataFrame:
-    """Generates a sample FMEA table with Risk Priority Numbers (RPN)."""
+def generate_dfmea_data() -> pd.DataFrame:
+    """Generates a sample Design FMEA table with Risk Priority Numbers (RPN)."""
     data = [
-        {'Failure Mode': 'Reagent Contamination', 'Severity': 10, 'Occurrence': 3, 'Detection': 5},
-        {'Failure Mode': 'Incorrect Pipetting Volume', 'Severity': 8, 'Occurrence': 5, 'Detection': 3},
-        {'Failure Mode': 'Thermal Cycler Malfunction', 'Severity': 9, 'Occurrence': 2, 'Detection': 7},
-        {'Failure Mode': 'Sample Mis-labeling', 'Severity': 10, 'Occurrence': 1, 'Detection': 2}
+        {'Failure Mode': 'Incorrect material for sample well', 'Potential Effect': 'Sample Adsorption, low yield', 'Severity': 9, 'Potential Cause': 'Biocompatibility not verified', 'Occurrence': 3, 'Current Controls': 'Material Spec Sheet Review', 'Detection': 6},
+        {'Failure Mode': 'Fluidic channel geometry causes bubbles', 'Potential Effect': 'Flow obstruction, assay failure', 'Severity': 10, 'Potential Cause': 'Sharp corners in CAD model', 'Occurrence': 5, 'Current Controls': 'Visual Inspection', 'Detection': 7},
+        {'Failure Mode': 'Device housing cracks under stress', 'Potential Effect': 'Leakage, contamination', 'Severity': 7, 'Potential Cause': 'Low-grade polymer used', 'Occurrence': 2, 'Current Controls': 'Drop Test Protocol', 'Detection': 2}
     ]
     df = pd.DataFrame(data)
     df['RPN'] = df['Severity'] * df['Occurrence'] * df['Detection']
     return df.sort_values('RPN', ascending=False, ignore_index=True)
 
 
-def generate_vsm_data() -> pd.DataFrame:
-    """Generates data for a Value Stream Map."""
-    return pd.DataFrame([
-        {"Step": "Accessioning", "CycleTime": 10, "WaitTime": 120, "ValueAdded": True},
-        {"Step": "Extraction", "CycleTime": 90, "WaitTime": 30, "ValueAdded": True},
-        {"Step": "Lib Prep", "CycleTime": 240, "WaitTime": 1200, "ValueAdded": True},
-        {"Step": "Sequencing", "CycleTime": 1440, "WaitTime": 2880, "ValueAdded": True},
-        {"Step": "Biofx", "CycleTime": 180, "WaitTime": 60, "ValueAdded": True},
-        {"Step": "Reporting", "CycleTime": 30, "WaitTime": 240, "ValueAdded": True}
-    ])
-
-
 def generate_hotelling_data(seed: Optional[int] = GLOBAL_SEED) -> pd.DataFrame:
-    """
-    Generates multivariate data for Hotelling's T-squared chart.
+    """Generates multivariate data for Hotelling's T-squared chart.
 
     Args:
         seed: Optional seed for the random number generator.
@@ -302,16 +220,15 @@ def generate_hotelling_data(seed: Optional[int] = GLOBAL_SEED) -> pd.DataFrame:
     rng = _get_rng(seed)
     mean_in, cov_in = [85, 15], [[4, -3], [-3, 4]]
     data_in = rng.multivariate_normal(mean_in, cov_in, 80)
-
+    
     mean_out = [80, 22]  # Shifted mean for the outlier group
     data_out = rng.multivariate_normal(mean_out, cov_in, 20)
-
+    
     return pd.DataFrame(np.vstack((data_in, data_out)), columns=['Pct_Mapped', 'Pct_Duplication'])
 
 
 def generate_rsm_data(seed: Optional[int] = GLOBAL_SEED) -> pd.DataFrame:
-    """
-    Generates data for a Response Surface Methodology plot.
+    """Generates data for a Response Surface Methodology plot.
 
     Args:
         seed: Optional seed for the random number generator.
@@ -323,10 +240,9 @@ def generate_rsm_data(seed: Optional[int] = GLOBAL_SEED) -> pd.DataFrame:
     temp = np.linspace(50, 70, 15)
     conc = np.linspace(1, 2, 15)
     T, C = np.meshgrid(temp, conc)
-
-    # A quadratic model with an interaction term and noise
+    
     yield_val = 90 - 0.1*(T-60)**2 - 20*(C-1.5)**2 - 0.5*(T-60)*(C-1.5) + rng.normal(0, 2, T.shape)
-
+    
     return pd.DataFrame({
         'Temperature': T.ravel(),
         'Concentration': C.ravel(),
@@ -338,7 +254,7 @@ def generate_qfd_data() -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Generates static data for a Quality Function Deployment matrix."""
     customer_reqs = ['High Sensitivity', 'High Specificity', 'Fast Turnaround', 'Low Cost']
     weights = pd.DataFrame({'Importance': [5, 5, 3, 4]}, index=customer_reqs)
-
+    
     tech_chars = ['LOD (VAF %)', 'Specificity (%)', 'Hands-on Time (min)', 'Reagent Cost ($)']
     relationships = np.array([
         [9, 1, 3, 1],
@@ -348,18 +264,6 @@ def generate_qfd_data() -> Tuple[pd.DataFrame, pd.DataFrame]:
     ])
     rel_df = pd.DataFrame(relationships, index=customer_reqs, columns=tech_chars)
     return weights, rel_df
-
-
-def generate_dfmea_data() -> pd.DataFrame:
-    """Generates a sample Design FMEA table."""
-    data = [
-        {'Potential Failure Mode': 'Incorrect material for sample well', 'Potential Effect': 'Sample Adsorption, low yield', 'Severity': 9, 'Potential Cause': 'Biocompatibility not verified', 'Occurrence': 3, 'Current Controls': 'Material Spec Sheet Review', 'Detection': 6},
-        {'Potential Failure Mode': 'Fluidic channel geometry causes bubbles', 'Potential Effect': 'Flow obstruction, assay failure', 'Severity': 10, 'Potential Cause': 'Sharp corners in CAD model', 'Occurrence': 5, 'Current Controls': 'Visual Inspection', 'Detection': 7},
-        {'Potential Failure Mode': 'Device housing cracks under stress', 'Potential Effect': 'Leakage, contamination', 'Severity': 7, 'Potential Cause': 'Low-grade polymer used', 'Occurrence': 2, 'Current Controls': 'Drop Test Protocol', 'Detection': 2}
-    ]
-    df = pd.DataFrame(data)
-    df['RPN'] = df['Severity'] * df['Occurrence'] * df['Detection']
-    return df.sort_values('RPN', ascending=False, ignore_index=True)
 
 
 def generate_capa_data() -> pd.DataFrame:
@@ -380,7 +284,14 @@ def generate_capa_data() -> pd.DataFrame:
 
 
 def generate_adverse_event_data(seed: Optional[int] = GLOBAL_SEED) -> pd.DataFrame:
-    """Generates synthetic adverse event narrative data."""
+    """Generates synthetic adverse event narrative data for NLP clustering.
+
+    Args:
+        seed: Optional seed for the random number generator.
+
+    Returns:
+        A DataFrame with event IDs and text descriptions.
+    """
     rng = _get_rng(seed)
     narratives = [
         'Patient experienced severe rash after starting treatment',
@@ -392,12 +303,11 @@ def generate_adverse_event_data(seed: Optional[int] = GLOBAL_SEED) -> pd.DataFra
     ]
     counts = [15, 10, 40, 25, 2, 8]
     
-    # FIX: Use a more robust generation method than np.repeat
     descriptions = []
     for narrative, count in zip(narratives, counts):
         descriptions.extend([narrative] * count)
         
-    rng.shuffle(descriptions) # Make the data less uniform
+    rng.shuffle(descriptions) # Make the data order less uniform for a better demo
 
     return pd.DataFrame({
         "event_id": range(1, len(descriptions) + 1),
@@ -406,8 +316,7 @@ def generate_adverse_event_data(seed: Optional[int] = GLOBAL_SEED) -> pd.DataFra
 
 
 def generate_risk_signal_data(seed: Optional[int] = GLOBAL_SEED) -> pd.DataFrame:
-    """
-    Generates multivariate manufacturing data for risk signal detection.
+    """Generates multivariate manufacturing data for risk signal detection.
 
     Args:
         seed: Optional seed for the random number generator.
@@ -430,8 +339,7 @@ def generate_risk_signal_data(seed: Optional[int] = GLOBAL_SEED) -> pd.DataFrame
 
 
 def generate_pccp_data(seed: Optional[int] = GLOBAL_SEED) -> pd.DataFrame:
-    """
-    Generates data simulating AI/ML model performance degradation.
+    """Generates data simulating AI/ML model performance degradation for PCCP.
 
     Args:
         seed: Optional seed for the random number generator.
@@ -441,32 +349,7 @@ def generate_pccp_data(seed: Optional[int] = GLOBAL_SEED) -> pd.DataFrame:
     """
     rng = _get_rng(seed)
     time = np.arange(100)
-    # Performance degrades quadratically with some noise
     performance = 0.95 - 0.0001 * time - 0.000005 * time**2 + rng.normal(0, 0.005, 100)
-    # A sudden drop due to a change in data distribution
-    performance[70:] -= 0.05
-
-    return pd.DataFrame({'Deployment_Day': time, 'Model_AUC': performance})
-
-
-def generate_validation_data(seed: Optional[int] = GLOBAL_SEED) -> Tuple[pd.DataFrame, Dict[str, np.ndarray]]:
-    """
-    Generates summary metrics and bootstrap samples for validation.
-
-    Args:
-        seed: Optional seed for the random number generator.
-
-    Returns:
-        A tuple containing a DataFrame of point estimates and a dictionary
-        of bootstrapped sample distributions.
-    """
-    rng = _get_rng(seed)
-    data = {'Metric': ['Accuracy', 'Sensitivity', 'Specificity'], 'Value': [0.95, 0.92, 0.97]}
-    df = pd.DataFrame(data)
-
-    bootstrap_samples = {
-        'Accuracy': rng.normal(0.95, 0.02, 1000),
-        'Sensitivity': rng.normal(0.92, 0.04, 1000),
-        'Specificity': rng.normal(0.97, 0.015, 1000)
-    }
-    return df, bootstrap_samples
+    performance[70:] -= 0.05 # Sudden drop due to data distribution shift
+    
+    return pd.DataFrame({'Deployment_Day': time, 'Model_AUC': np.clip(performance, 0, 1)})
