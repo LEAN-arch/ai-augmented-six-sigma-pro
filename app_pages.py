@@ -140,7 +140,7 @@ def show_measure_phase():
         with col2:
             st.markdown("##### **Capability Indices**")
             cp_color = "success" if cp >= 1.33 else ("warning" if cp >= 1.0 else "error")
-            cpk_color = "success" if cpk >= 1.33 else ("warning" if cp >= 1.0 else "error")
+            cpk_color = "success" if cpk >= 1.33 else ("warning" if cpk >= 1.0 else "error")
             st.metric(label="Process Potential (Cp)", value=f"{cp:.2f}", help="Measures potential. Target: > 1.33")
             st.markdown(f'<hr style="margin-top:0; margin-bottom:0.5rem; border-color:{COLORS[cp_color]}">', unsafe_allow_html=True)
             st.metric(label="Process Capability (Cpk)", value=f"{cpk:.2f}", help="Measures performance. Target: > 1.33")
@@ -220,6 +220,7 @@ def show_analyze_phase():
         with tab3:
             st.markdown("##### **Tool: Fault Tree Analysis (FTA)**")
             st.plotly_chart(plot_fault_tree_plotly(), use_container_width=True)
+            st.markdown("---")
             st.markdown("##### **Tool: 5 Whys Analysis**")
             st.plotly_chart(plot_5whys_diagram(), use_container_width=True)
         with tab4:
@@ -236,7 +237,7 @@ def show_improve_phase():
     st.markdown("---")
 
     with st.container(border=True):
-        st.subheader("1. Finding Optimal Protocol Settings")
+        st.subheader("1. Design Space & Process Optimization")
         tab1, tab2 = st.tabs(["🧪 Design of Experiments (DOE) & RSM", "🤖 Bayesian Optimization"])
         with tab1:
             st.markdown("##### **Classical: Design of Experiments (DOE)**")
@@ -247,6 +248,12 @@ def show_improve_phase():
             st.markdown("---")
             st.markdown("##### **Classical: Response Surface Methodology (RSM)**")
             st.plotly_chart(plot_rsm_contour(generate_rsm_data()), use_container_width=True)
+            with st.expander("Methodology & Regulatory Significance"):
+                st.markdown("""
+                **Methodology:** DOE and RSM are the gold standard for efficiently exploring process parameters and their interactions to find an optimal operating window.
+                
+                **Regulatory Significance:** This is the primary method for defining and justifying the **Design Space** under ICH Q8. A well-defined Design Space provides operational flexibility and is a sign of a deep process understanding, which is highly valued by regulators.
+                """)
         with tab2:
             st.markdown("##### **ML Augmentation: Bayesian Optimization**")
             st.sidebar.header("🔬 Simulators"); st.sidebar.markdown("---"); st.sidebar.subheader("Bayesian Optimization")
@@ -258,6 +265,12 @@ def show_improve_phase():
             if st.sidebar.button("Reset Simulation", key='bo_reset'): st.session_state.sampled_points = {'x': [2.0, 18.0], 'y': [true_func(2.0), true_func(18.0)]}
             fig_bo, _ = plot_bayesian_optimization_interactive(true_func, x_range, st.session_state.sampled_points)
             st.plotly_chart(fig_bo, use_container_width=True)
+            with st.expander("Methodology & Regulatory Significance"):
+                 st.markdown("""
+                **Methodology:** A Gaussian Process Regression (GPR) model is trained on initial experimental results to create a 'digital twin' of the process. Bayesian Optimization then uses this model to intelligently select the next most informative experiment to run, drastically reducing the time and cost to find the true optimum.
+                
+                **Regulatory Significance:** This is a powerful accelerator. The GPR model is used for *exploration*; the final proposed optimal settings must still be **confirmed with physical validation runs**. The entire process, including the ML-guided experimental path, is documented in the DHF, showcasing a state-of-the-art, efficient development process.
+                """)
 
     with st.container(border=True):
         st.subheader("2. Proactively Mitigating Risks in the Improved Process")
@@ -277,7 +290,7 @@ def show_control_phase():
     st.markdown("**Objective:** To implement a robust Quality Control (QC) system to monitor the optimized process, ensuring performance remains stable and compliant over time, and to actively monitor post-market data.")
     st.markdown("> **Applicable Regulatory Stages:** Continued Process Verification (CPV, FDA Stage 3), Post-Market Surveillance (PMS)")
     st.markdown("---")
-
+    
     with st.container(border=True):
         st.subheader("1. Monitoring for Stability: Statistical Process Control (SPC)")
         st.sidebar.header("🔬 Simulators"); st.sidebar.markdown("---"); st.sidebar.subheader("QC Simulator")
