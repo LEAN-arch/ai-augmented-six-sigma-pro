@@ -1,12 +1,12 @@
 """
 main_app.py
 
-Serves as the primary entry point and navigation controller for the Bio-AI 
+Serves as the primary entry point and navigation controller for the Bio-AI
 Excellence Framework application.
 
 This script is responsible for:
 1.  Initializing global configurations (logging, page settings).
-2.  Loading external configurations and secrets.
+2.  Loading external configurations and secrets with robust fallbacks.
 3.  Dynamically and safely importing page-rendering functions.
 4.  Constructing the application's navigation structure using Streamlit's
     modern st.navigation API.
@@ -18,7 +18,7 @@ handles the "scaffolding" and "routing," while content and logic are delegated
 to dedicated modules.
 
 Author: AI Engineering SME
-Version: 23.1 (Commercial Grade Refactor)
+Version: 23.2 (Hardened Refactor)
 Date: 2023-10-26
 """
 
@@ -30,19 +30,16 @@ from typing import List, Callable
 # ==============================================================================
 # 0. APPLICATION BOOTSTRAP & INITIALIZATION
 # ==============================================================================
-# Encapsulates the application's core logic into a main function. This is a 
-# standard Python best practice that prevents global scope pollution and makes
-# the script's behavior explicit and testable.
 def main():
     """
     Main function to configure and run the Streamlit application.
     """
     # --- 0.1. Logging Configuration ---
-    # Centralized logging is critical for debugging and monitoring in production.
-    # It provides a standardized way to record events, warnings, and errors.
-    # Configuration is loaded from secrets.toml to allow environment-specific
-    # logging levels (e.g., DEBUG in dev, INFO in prod).
-    log_level_str = st.secrets.get("logging", {}).get("level", "INFO").upper()
+    # Centralized logging is critical. We use .get() for safe access to secrets.
+    # This prevents a crash if the [logging] section is missing from secrets.toml.
+    log_config = st.secrets.get("logging", {})
+    log_level_str = log_config.get("level", "INFO").upper()
+
     logging.basicConfig(
         level=getattr(logging, log_level_str, logging.INFO),
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
@@ -51,21 +48,19 @@ def main():
     logger = logging.getLogger(__name__)
     logger.info("Application starting up.")
 
-
     # --- 0.2. Dynamic & Resilient Module Imports ---
-    # To prevent the entire app from crashing due to an error in a single page 
-    # or helper, we wrap imports in try-except blocks. This makes the application
-    # robust and gracefully degradable.
+    # This prevents the app from crashing if a page has a syntax error.
     try:
-        from app_helpers import get_custom_css
-        logger.debug("Successfully imported 'app_helpers'.")
+        from helpers.styling import get_custom_css
+        from helpers.content import get_workflow_css, render_workflow_step
+        logger.debug("Successfully imported 'helpers' modules.")
     except ImportError as e:
-        logger.error(f"Fatal error: Failed to import critical module 'app_helpers'. {e}")
+        logger.error(f"Fatal error: Failed to import critical helper modules. {e}")
         st.error(
             "Application startup failed: A critical component could not be loaded. "
-            "Please check the logs for more details."
+            "Please check the logs and file structure. The 'helpers' package may be missing."
         )
-        st.stop() # Halt execution if a critical helper is missing.
+        st.stop()
 
     try:
         from app_pages import (
@@ -85,78 +80,69 @@ def main():
         ]
         logger.debug("Successfully imported all page modules.")
     except ImportError as e:
-        logger.error(f"Error importing one or more page modules: {e}. The app will run without them.")
+        logger.error(f"Error importing one or more page modules: {e}. The app may be unstable.")
         st.toast(f"Warning: A page module failed to load. {e}", icon="⚠️")
-        # Gracefully filter out pages that failed to import if necessary.
-        # This simple implementation assumes all pages loaded or none did for brevity.
-        # A more complex system could check each function individually.
-
 
     # ==============================================================================
-    # 1. GLOBAL PAGE CONFIGURATION
+    # 1. GLOBAL PAGE CONFIGURATION (WITH HARDENED SECRET ACCESS)
     # ==============================================================================
-    # This must be the first Streamlit command. Configuration is loaded from 
-    # st.secrets to avoid hardcoding and facilitate environment changes.
-    logger.debug("Setting page configuration.")
-    app_version = st.secrets.get("app_meta", {}).get("version", "N/A")
+    # --- Safe loading of secrets with default fallbacks ---
+    # This is the key fix for the traceback. By using .get(key, default_value),
+    # the app will not crash if a section or key is missing in secrets.toml.
+    app_meta = st.secrets.get("app_meta", {})
+    app_version = app_meta.get("version", "N/A")
+
+    url_config = st.secrets.get("urls", {})
+    help_url = url_config.get("help", "#")
+    bug_report_url = url_config.get("bug_report", "#")
+    source_code_url = url_config.get("source_code", "#")
+
     st.set_page_config(
         page_title="Bio-AI Excellence Framework",
         page_icon="🧬",
         layout="wide",
         initial_sidebar_state="expanded",
         menu_items={
-            'Get Help': st.secrets.urls.help,
-            'Report a bug': st.secrets.urls.bug_report,
+            'Get Help': help_url,
+            'Report a bug': bug_report_url,
             'About': f"""
             ## 🧬 The Bio-AI Excellence Framework
-            
-            **An interactive playbook for developing and optimizing robust genomic assays and devices.**
+
+            **An interactive playbook for optimizing genomic assays and devices.**
 
             This application demonstrates a unified framework that fuses the statistical rigor of
-            classical **Design of Experiments (DOE) and Six Sigma** with the predictive power of **Machine Learning and Bioinformatics**.
-            
-            Navigate through the R&D lifecycle (framed as DMAIC) to see foundational methods presented 
-            alongside their AI-augmented and regulatory-compliant counterparts for the modern biotech lab. This version integrates both the original educational examples and the advanced, expert-level QMS/regulatory tools.
-            
+            **Six Sigma** with the predictive power of **Machine Learning**.
+
             **Version:** {app_version}
             """
         }
     )
 
     # --- 1.1. Custom Styling ---
-    # Apply custom CSS. The use of unsafe_allow_html is a known security consideration.
-    # We acknowledge this and ensure the source is trusted and internally controlled.
-    # Reference: OWASP Top 10 - A03:2021 - Injection
+    # SECURITY NOTE: The 'unsafe_allow_html' parameter is used here with trusted,
+    # internally-generated CSS. This is a controlled risk. Do not pass any
+    # user-generated or external strings to this function to prevent XSS attacks.
     try:
-        css = get_custom_css()
-        # SECURITY NOTE: The 'unsafe_allow_html' parameter is used here with trusted,
-        # internally-generated CSS. This is a controlled risk. Do not pass any
-        # user-generated or external strings to this function to prevent XSS attacks.
-        st.markdown(css, unsafe_allow_html=True)
+        st.markdown(get_custom_css(), unsafe_allow_html=True)
         logger.debug("Custom CSS applied successfully.")
     except Exception as e:
         logger.warning(f"Failed to apply custom CSS. Using default theme. Error: {e}")
         st.toast("Could not load custom theme.", icon="🎨")
 
-
     # ==============================================================================
     # 2. APPLICATION NAVIGATION & SIDEBAR
     # ==============================================================================
-    # Using st.Page and st.navigation is the modern, idiomatic way to build
-    # multi-page apps in Streamlit. It's robust and manages state correctly.
     logger.debug("Configuring application navigation.")
     PAGES = [
-        st.Page(page_func, title=title, icon=icon) 
+        st.Page(page_func, title=title, icon=icon)
         for title, page_func, icon in page_modules
     ]
 
-    # --- Sidebar Rendering ---
     with st.sidebar:
         st.title("🧬 Bio-AI Framework")
         st.markdown("##### Assay Development Playbook")
         st.markdown("Navigate the R&D lifecycle below.")
-        
-        # Create the navigation menu from the list of pages
+
         pg = st.navigation(PAGES)
 
         st.divider()
@@ -164,29 +150,26 @@ def main():
             "This app demonstrates a framework for integrating Machine Learning into the "
             "biotech R&D lifecycle to achieve superior assay performance and reliability."
         )
-        st.markdown(
-            f"**[View Source on GitHub]({st.secrets.urls.source_code})**"
-        )
+        # Use the safely-loaded URL with a fallback.
+        st.markdown(f"**[View Source on GitHub]({source_code_url})**")
         st.caption(f"Version: {app_version}")
-    
-    logger.info("Sidebar rendered and navigation configured.")
 
+    logger.info("Sidebar rendered and navigation configured.")
 
     # ==============================================================================
     # 3. PAGE RENDERING LOGIC
     # ==============================================================================
-    # The st.navigation object handles the rendering of the selected page.
-    # This single line executes the function associated with the current page.
     logger.info(f"Running page: '{pg.title}'")
-    pg.run()
-    logger.info(f"Finished rendering page: '{pg.title}'")
-
+    try:
+        pg.run()
+        logger.info(f"Finished rendering page: '{pg.title}'")
+    except Exception as e:
+        logger.error(f"An error occurred while rendering page '{pg.title}': {e}", exc_info=True)
+        st.error(f"An unexpected error occurred on this page. Please check the logs or contact support.")
+        st.exception(e)
 
 # ==============================================================================
 # SCRIPT ENTRY POINT
 # ==============================================================================
 if __name__ == "__main__":
-    # The `if __name__ == "__main__"` block ensures that the `main()` function is
-    # called only when the script is executed directly. This is crucial for making
-    # the code testable, reusable, and compliant with Python standards.
     main()
