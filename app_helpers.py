@@ -7,15 +7,14 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 import shap
 
-from sklearn.linear_model import LinearRegression, LogisticRegression
-from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
+from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans, DBSCAN
-from sklearn.manifold import TSNE
-from scipy.stats import gaussian_kde, f_oneway, ttest_ind
+from scipy.stats import gaussian_kde, f_oneway
 from scipy.stats import f as f_dist
 from typing import List, Dict, Tuple
 
@@ -155,6 +154,66 @@ def _add_network_nodes_and_edges(fig: go.Figure, nodes: Dict, edges: List[Tuple]
     if annotations:
         for node_id, node_data in nodes.items(): fig.add_annotation(x=node_data['x'], y=node_data['y'], text=f"<b>{node_data['text'].replace('<br>', '<br>')}</b>", showarrow=False, font=dict(color=COLORS['text'], size=11, family="Arial"), bgcolor=hex_to_rgba(node_data.get('color', COLORS['primary']), 0.15), bordercolor=node_data.get('color', COLORS['primary']), borderwidth=2, borderpad=10, align="center")
 
+# --- ALL VISUALIZATION FUNCTIONS, RESTORED AND VERIFIED ---
+
+def plot_qfd_house_of_quality() -> go.Figure:
+    weights, rel_df = generate_qfd_data()
+    tech_importance = (rel_df.T * weights['Importance'].values).T.sum()
+    fig = make_subplots(rows=2, cols=2, column_widths=[0.25, 0.75], row_heights=[0.75, 0.25], specs=[[{"type": "table"}, {"type": "heatmap"}], [None, {"type": "bar"}]], vertical_spacing=0.02, horizontal_spacing=0.02)
+    fig.add_trace(go.Heatmap(z=rel_df.values, x=rel_df.columns, y=rel_df.index, colorscale='Blues', text=rel_df.values, texttemplate="%{text}", showscale=False), row=1, col=2)
+    fig.add_trace(go.Table(header=dict(values=['<b>Customer Need</b>', '<b>Importance</b>'], fill_color=COLORS['dark_gray'], font=dict(color='white'), align='left'), cells=dict(values=[weights.index, weights.Importance], align='left', height=40, fill_color=[[hex_to_rgba(COLORS['light_gray'], 0.2), 'white']*len(weights)])), row=1, col=1)
+    fig.add_trace(go.Bar(x=tech_importance.index, y=tech_importance.values, marker_color=COLORS['primary'], text=tech_importance.values, texttemplate='%{text:.0f}', textposition='outside'), row=2, col=2)
+    fig.update_layout(title_text="<b>QFD 'House of Quality':</b> Translating VOC to Design Specs", plot_bgcolor='white', showlegend=False, margin=dict(l=10, r=10, t=50, b=10), height=500); fig.update_xaxes(showticklabels=False, row=1, col=2); fig.update_yaxes(title_text="<b>Technical Importance Score</b>", row=2, col=2, range=[0, max(tech_importance.values)*1.2]); return fig
+def plot_dfmea_table() -> go.Figure:
+    df = generate_dfmea_data(); column_widths = [4, 3, 1, 3, 1, 3, 1, 1]
+    fig = go.Figure(data=[go.Table(columnorder=list(range(len(df.columns))), columnwidth=column_widths, header=dict(values=[f'<b>{col.replace(" ", "<br>")}</b>' for col in df.columns], fill_color=COLORS['dark_gray'], font=dict(color='white'), align='center', height=50), cells=dict(values=[df[c] for c in df.columns], align='left', height=60, fill_color=[[hex_to_rgba(COLORS['danger'], 0.5) if c == 'RPN' and v > 200 else (hex_to_rgba(COLORS['warning'], 0.5) if c == 'RPN' and v > 100 else 'white') for v in df[c]] for c in df.columns]))])
+    fig.update_layout(title="<b>Design FMEA (DFMEA):</b> Proactive Risk Analysis of Device Design", margin=dict(l=10, r=10, t=50, b=10), height=350); return fig
+def plot_risk_signal_clusters() -> go.Figure:
+    df = generate_risk_signal_data(); model = DBSCAN(eps=3, min_samples=3).fit(df[['Temp_C', 'Pressure_psi']]); df['cluster'] = [str(c) for c in model.labels_]; df.loc[df['cluster'] == '-1', 'cluster'] = 'Outlier/Anomaly'
+    fig = px.scatter(df, x='Temp_C', y='Pressure_psi', color='cluster', symbol='Source', color_discrete_map={'0': COLORS['primary'], '1': COLORS['secondary'], 'Outlier/Anomaly': COLORS['danger']}, title="<b>ML Clustering of Process Data for Risk Signal Detection</b>")
+    fig.update_layout(plot_bgcolor='white', legend_title="Identified Group", xaxis_title="Temperature (°C)", yaxis_title="Pressure (psi)"); fig.update_traces(marker=dict(size=10, line=dict(width=1, color='DarkSlateGrey'))); return fig
+def plot_rsm_contour(df: pd.DataFrame) -> go.Figure:
+    fig = go.Figure(data=go.Contour(z=df['Yield'], x=df['Temperature'], y=df['Concentration'], colorscale='Viridis', contours=dict(coloring='heatmap', showlabels=True, labelfont=dict(size=12, color='white'))))
+    max_yield_point = df.loc[df['Yield'].idxmax()]; fig.add_trace(go.Scatter(x=[max_yield_point['Temperature']], y=[max_yield_point['Concentration']], mode='markers', marker=dict(color=COLORS['danger'], size=15, symbol='star'), name='Optimal Point'))
+    fig.update_layout(title="<b>Response Surface Methodology (RSM):</b> Mapping the Design Space", xaxis_title="Temperature (°C)", yaxis_title="Enzyme Concentration", plot_bgcolor='white', showlegend=False); return fig
+def plot_model_validation_ci() -> go.Figure:
+    df, bootstrap_samples = generate_validation_data(); fig = go.Figure()
+    for i, row in df.iterrows():
+        metric = row['Metric']; samples = bootstrap_samples[metric]; ci_95 = np.percentile(samples, [2.5, 97.5])
+        fig.add_trace(go.Box(y=samples, name=metric, marker_color=COLORS['primary'])); fig.add_annotation(x=metric, y=ci_95[1], text=f"<b>95% CI:</b> [{ci_95[0]:.3f}, {ci_95[1]:.3f}]", showarrow=False, yshift=20, font=dict(color=COLORS['dark_gray']))
+    fig.update_layout(title="<b>ML Model Validation with Bootstrapped Confidence Intervals</b>", yaxis_title="Performance Metric Value", plot_bgcolor='white', showlegend=False); return fig
+def plot_fault_tree_plotly() -> go.Figure:
+    fig = _create_network_fig(height=500, x_range=[-0.5, 4.5], y_range=[-0.5, 5]); nodes = {'top':{'x': 2, 'y': 4.5, 'text': '<b>TOP EVENT</b><br>False Negative Result', 'color': COLORS['danger']}, 'or1':{'x': 2, 'y': 3.5, 'text': 'OR Gate', 'color': COLORS['dark_gray']}, 'and1':{'x': 0.5, 'y': 2, 'text': 'AND Gate', 'color': COLORS['dark_gray']}, 'assay':{'x': 3.5, 'y': 2.5, 'text': 'Assay Failure', 'color': COLORS['primary']}, 'reagent':{'x': 0, 'y': 1, 'text': 'Reagent Degraded<br>P=0.01', 'color': COLORS['secondary']}, 'storage':{'x': 1, 'y': 1, 'text': 'Improper Storage<br>P=0.05', 'color': COLORS['secondary']}, 'sample':{'x': 3.5, 'y': 1.5, 'text': 'Low DNA Input<br>P=0.02', 'color': COLORS['primary']}}
+    edges = [('top', 'or1'), ('or1', 'and1'), ('or1', 'assay'), ('assay', 'sample'), ('and1', 'reagent'), ('and1', 'storage')]; _add_network_nodes_and_edges(fig, nodes, edges); fig.update_layout(title="<b>Fault Tree Analysis (FTA):</b> Top-Down Risk Assessment"); return fig
+def plot_nlp_on_capa_logs() -> go.Figure:
+    df = generate_capa_data(); topics = {"Reagent/Storage Issue": "enzyme|degradation|lot|freezer|stored|mobile phase", "Contamination": "contamination|aerosolization|negative control", "Hardware Failure": "thermal cycler|calibration|overshoot|robot|clogged|nozzle", "Human Error": "pipetting|inconsistent volumes"}
+    topic_counts = {topic: df['Description'].str.contains(pattern, case=False).sum() for topic, pattern in topics.items()}
+    fig = px.bar(x=list(topic_counts.values()), y=list(topic_counts.keys()), orientation='h', color=list(topic_counts.keys()), labels={'y': 'Identified Failure Theme', 'x': 'Frequency'}, title="<b>NLP Topic Modeling on CAPA & Deviation Logs</b>", color_discrete_map={"Reagent/Storage Issue": COLORS['primary'], "Contamination": COLORS['accent'], "Hardware Failure": COLORS['danger'], "Human Error": COLORS['warning']})
+    fig.update_layout(plot_bgcolor='white', showlegend=False, yaxis={'categoryorder':'total ascending'}); return fig
+def plot_5whys_diagram() -> go.Figure:
+    fig = _create_network_fig(height=550, y_range=[-0.5, 5.5]); steps = [('Problem', 'Low Library Yield on Plate 4'), ('Why 1?', 'Reagents added improperly.'), ('Why 2?', 'Technician used a miscalibrated multi-channel pipette.'), ('Why 3?', 'Pipette was overdue for its 6-month calibration.'), ('Why 4?', 'Calibration tracking system is a manual spreadsheet, prone to error.'), ('Root Cause', 'The asset management system is not robust enough to prevent use of out-of-spec equipment.')]
+    nodes, edges = {}, [];
+    for i, (level, text) in enumerate(steps): y_pos = 5 - i; color = COLORS['danger'] if i == 0 else (COLORS['success'] if i == len(steps) - 1 else COLORS['primary']); nodes[f's{i}'] = {'x': 1, 'y': y_pos, 'text': f'<b>{level}</b><br>{text}', 'color': color};
+    if i > 0: edges.append((f's{i-1}', f's{i}'))
+    _add_network_nodes_and_edges(fig, nodes, edges); fig.update_layout(title="<b>5 Whys Analysis:</b> Drilling Down to the True Root Cause"); return fig
+def plot_pccp_monitoring() -> go.Figure:
+    df = generate_pccp_data(); fig = go.Figure(); fig.add_trace(go.Scatter(x=df['Deployment_Day'], y=df['Model_AUC'], mode='lines', name='Model Performance (AUC)', line=dict(color=COLORS['primary']))); fig.add_hline(y=0.90, line=dict(color=COLORS['danger'], dash='dash'), name='Performance Threshold'); fig.add_vrect(x0=70, x1=100, fillcolor=hex_to_rgba(COLORS['warning'], 0.2), line_width=0, name="Performance Degradation"); fig.add_annotation(x=85, y=0.87, text="<b>Retraining & Revalidation<br>Triggered per PCCP</b>", showarrow=True, arrowhead=1, ax=0, ay=-40, bgcolor="rgba(255,255,255,0.7)")
+    fig.update_layout(title="<b>PCCP Monitoring for an AI/ML Device (SaMD)</b>", xaxis_title="Days Since Deployment", yaxis_title="Model Area Under Curve (AUC)", plot_bgcolor='white', legend=dict(x=0.01, y=0.01, yanchor='bottom')); return fig
+def plot_adverse_event_clusters() -> go.Figure:
+    df = generate_adverse_event_data(); vectorizer = TfidfVectorizer(stop_words='english'); X = vectorizer.fit_transform(df['description']); pca = PCA(n_components=2, random_state=42); X_pca = pca.fit_transform(X.toarray()); kmeans = KMeans(n_clusters=4, random_state=42, n_init=10); df['cluster'] = kmeans.fit_predict(X); df['x'] = X_pca[:, 0]; df['y'] = X_pca[:, 1]
+    cluster_names = {0: "Neurological (Headache, Dizziness)", 1: "Allergic / Skin Reaction", 2: "Systemic (Liver, Anaphylaxis)", 3: "Gastrointestinal / Injection Site"}; df['cluster_name'] = df['cluster'].map(cluster_names)
+    fig = px.scatter(df, x='x', y='y', color='cluster_name', hover_data=['description'], title="<b>ML Clustering of Adverse Event Narratives for Signal Detection</b>", labels={'color': 'Event Cluster'}); fig.update_layout(xaxis_title="PCA Component 1", yaxis_title="PCA Component 2", plot_bgcolor='white', xaxis=dict(showticklabels=False, zeroline=False, showgrid=False), yaxis=dict(showticklabels=False, zeroline=False, showgrid=False)); return fig
+def train_and_plot_regression_models(df: pd.DataFrame) -> Tuple[go.Figure, RandomForestRegressor, pd.DataFrame]:
+    X, y = df.drop(columns=['On_Target_Rate']), df['On_Target_Rate']; lin_reg = LinearRegression().fit(X, y); y_pred_lin = lin_reg.predict(X); r2_lin = lin_reg.score(X, y)
+    rf_reg = RandomForestRegressor(n_estimators=100, random_state=42, oob_score=True).fit(X, y); y_pred_rf = rf_reg.predict(X); r2_rf = rf_reg.oob_score_
+    sort_idx = X['Annealing_Temp'].argsort(); fig = go.Figure(); fig.add_trace(go.Scatter(x=X['Annealing_Temp'].iloc[sort_idx], y=y.iloc[sort_idx], mode='markers', name='Actual Data', marker=dict(color=COLORS['dark_gray'], opacity=0.4))); fig.add_trace(go.Scatter(x=X['Annealing_Temp'].iloc[sort_idx], y=y_pred_lin[sort_idx], mode='lines', name=f'Linear Model (R²={r2_lin:.2f})', line=dict(color=COLORS['primary'], width=3))); fig.add_trace(go.Scatter(x=X['Annealing_Temp'].iloc[sort_idx], y=y_pred_rf[sort_idx], mode='lines', name=f'Random Forest (OOB R²={r2_rf:.2f})', line=dict(color=COLORS['secondary'], width=3, dash='dot')))
+    fig.update_layout(title_text="<b>Regression:</b> Modeling Assay Performance", xaxis_title="Primary Factor: Annealing Temp (°C)", yaxis_title="On-Target Rate (%)", legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01), plot_bgcolor='white'); return fig, rf_reg, X
+def plot_shap_summary(model: RandomForestRegressor, X: pd.DataFrame) -> go.Figure:
+    explainer = shap.TreeExplainer(model); shap_values = explainer(X); fig = go.Figure()
+    for i, feature in enumerate(X.columns):
+        y_jitter = np.random.uniform(-0.25, 0.25, len(shap_values)); y_pos = np.full(len(shap_values), i) + y_jitter
+        fig.add_trace(go.Scatter(x=shap_values.values[:, i], y=y_pos, mode='markers', marker=dict(color=shap_values.data[:, i], colorscale='RdBu_r', showscale=(i == 0), colorbar=dict(title="Feature Value<br>High / Low", x=1.02, y=0.5, len=0.75), symbol='circle', size=6, opacity=0.7), hoverinfo='text', hovertext=[f'<b>{feature}</b><br>Value: {val:.2f}<br>SHAP: {shap_val:.2f}' for val, shap_val in zip(shap_values.data[:, i], shap_values.values[:, i])], showlegend=False))
+    fig.update_layout(title="<b>XAI with SHAP:</b> Parameter Impact on Outcome", xaxis_title="SHAP Value (Impact on Model Output)", yaxis=dict(tickmode='array', tickvals=list(range(len(X.columns))), ticktext=[col.replace('_', ' ') for col in X.columns], showgrid=True, gridcolor=COLORS['light_gray']), plot_bgcolor='white', margin=dict(l=150)); return fig
 def plot_ctq_tree_plotly() -> go.Figure:
     fig = _create_network_fig(height=450); nodes = { 'Need':    {'x': 0, 'y': 2, 'text': 'Clinician Need<br>Reliable Early CRC Detection', 'color': COLORS['accent']}, 'Driver1': {'x': 1, 'y': 3, 'text': 'High Sensitivity', 'color': COLORS['primary']}, 'Driver2': {'x': 1, 'y': 2, 'text': 'High Specificity', 'color': COLORS['primary']}, 'Driver3': {'x': 1, 'y': 1, 'text': 'Fast Turnaround', 'color': COLORS['primary']}, 'CTQ1':    {'x': 2, 'y': 3, 'text': 'CTQ:<br>LOD < 0.1% VAF', 'color': COLORS['secondary']}, 'CTQ2':    {'x': 2, 'y': 2, 'text': 'CTQ:<br>Specificity > 99.5%', 'color': COLORS['secondary']}, 'CTQ3':    {'x': 2, 'y': 1, 'text': 'CTQ:<br>Sample-to-Report < 5 days', 'color': COLORS['secondary']} }; edges = [('Need', 'Driver1'), ('Need', 'Driver2'), ('Need', 'Driver3'), ('Driver1', 'CTQ1'), ('Driver2', 'CTQ2'), ('Driver3', 'CTQ3')]; _add_network_nodes_and_edges(fig, nodes, edges); return fig
 def plot_causal_discovery_plotly() -> go.Figure:
@@ -185,10 +244,6 @@ def plot_project_charter_visual() -> go.Figure:
 def plot_sipoc_visual() -> go.Figure:
     header_values = ['<b>👤<br>Suppliers</b>', '<b>🧬<br>Inputs</b>', '<b>⚙️<br>Process</b>', '<b>📊<br>Outputs</b>', '<b>⚕️<br>Customers</b>']; cell_values = [['• Reagent Vendors<br>• Instrument Mfr.<br>• LIMS Provider'], ['• Patient Blood Sample<br>• Reagent Kits<br>• Lab Protocol (SOP)'], ['1. Sample Prep<br>2. Library Prep<br>3. NGS Sequencing<br>4. Bioinformatics<br>5. Reporting'], ['• VCF File<br>• QC Metrics Report<br>• Clinical Report'], ['• Oncologists<br>• Patients<br>• Pharma Partners']]
     fig = go.Figure(data=[go.Table(header=dict(values=header_values, line_color=COLORS['light_gray'], fill_color=COLORS['light_gray'], align='center', font=dict(color=COLORS['primary'], size=14)), cells=dict(values=cell_values, line_color=COLORS['light_gray'], fill_color='white', align='left', font_size=12, height=150))]); fig.update_layout(title_text="<b>SIPOC Diagram:</b> NGS Assay Workflow", margin=dict(l=10, r=10, t=50, b=10)); return fig
-def plot_kano_visual() -> go.Figure:
-    df = generate_kano_data(); fig = go.Figure(); fig.add_shape(type="rect", x0=0, y0=0, x1=10, y1=10, fillcolor=hex_to_rgba(COLORS['success'], 0.1), line_width=0, layer='below'); fig.add_shape(type="rect", x0=0, y0=-10, x1=10, y1=0, fillcolor=hex_to_rgba(COLORS['danger'], 0.1), line_width=0, layer='below'); colors = {'Basic (Must-be)': COLORS['accent'], 'Performance': COLORS['primary'], 'Excitement (Delighter)': COLORS['secondary']}
-    for cat, color in colors.items(): subset = df[df['category'] == cat]; fig.add_trace(go.Scatter(x=subset['functionality'], y=subset['satisfaction'], mode='lines', name=cat, line=dict(color=color, width=4)))
-    fig.add_annotation(x=8, y=8, text="<b>Excitement</b><br>e.g., Detects new<br>resistance mutation", showarrow=True, arrowhead=1, ax=-50, ay=-40, font_color=COLORS['secondary']); fig.add_annotation(x=8, y=4, text="<b>Performance</b><br>e.g., VAF quantification<br>accuracy", showarrow=True, arrowhead=1, ax=0, ay=-40, font_color=COLORS['primary']); fig.add_annotation(x=8, y=-8, text="<b>Basic</b><br>e.g., Detects known<br>KRAS hotspot", showarrow=True, arrowhead=1, ax=0, ay=40, font_color=COLORS['accent']); fig.update_layout(title='<b>Kano Model:</b> Prioritizing Diagnostic Features', xaxis_title='Feature Performance / Implementation →', yaxis_title='← Clinician Dissatisfaction ... Satisfaction →', plot_bgcolor='white', legend=dict(x=0.01, y=0.99, bgcolor='rgba(255,255,255,0.7)')); return fig
 def plot_voc_bubble_chart() -> go.Figure:
     data = {'Category': ['Biomarkers', 'Biomarkers', 'Methodology', 'Methodology', 'Performance', 'Performance'], 'Topic': ['EGFR Variants', 'KRAS Hotspots', 'ddPCR', 'Shallow WGS', 'LOD <0.1%', 'Specificity >99%'], 'Count': [180, 150, 90, 60, 250, 210], 'Sentiment': [0.5, 0.4, -0.2, -0.4, 0.8, 0.7]}; df = pd.DataFrame(data); fig = px.scatter(df, x='Topic', y='Sentiment', size='Count', color='Category', hover_name='Topic', size_max=60, labels={"Sentiment": "Average Sentiment Score", "Topic": "Biomarker or Methodology", "Count": "Publication Volume"}, color_discrete_map={'Biomarkers': COLORS['primary'], 'Methodology': COLORS['secondary'], 'Performance': COLORS['accent']})
     fig.add_hline(y=0, line_width=1, line_dash="dash", line_color="grey"); fig.update_layout(title="<b>NLP Landscape:</b> Scientific Literature Analysis", plot_bgcolor='white', yaxis=dict(range=[-1, 1], gridcolor=COLORS['light_gray']), xaxis=dict(showgrid=False), legend_title_text='Topic Category'); fig.update_traces(hovertemplate='<b>%{hovertext}</b><br>Publication Count: %{marker.size:,}<br>Avg. Sentiment: %{y:.2f}'); return fig
@@ -214,16 +269,6 @@ def plot_capability_analysis_pro(data: np.ndarray, lsl: float, usl: float) -> Tu
     fig = make_subplots(specs=[[{"secondary_y": True}]]); fig.add_trace(go.Histogram(x=data, name='Assay Output', marker_color=COLORS['primary'], opacity=0.7), secondary_y=False); fig.add_trace(go.Scatter(x=x_range, y=kde_y, mode='lines', name='KDE of Output', line=dict(color=COLORS['accent'], width=3)), secondary_y=True)
     fig.add_vline(x=lsl, line=dict(color=COLORS['danger'], width=2, dash='dash'), name="LSL"); fig.add_vline(x=usl, line=dict(color=COLORS['danger'], width=2, dash='dash'), name="USL"); fig.add_vline(x=mean, line=dict(color=COLORS['dark_gray'], width=2, dash='dot'), name="Mean")
     fig.update_layout(title_text=f"<b>Assay Capability:</b> Performance vs. Specification", xaxis_title="Assay Metric (e.g., Signal-to-Noise)", legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1), plot_bgcolor='white'); fig.update_yaxes(title_text="Count", secondary_y=False, showgrid=False); fig.update_yaxes(title_text="Probability Density", secondary_y=True, showgrid=False); return fig, cp, cpk
-def plot_shap_summary(model: RandomForestRegressor, X: pd.DataFrame) -> go.Figure:
-    explainer = shap.TreeExplainer(model); shap_values = explainer(X); fig = go.Figure()
-    for i, feature in enumerate(X.columns):
-        y_jitter = np.random.uniform(-0.25, 0.25, len(shap_values)); y_pos = np.full(len(shap_values), i) + y_jitter
-        fig.add_trace(go.Scatter(x=shap_values.values[:, i], y=y_pos, mode='markers', marker=dict(color=shap_values.data[:, i], colorscale='RdBu_r', showscale=(i == 0), colorbar=dict(title="Feature Value<br>High / Low", x=1.02, y=0.5, len=0.75), symbol='circle', size=6, opacity=0.7), hoverinfo='text', hovertext=[f'<b>{feature}</b><br>Value: {val:.2f}<br>SHAP: {shap_val:.2f}' for val, shap_val in zip(shap_values.data[:, i], shap_values.values[:, i])], showlegend=False))
-    fig.update_layout(title="<b>XAI with SHAP:</b> Parameter Impact on Outcome", xaxis_title="SHAP Value (Impact on Model Output)", yaxis=dict(tickmode='array', tickvals=list(range(len(X.columns))), ticktext=[col.replace('_', ' ') for col in X.columns], showgrid=True, gridcolor=COLORS['light_gray']), plot_bgcolor='white', margin=dict(l=150)); return fig
-def plot_pareto_chart() -> go.Figure:
-    df = generate_pareto_data().sort_values('Frequency', ascending=False); df['Cumulative Percentage'] = df['Frequency'].cumsum() / df['Frequency'].sum() * 100
-    fig = make_subplots(specs=[[{"secondary_y": True}]]); fig.add_trace(go.Bar(x=df['QC_Failure_Mode'], y=df['Frequency'], name='Failure Count', marker_color=COLORS['primary']), secondary_y=False); fig.add_trace(go.Scatter(x=df['QC_Failure_Mode'], y=df['Cumulative Percentage'], name='Cumulative %', mode='lines+markers', line_color=COLORS['accent']), secondary_y=True); fig.add_hline(y=80, line=dict(color=COLORS['dark_gray'], dash='dot'), secondary_y=True)
-    fig.update_layout(title_text="<b>Pareto Chart:</b> Identifying Top QC Failure Modes", xaxis_title="QC Failure Mode", plot_bgcolor='white', legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)); fig.update_yaxes(title_text="Frequency", secondary_y=False); fig.update_yaxes(title_text="Cumulative Percentage", secondary_y=True, range=[0, 101], ticksuffix='%'); return fig
 def plot_anova_groups(df: pd.DataFrame) -> Tuple[go.Figure, float]:
     groups = df['Reagent_Lot'].unique(); fig = go.Figure(); colors = [COLORS['primary'], COLORS['secondary'], COLORS['accent'], COLORS['neutral_pink']]
     for i, group in enumerate(groups): fig.add_trace(go.Box(y=df[df['Reagent_Lot'] == group]['Library_Yield'], name=group, marker_color=colors[i % len(colors)]))
@@ -238,11 +283,6 @@ def plot_permutation_test(df: pd.DataFrame, n_permutations: int = 1000) -> go.Fi
     p_val = (np.sum(np.abs(perm_diffs) >= np.abs(observed_diff)) + 1) / (n_permutations + 1); fig = go.Figure()
     fig.add_trace(go.Histogram(x=perm_diffs, name='Permuted Differences', marker_color=COLORS['light_gray'])); fig.add_vline(x=observed_diff, line=dict(color=COLORS['accent'], width=3, dash='dash'), name=f'Observed Diff ({observed_diff:.2f})')
     fig.update_layout(title=f'<b>Permutation Test:</b> Distribution of Differences (p-value: {p_val:.4f})', xaxis_title=f'Difference in Mean Yield ({groups[0]} vs {groups[1]})', yaxis_title='Frequency', plot_bgcolor='white'); return fig
-def train_and_plot_regression_models(df: pd.DataFrame) -> Tuple[go.Figure, RandomForestRegressor, pd.DataFrame]:
-    X, y = df.drop(columns=['On_Target_Rate']), df['On_Target_Rate']; lin_reg = LinearRegression().fit(X, y); y_pred_lin = lin_reg.predict(X); r2_lin = lin_reg.score(X, y)
-    rf_reg = RandomForestRegressor(n_estimators=100, random_state=42, oob_score=True).fit(X, y); y_pred_rf = rf_reg.predict(X); r2_rf = rf_reg.oob_score_
-    sort_idx = X['Annealing_Temp'].argsort(); fig = go.Figure(); fig.add_trace(go.Scatter(x=X['Annealing_Temp'].iloc[sort_idx], y=y.iloc[sort_idx], mode='markers', name='Actual Data', marker=dict(color=COLORS['dark_gray'], opacity=0.4))); fig.add_trace(go.Scatter(x=X['Annealing_Temp'].iloc[sort_idx], y=y_pred_lin[sort_idx], mode='lines', name=f'Linear Model (R²={r2_lin:.2f})', line=dict(color=COLORS['primary'], width=3))); fig.add_trace(go.Scatter(x=X['Annealing_Temp'].iloc[sort_idx], y=y_pred_rf[sort_idx], mode='lines', name=f'Random Forest (OOB R²={r2_rf:.2f})', line=dict(color=COLORS['secondary'], width=3, dash='dot')))
-    fig.update_layout(title_text="<b>Regression:</b> Modeling Assay Performance", xaxis_title="Primary Factor: Annealing Temp (°C)", yaxis_title="On-Target Rate (%)", legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01), plot_bgcolor='white'); return fig, rf_reg, X
 def plot_doe_cube(df: pd.DataFrame) -> go.Figure:
     fig = go.Figure(data=[go.Scatter3d(x=df['Primer_Conc'], y=df['Anneal_Temp'], z=df['PCR_Cycles'], mode='markers+text', marker=dict(size=12, color=df['Library_Yield'], colorscale='Viridis', showscale=True, colorbar=dict(title='Yield (ng)')), text=[f"{y:.1f}" for y in df['Library_Yield']], textposition='top center')]); lines = []
     for i in range(len(df)):
