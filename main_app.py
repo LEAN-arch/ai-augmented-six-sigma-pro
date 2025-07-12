@@ -18,7 +18,7 @@ handles the "scaffolding" and "routing," while content and logic are delegated
 to dedicated modules.
 
 Author: AI Engineering SME
-Version: 23.2 (Hardened Refactor)
+Version: 23.4 (Bulletproof Refactor)
 Date: 2023-10-26
 """
 
@@ -35,11 +35,8 @@ def main():
     Main function to configure and run the Streamlit application.
     """
     # --- 0.1. Logging Configuration ---
-    # Centralized logging is critical. We use .get() for safe access to secrets.
-    # This prevents a crash if the [logging] section is missing from secrets.toml.
     log_config = st.secrets.get("logging", {})
     log_level_str = log_config.get("level", "INFO").upper()
-
     logging.basicConfig(
         level=getattr(logging, log_level_str, logging.INFO),
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
@@ -49,10 +46,9 @@ def main():
     logger.info("Application starting up.")
 
     # --- 0.2. Dynamic & Resilient Module Imports ---
-    # This prevents the app from crashing if a page has a syntax error.
     try:
         from helpers.styling import get_custom_css
-        from helpers.content import get_workflow_css, render_workflow_step
+        # Other helper imports can be added here if needed globally
         logger.debug("Successfully imported 'helpers' modules.")
     except ImportError as e:
         logger.error(f"Fatal error: Failed to import critical helper modules. {e}")
@@ -80,53 +76,53 @@ def main():
         ]
         logger.debug("Successfully imported all page modules.")
     except ImportError as e:
-        logger.error(f"Error importing one or more page modules: {e}. The app may be unstable.")
+        logger.error(f"Error importing page modules: {e}. The app may be unstable.")
         st.toast(f"Warning: A page module failed to load. {e}", icon="⚠️")
 
     # ==============================================================================
-    # 1. GLOBAL PAGE CONFIGURATION (WITH HARDENED SECRET ACCESS)
+    # 1. GLOBAL PAGE CONFIGURATION (WITH GRACEFUL DEGRADATION)
     # ==============================================================================
-    # --- Safe loading of secrets with default fallbacks ---
-    # This is the key fix for the traceback. By using .get(key, default_value),
-    # the app will not crash if a section or key is missing in secrets.toml.
     app_meta = st.secrets.get("app_meta", {})
     app_version = app_meta.get("version", "N/A")
 
+    # --- Dynamically build the menu_items dictionary ---
+    # This is the key fix. We only add menu items if their corresponding
+    # URLs are defined in secrets.toml. This prevents the StreamlitInvalidURLError.
+    menu_items = {
+        'About': f"""
+        ## 🧬 The Bio-AI Excellence Framework
+        **An interactive playbook for optimizing genomic assays and devices.**
+        This application demonstrates a unified framework that fuses the statistical rigor of
+        **Six Sigma** with the predictive power of **Machine Learning**.
+        **Version:** {app_version}
+        """
+    }
     url_config = st.secrets.get("urls", {})
-    help_url = url_config.get("help", "#")
-    bug_report_url = url_config.get("bug_report", "#")
-    source_code_url = url_config.get("source_code", "#")
+    help_url = url_config.get("help")
+    bug_report_url = url_config.get("bug_report")
+    source_code_url = url_config.get("source_code")
+
+    if help_url:
+        menu_items['Get Help'] = help_url
+    if bug_report_url:
+        menu_items['Report a bug'] = bug_report_url
 
     st.set_page_config(
         page_title="Bio-AI Excellence Framework",
         page_icon="🧬",
         layout="wide",
         initial_sidebar_state="expanded",
-        menu_items={
-            'Get Help': help_url,
-            'Report a bug': bug_report_url,
-            'About': f"""
-            ## 🧬 The Bio-AI Excellence Framework
-
-            **An interactive playbook for optimizing genomic assays and devices.**
-
-            This application demonstrates a unified framework that fuses the statistical rigor of
-            **Six Sigma** with the predictive power of **Machine Learning**.
-
-            **Version:** {app_version}
-            """
-        }
+        menu_items=menu_items
     )
 
     # --- 1.1. Custom Styling ---
-    # SECURITY NOTE: The 'unsafe_allow_html' parameter is used here with trusted,
-    # internally-generated CSS. This is a controlled risk. Do not pass any
-    # user-generated or external strings to this function to prevent XSS attacks.
     try:
+        # SECURITY NOTE: The 'unsafe_allow_html' parameter is used with trusted,
+        # internal CSS. Do not pass user-generated strings here.
         st.markdown(get_custom_css(), unsafe_allow_html=True)
         logger.debug("Custom CSS applied successfully.")
     except Exception as e:
-        logger.warning(f"Failed to apply custom CSS. Using default theme. Error: {e}")
+        logger.warning(f"Failed to apply custom CSS. Error: {e}")
         st.toast("Could not load custom theme.", icon="🎨")
 
     # ==============================================================================
@@ -147,17 +143,18 @@ def main():
 
         st.divider()
         st.info(
-            "This app demonstrates a framework for integrating Machine Learning into the "
-            "biotech R&D lifecycle to achieve superior assay performance and reliability."
+            "This app demonstrates integrating ML into the biotech R&D lifecycle "
+            "for superior performance and reliability."
         )
-        # Use the safely-loaded URL with a fallback.
-        st.markdown(f"**[View Source on GitHub]({source_code_url})**")
+        # Conditionally display the source code link
+        if source_code_url:
+            st.markdown(f"**[View Source on GitHub]({source_code_url})**")
         st.caption(f"Version: {app_version}")
 
     logger.info("Sidebar rendered and navigation configured.")
 
     # ==============================================================================
-    # 3. PAGE RENDERING LOGIC
+    # 3. PAGE RENDERING LOGIC WITH ERROR BOUNDARY
     # ==============================================================================
     logger.info(f"Running page: '{pg.title}'")
     try:
