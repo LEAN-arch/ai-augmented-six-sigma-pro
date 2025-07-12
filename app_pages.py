@@ -123,12 +123,12 @@ def show_process_characterization():
         with tab2:
             st.markdown("##### **ML-based Surrogate Modeling (Gaussian Process)**")
             st.info("Here, an ML model like a Gaussian Process Regression (GPR) acts as a 'digital twin' of the process. It learns from limited experimental data and can then predict the outcome for any combination of parameters, including uncertainty estimates.")
-            st.warning("Live GPR Surrogate Model visualization is pending implementation.")
+            st.warning("Live GPR Surrogate Model visualization is pending implementation. The concept is analogous to the Bayesian Optimization page in the legacy DMAIC module.")
             with st.expander("Methodology & Regulatory Significance"):
                  st.markdown("""
-                **Methodology:** A GPR model is trained on the results of an initial, smaller DOE. This model doesn't just predict the outcome; it also predicts its own uncertainty. This allows for intelligent subsequent experimentation (see Bayesian Optimization).
+                **Methodology:** A GPR model is trained on the results of an initial, smaller DOE. This model doesn't just predict the outcome; it also predicts its own uncertainty. This allows for intelligent subsequent experimentation (e.g., Bayesian Optimization) to find the true optimum faster.
                 
-                **Regulatory Significance:** Surrogate models are powerful for **accelerating development**. They can drastically reduce the number of physical experiments needed to map a complex design space. In a regulatory context, the surrogate model is used for *exploration*; the final proposed Design Space must still be confirmed with a small number of physical validation runs at the proposed boundaries. The development of the model is documented in the DHF.
+                **Regulatory Significance:** Surrogate models are powerful for **accelerating development**. They can drastically reduce the number of physical experiments needed to map a complex design space. In a regulatory context, the surrogate model is used for *exploration*; the final proposed Design Space must still be confirmed with a small number of physical validation runs at the proposed boundaries. The development of the model and its use in guiding experiments is documented in the DHF.
                 """)
     st.success("""**🏆 Hybrid Strategy for Process Characterization:**
     1.  **Screen with DOE:** Use a classical **Fractional Factorial DOE** to efficiently screen many parameters and identify the likely main drivers.
@@ -186,7 +186,7 @@ def show_process_validation_ppq():
             3. Repeat this thousands of times to create a distribution of the metric.
             4. The 95% confidence interval is the range covering the central 95% of this distribution.
 
-            **Regulatory Significance:** Reporting a confidence interval (e.g., "The model accuracy is 95% with a 95% CI of [93.5%, 96.5%]") is far more powerful and transparent to a regulator than a single point estimate. It demonstrates a deep understanding of the model's uncertainty and stability. This is especially critical when validating an ML model, as it provides a robust estimate of its performance on unseen data.
+            **Regulatory Significance:** Reporting a confidence interval (e.g., "The model accuracy is 95% with a 95% CI of [93.5%, 96.5%]") is far more powerful and transparent to a regulator than a single point estimate. It demonstrates a deep understanding of the model's uncertainty and stability. This is especially critical when validating an ML model, as it provides a robust estimate of its performance on unseen data and is a key component of a strong validation package.
             """)
 
     st.success("""**🏆 Hybrid Strategy for PPQ & Validation:**
@@ -328,7 +328,7 @@ def show_post_market_surveillance():
 # ==============================================================================
 def show_digital_health_samd():
     st.title("Digital Health / SaMD")
-    st.markdown("> **Regulatory Context:** FDA GMLP, FDA PCCP Guidance, ISO 13485")
+    st.markdown("> **Regulatory Context:** FDA Guidance on AI/ML-based SaMD, Good Machine Learning Practice (GMLP), Predetermined Change Control Plan (PCCP)")
     st.markdown("**Objective:** To address the unique challenges of validating and maintaining AI/ML-based Software as a Medical Device (SaMD) throughout its lifecycle.")
     st.markdown("---")
     with st.container(border=True):
@@ -347,7 +347,7 @@ def show_digital_health_samd():
     """)
 
 def show_hybrid_manifesto():
-    st.title("The Hybrid Manifesto & GxP Compliance")
+    st.title("The Hybrid Manifesto: Compliant, Accelerated, & Intelligent")
     st.markdown("The most competitive biotech organizations do not choose one methodology over the other; they build a **Bio-AI framework** that leverages the unique strengths of each to achieve superior outcomes while maintaining impeccable compliance.")
     st.markdown("---")
 
