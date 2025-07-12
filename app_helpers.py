@@ -155,6 +155,29 @@ def generate_validation_data() -> pd.DataFrame:
         'Specificity': np.random.normal(0.97, 0.015, 1000)
     }
     return df, bootstrap_samples
+def generate_anova_data(means: list, stds: list, n: int) -> pd.DataFrame:
+    data, groups = [], [];
+    for i, (mean, std) in enumerate(zip(means, stds)):
+        data.extend(np.random.normal(mean, std, n))
+        groups.extend([f'Lot {chr(65+i)}'] * n)
+    return pd.DataFrame({'Library_Yield': data, 'Reagent_Lot': groups})
+def generate_pareto_data() -> pd.DataFrame:
+    return pd.DataFrame({
+        'QC_Failure_Mode': ['Low Library Yield', 'Adapter-Dimer Contamination', 'High Duplication Rate', 'Failed Positive Control', 'Low Q30 Score', 'Sample Mix-up'],
+        'Frequency': [45, 22, 11, 6, 4, 2]
+    })
+def generate_kano_data() -> pd.DataFrame:
+    np.random.seed(42)
+    func = np.linspace(0, 10, 20)
+    basic_sat = np.clip(np.log(func + 0.1) * 3 - 8, -10, 0) + np.random.normal(0, 0.3, 20)
+    basic_sat[func==0] = -10
+    perf_sat = np.linspace(-5, 5, 20) + np.random.normal(0, 0.8, 20)
+    excite_sat = np.clip(np.exp(func * 0.4) - 1.5, 0, 10) + np.random.normal(0, 0.3, 20)
+    excite_sat[func==0] = 0
+    df_basic = pd.DataFrame({'functionality': func, 'satisfaction': basic_sat, 'category': 'Basic (Must-be)'})
+    df_perf = pd.DataFrame({'functionality': func, 'satisfaction': perf_sat, 'category': 'Performance'})
+    df_excite = pd.DataFrame({'functionality': func, 'satisfaction': excite_sat, 'category': 'Excitement (Delighter)'})
+    return pd.concat([df_basic, df_perf, df_excite], ignore_index=True)
 
 # ==============================================================================
 # SECTION 3: VISUALIZATION HELPERS (ALL-INCLUSIVE & SME-GRADE)
@@ -182,28 +205,6 @@ def _add_network_nodes_and_edges(fig: go.Figure, nodes: Dict, edges: List[Tuple]
                                showarrow=False, font=dict(color=COLORS['text'], size=11, family="Arial"),
                                bgcolor=hex_to_rgba(node_data.get('color', COLORS['primary']), 0.15),
                                bordercolor=node_data.get('color', COLORS['primary']), borderwidth=2, borderpad=10, align="center")
-
-def plot_framework_diagram() -> go.Figure:
-    fig = go.Figure()
-    # Background shapes
-    fig.add_shape(type="rect", x0=0, y0=0, x1=4, y1=2, line_width=0, fillcolor=hex_to_rgba(COLORS['primary'], 0.1), layer="below")
-    fig.add_shape(type="rect", x0=0, y0=2.2, x1=4, y1=4.2, line_width=0, fillcolor=hex_to_rgba(COLORS['secondary'], 0.1), layer="below")
-    # Titles
-    fig.add_annotation(x=2, y=4.0, text="<b>Regulatory & QMS Framework (The 'What' & 'Why')</b>", showarrow=False, font=dict(size=16, color=COLORS['secondary']))
-    fig.add_annotation(x=2, y=1.8, text="<b>Process Improvement & Data Science Toolkit (The 'How')</b>", showarrow=False, font=dict(size=16, color=COLORS['primary']))
-    # Nodes
-    qms_nodes = ['Design Controls', 'Process Validation', 'QRM (ISO 14971)', 'CPV (ICH Q10)']
-    dmaic_nodes = ['Define', 'Measure', 'Analyze', 'Improve/Control']
-    for i, node_text in enumerate(qms_nodes):
-        fig.add_annotation(x=i*1+0.5, y=3, text=f"<b>{node_text}</b>", showarrow=False, bgcolor='white', bordercolor=COLORS['secondary'], borderwidth=2, borderpad=8)
-    for i, node_text in enumerate(dmaic_nodes):
-        fig.add_annotation(x=i*1+0.5, y=1, text=f"<i>Tool:</i><br><b>{node_text}</b>", showarrow=False, bgcolor='white', bordercolor=COLORS['primary'], borderwidth=2, borderpad=8)
-    # Connecting arrows
-    for i in range(4):
-        fig.add_annotation(x=i*1+0.5, y=2.5, ax=i*1+0.5, ay=1.5, arrowhead=2, arrowsize=1.5, arrowwidth=2, arrowcolor=COLORS['dark_gray'])
-    fig.update_layout(height=350, plot_bgcolor='white', margin=dict(l=10, r=10, t=10, b=10),
-                      xaxis=dict(visible=False, range=[0, 4]), yaxis=dict(visible=False, range=[0, 4.5]))
-    return fig
 
 def plot_qfd_house_of_quality() -> go.Figure:
     weights, rel_df = generate_qfd_data()
@@ -406,56 +407,66 @@ def plot_adverse_event_clusters() -> go.Figure:
     )
     return fig
 
-# All original plotting functions are preserved below this line
-# For brevity, their code is not repeated but they are assumed to exist
-def plot_ctq_tree_plotly(): return go.Figure()
-def plot_capability_analysis_pro(data, lsl, usl): return go.Figure(), 0, 0
-def plot_pareto_chart(): return go.Figure()
-def plot_doe_effects(df: pd.DataFrame) -> Tuple[go.Figure, go.Figure]:
-    main_effects = {f: df.loc[df[f] == 1, 'Library_Yield'].mean() - df.loc[df[f] == -1, 'Library_Yield'].mean() for f in ['Primer_Conc', 'Anneal_Temp', 'PCR_Cycles']}
-    fig_main = px.bar(x=list(main_effects.keys()), y=list(main_effects.values()), color=list(main_effects.keys()), color_discrete_map={'Primer_Conc': COLORS['primary'], 'Anneal_Temp': COLORS['accent'], 'PCR_Cycles': COLORS['secondary']}, labels={'x': 'Factor', 'y': 'Effect on Library Yield (ng)'}, title="<b>DOE: Main Effects</b>")
-    fig_main.update_layout(plot_bgcolor='white', showlegend=False)
-    fig_int = go.Figure()
-    for level in [-1, 1]:
-        subset = df[df['Anneal_Temp'] == level]; means = subset.groupby('PCR_Cycles')['Library_Yield'].mean()
-        fig_int.add_trace(go.Scatter(x=means.index, y=means.values, mode='lines+markers', name=f'Anneal Temp at {level} (Low/High)'))
-    fig_int.update_layout(title="<b>DOE: Interaction (Temp*Cycles)</b>", xaxis_title="Factor C: PCR Cycles", yaxis_title="Mean Library Yield (ng)", plot_bgcolor='white', legend_title_text='Factor B Level')
-    return fig_main, fig_int
-def train_and_plot_regression_models(df: pd.DataFrame) -> Tuple[go.Figure, RandomForestRegressor, pd.DataFrame]:
-    X, y = df.drop(columns=['On_Target_Rate']), df['On_Target_Rate']; lin_reg = LinearRegression().fit(X, y); y_pred_lin = lin_reg.predict(X); r2_lin = lin_reg.score(X, y)
-    rf_reg = RandomForestRegressor(n_estimators=100, random_state=42, oob_score=True).fit(X, y); y_pred_rf = rf_reg.predict(X); r2_rf = rf_reg.oob_score_
-    sort_idx = X['Annealing_Temp'].argsort(); fig = go.Figure()
-    fig.add_trace(go.Scatter(x=X['Annealing_Temp'].iloc[sort_idx], y=y.iloc[sort_idx], mode='markers', name='Actual Data', marker=dict(color=COLORS['dark_gray'], opacity=0.4)))
-    fig.add_trace(go.Scatter(x=X['Annealing_Temp'].iloc[sort_idx], y=y_pred_lin[sort_idx], mode='lines', name=f'Linear Model (R²={r2_lin:.2f})', line=dict(color=COLORS['primary'], width=3)))
-    fig.add_trace(go.Scatter(x=X['Annealing_Temp'].iloc[sort_idx], y=y_pred_rf[sort_idx], mode='lines', name=f'Random Forest (OOB R²={r2_rf:.2f})', line=dict(color=COLORS['secondary'], width=3, dash='dot')))
-    fig.update_layout(title_text="<b>Regression:</b> Modeling Assay Performance", xaxis_title="Primary Factor: Annealing Temp (°C)", yaxis_title="On-Target Rate (%)", legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01), plot_bgcolor='white')
-    return fig, rf_reg, X
-def plot_shap_summary(model: RandomForestRegressor, X: pd.DataFrame) -> go.Figure:
-    explainer = shap.TreeExplainer(model); shap_values = explainer(X); fig = go.Figure()
-    for i, feature in enumerate(X.columns):
-        y_jitter = np.random.uniform(-0.25, 0.25, len(shap_values)); y_pos = np.full(len(shap_values), i) + y_jitter
-        fig.add_trace(go.Scatter(x=shap_values.values[:, i], y=y_pos, mode='markers', marker=dict(color=shap_values.data[:, i], colorscale='RdBu_r', showscale=(i == 0), colorbar=dict(title="Feature Value<br>High / Low", x=1.02, y=0.5, len=0.75), symbol='circle', size=6, opacity=0.7), hoverinfo='text', hovertext=[f'<b>{feature}</b><br>Value: {val:.2f}<br>SHAP: {shap_val:.2f}' for val, shap_val in zip(shap_values.data[:, i], shap_values.values[:, i])], showlegend=False))
-    fig.update_layout(title="<b>XAI with SHAP:</b> Parameter Impact on Outcome", xaxis_title="SHAP Value (Impact on Model Output)", yaxis=dict(tickmode='array', tickvals=list(range(len(X.columns))), ticktext=[col.replace('_', ' ') for col in X.columns], showgrid=True, gridcolor=COLORS['light_gray']), plot_bgcolor='white', margin=dict(l=150))
+def plot_kano_visual() -> go.Figure:
+    df = generate_kano_data()
+    fig = go.Figure()
+    fig.add_shape(type="rect", x0=0, y0=0, x1=10, y1=10, fillcolor=hex_to_rgba(COLORS['success'], 0.1), line_width=0, layer='below')
+    fig.add_shape(type="rect", x0=0, y0=-10, x1=10, y1=0, fillcolor=hex_to_rgba(COLORS['danger'], 0.1), line_width=0, layer='below')
+    colors = {'Basic (Must-be)': COLORS['accent'], 'Performance': COLORS['primary'], 'Excitement (Delighter)': COLORS['secondary']}
+    for cat, color in colors.items():
+        subset = df[df['category'] == cat]
+        fig.add_trace(go.Scatter(x=subset['functionality'], y=subset['satisfaction'], mode='lines', name=cat, line=dict(color=color, width=4)))
+    fig.add_annotation(x=8, y=8, text="<b>Excitement</b><br>e.g., Detects new<br>resistance mutation", showarrow=True, arrowhead=1, ax=-50, ay=-40, font_color=COLORS['secondary'])
+    fig.add_annotation(x=8, y=4, text="<b>Performance</b><br>e.g., VAF quantification<br>accuracy", showarrow=True, arrowhead=1, ax=0, ay=-40, font_color=COLORS['primary'])
+    fig.add_annotation(x=8, y=-8, text="<b>Basic</b><br>e.g., Detects known<br>KRAS hotspot", showarrow=True, arrowhead=1, ax=0, ay=40, font_color=COLORS['accent'])
+    fig.update_layout(title='<b>Kano Model:</b> Prioritizing Diagnostic Features', xaxis_title='Feature Performance / Implementation →', yaxis_title='← Clinician Dissatisfaction ... Satisfaction →', plot_bgcolor='white', legend=dict(x=0.01, y=0.99, bgcolor='rgba(255,255,255,0.7)'))
     return fig
+
+def plot_pareto_chart() -> go.Figure:
+    df = generate_pareto_data().sort_values('Frequency', ascending=False)
+    df['Cumulative Percentage'] = df['Frequency'].cumsum() / df['Frequency'].sum() * 100
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+    fig.add_trace(go.Bar(x=df['QC_Failure_Mode'], y=df['Frequency'], name='Failure Count', marker_color=COLORS['primary']), secondary_y=False)
+    fig.add_trace(go.Scatter(x=df['QC_Failure_Mode'], y=df['Cumulative Percentage'], name='Cumulative %', mode='lines+markers', line_color=COLORS['accent']), secondary_y=True)
+    fig.add_hline(y=80, line=dict(color=COLORS['dark_gray'], dash='dot'), secondary_y=True)
+    fig.update_layout(title_text="<b>Pareto Chart:</b> Identifying Top QC Failure Modes", xaxis_title="QC Failure Mode", plot_bgcolor='white', legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
+    fig.update_yaxes(title_text="Frequency", secondary_y=False)
+    fig.update_yaxes(title_text="Cumulative Percentage", secondary_y=True, range=[0, 101], ticksuffix='%')
+    return fig
+    
+def plot_anova_groups(df: pd.DataFrame) -> Tuple[go.Figure, float]:
+    groups = df['Reagent_Lot'].unique()
+    fig = go.Figure()
+    colors = [COLORS['primary'], COLORS['secondary'], COLORS['accent'], COLORS['neutral_pink']]
+    for i, group in enumerate(groups):
+        fig.add_trace(go.Box(y=df[df['Reagent_Lot'] == group]['Library_Yield'], name=group, marker_color=colors[i % len(colors)]))
+    group_data = [df[df['Reagent_Lot'] == g]['Library_Yield'] for g in groups]
+    p_val = 1.0
+    if len(group_data) > 1 and all(len(g) > 1 for g in group_data):
+        _, p_val = f_oneway(*group_data)
+    fig.update_layout(title=f'<b>ANOVA:</b> Comparing Reagent Lot Performance', yaxis_title='Library Yield (ng/µL)', plot_bgcolor='white', showlegend=False)
+    return fig, p_val
+
 def plot_shewhart_chart(df: pd.DataFrame) -> go.Figure:
     mean, std_dev = df['Yield_ng'].iloc[:75].mean(), df['Yield_ng'].iloc[:75].std(ddof=1)
-    ucl, lcl = mean + 3 * std_dev, mean - 3 * std_dev; violations = df[(df['Yield_ng'] > ucl) | (df['Yield_ng'] < lcl)]; fig = go.Figure()
+    ucl, lcl = mean + 3 * std_dev, mean - 3 * std_dev
+    violations = df[(df['Yield_ng'] > ucl) | (df['Yield_ng'] < lcl)]
+    fig = go.Figure()
     fig.add_trace(go.Scatter(x=df['Batch_ID'], y=df['Yield_ng'], mode='lines+markers', name='QC Control', line=dict(color=COLORS['primary'])))
-    fig.add_trace(go.Scatter(x=[0, len(df) - 1], y=[ucl, ucl], mode='lines', name='UCL (Mean+3σ)', line=dict(color=COLORS['accent'], dash='dash'))); fig.add_trace(go.Scatter(x=[0, len(df) - 1], y=[mean, mean], mode='lines', name='Center Line', line=dict(color=COLORS['dark_gray'], dash='dot'))); fig.add_trace(go.Scatter(x=[0, len(df) - 1], y=[lcl, lcl], mode='lines', name='LCL (Mean-3σ)', line=dict(color=COLORS['accent'], dash='dash')))
-    if not violations.empty: fig.add_trace(go.Scatter(x=violations['Batch_ID'], y=violations['Yield_ng'], mode='markers', name='Violation', marker=dict(color=COLORS['danger'], size=10, symbol='x')))
+    fig.add_trace(go.Scatter(x=[0, len(df) - 1], y=[ucl, ucl], mode='lines', name='UCL (Mean+3σ)', line=dict(color=COLORS['accent'], dash='dash')))
+    fig.add_trace(go.Scatter(x=[0, len(df) - 1], y=[mean, mean], mode='lines', name='Center Line', line=dict(color=COLORS['dark_gray'], dash='dot')))
+    fig.add_trace(go.Scatter(x=[0, len(df) - 1], y=[lcl, lcl], mode='lines', name='LCL (Mean-3σ)', line=dict(color=COLORS['accent'], dash='dash')))
+    if not violations.empty:
+        fig.add_trace(go.Scatter(x=violations['Batch_ID'], y=violations['Yield_ng'], mode='markers', name='Violation', marker=dict(color=COLORS['danger'], size=10, symbol='x')))
     fig.update_layout(title='<b>Levey-Jennings Chart:</b> Positive Control Monitoring', xaxis_title='Batch ID', yaxis_title='Yield (ng)', plot_bgcolor='white')
     return fig
-def plot_ewma_chart(df: pd.DataFrame, lambda_val: float = 0.2) -> go.Figure:
-    mean, std_dev = df['Yield_ng'].iloc[:75].mean(), df['Yield_ng'].iloc[:75].std(ddof=1); df['ewma'] = df['Yield_ng'].ewm(span=(2 / lambda_val) - 1).mean(); n = np.arange(1, len(df) + 1)
-    ucl_ewma = mean + 3 * std_dev * np.sqrt(lambda_val / (2 - lambda_val) * (1 - (1 - lambda_val) ** (2 * n))); lcl_ewma = mean - 3 * std_dev * np.sqrt(lambda_val / (2 - lambda_val) * (1 - (1 - lambda_val) ** (2 * n)))
-    violations = df[(df['ewma'] > ucl_ewma) | (df['ewma'] < lcl_ewma)]; fig = go.Figure(); fig.add_trace(go.Scatter(x=df['Batch_ID'], y=df['Yield_ng'], mode='lines', name='Original QC Data', line=dict(color=COLORS['light_gray'], width=1))); fig.add_trace(go.Scatter(x=df['Batch_ID'], y=df['ewma'], mode='lines', name='EWMA', line=dict(color=COLORS['secondary'], width=2.5)))
-    fig.add_trace(go.Scatter(x=df['Batch_ID'], y=ucl_ewma, mode='lines', name='EWMA UCL', line=dict(color=COLORS['accent'], dash='dash'))); fig.add_trace(go.Scatter(x=df['Batch_ID'], y=lcl_ewma, mode='lines', name='EWMA LCL', line=dict(color=COLORS['accent'], dash='dash')))
-    if not violations.empty: fig.add_trace(go.Scatter(x=violations['Batch_ID'], y=violations['ewma'], mode='markers', name='Violation', marker=dict(color=COLORS['danger'], size=10, symbol='x')))
-    fig.update_layout(title=f'<b>EWMA Chart (λ={lambda_val}):</b> Detecting Small Drifts', xaxis_title='Batch ID', yaxis_title='Yield (ng)', plot_bgcolor='white')
-    return fig
+
 def plot_synergy_diagram() -> go.Figure:
-    fig = go.Figure(); fig.add_shape(type="circle", x0=0, y0=0, x1=2, y1=2, line_color=COLORS['primary'], fillcolor=COLORS['primary'], opacity=0.6); fig.add_shape(type="circle", x0=1.2, y0=0, x1=3.2, y1=2, line_color=COLORS['secondary'], fillcolor=COLORS['secondary'], opacity=0.6)
-    fig.add_annotation(x=1, y=1, text="<b>Classical Stats</b><br><i>Inference & Causality</i><br><i>Rigor & Validation</i>", showarrow=False, font=dict(color="white", size=12)); fig.add_annotation(x=2.2, y=1, text="<b>Machine Learning</b><br><i>Prediction & Discovery</i><br><i>Complexity & Scale</i>", showarrow=False, font=dict(color="white", size=12))
+    fig = go.Figure()
+    fig.add_shape(type="circle", x0=0, y0=0, x1=2, y1=2, line_color=COLORS['primary'], fillcolor=COLORS['primary'], opacity=0.6)
+    fig.add_shape(type="circle", x0=1.2, y0=0, x1=3.2, y1=2, line_color=COLORS['secondary'], fillcolor=COLORS['secondary'], opacity=0.6)
+    fig.add_annotation(x=1, y=1, text="<b>Classical Stats</b><br><i>Inference & Causality</i><br><i>Rigor & Validation</i>", showarrow=False, font=dict(color="white", size=12))
+    fig.add_annotation(x=2.2, y=1, text="<b>Machine Learning</b><br><i>Prediction & Discovery</i><br><i>Complexity & Scale</i>", showarrow=False, font=dict(color="white", size=12))
     fig.add_annotation(x=1.6, y=1, text="<b>Bio-AI<br>Excellence</b>", showarrow=False, font=dict(color="black", size=18, family="Arial Black"))
     fig.update_layout(title="<b>The Hybrid Philosophy:</b> Combining Strengths", xaxis=dict(visible=False, range=[-0.5, 3.7]), yaxis=dict(visible=False, range=[-0.5, 2.5]), plot_bgcolor='white', margin=dict(t=50, b=10, l=10, r=10))
     return fig
