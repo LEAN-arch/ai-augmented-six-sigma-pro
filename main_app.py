@@ -6,15 +6,12 @@ import streamlit as st
 # This architecture keeps the main app file clean and focused on navigation.
 from app_helpers import get_custom_css
 from app_pages import (
-    show_framework_overview,
-    show_design_and_development,
-    show_process_characterization,
-    show_process_validation_ppq,
-    show_qrm,
-    show_capa_rca,
-    show_cpv_and_monitoring,
-    show_post_market_surveillance,
-    show_digital_health_samd,
+    show_welcome_page,
+    show_define_phase,
+    show_measure_phase,
+    show_analyze_phase,
+    show_improve_phase,
+    show_control_phase,
     show_hybrid_manifesto
 )
 
@@ -33,17 +30,14 @@ st.set_page_config(
         'About': """
         ## 🧬 The Bio-AI Excellence Framework
         
-        **An interactive playbook for compliant and accelerated development of drugs, devices, and diagnostics.**
+        **An interactive, expert-level playbook for compliant and accelerated development of drugs, devices, and diagnostics.**
 
-        This application demonstrates a unified framework that fuses the **regulatory-mandated rigor of classical statistics and Six Sigma** 
+        This application demonstrates a unified framework that fuses the **regulatory-mandated rigor of classical Six Sigma** 
         with the **predictive and discovery power of modern Machine Learning**.
         
-        Navigate through the GxP product lifecycle to see classical quality tools presented alongside their AI-augmented counterparts, 
-        providing a roadmap for the modern, compliant, and competitive biotech organization.
+        Navigate through the **DMAIC (Define, Measure, Analyze, Improve, Control)** process improvement lifecycle. Each phase has been substantially enriched with a comprehensive suite of tools and examples relevant to the key regulatory milestones in the Bio/Pharma/Medtech industries, providing a complete roadmap for the modern, compliant, and competitive organization.
         
-        This tool is designed for a technically proficient audience (e.g., R&D Scientists, Process Engineers, Bioinformaticians, Quality & Regulatory Affairs Professionals).
-        
-        **Version:** 15.0 (SME Final Integration & Lifecycle Overhaul)
+        **Version:** 17.0 (Definitive All-Inclusive DMAIC Integration)
         """
     }
 )
@@ -53,35 +47,30 @@ st.markdown(get_custom_css(), unsafe_allow_html=True)
 
 
 # ==============================================================================
-# 2. APPLICATION NAVIGATION (Final Regulatory Lifecycle Structure)
+# 2. APPLICATION NAVIGATION (Final, Verified DMAIC Structure)
 # ==============================================================================
-# The navigation is organized by regulatory stage, providing an intuitive journey
-# for professionals in the Bio / Pharma / Medtech space.
+# The navigation is structured around the DMAIC framework, with each page
+# now containing a comprehensive set of tools relevant to that phase.
 PAGES = {
     "Framework Overview": [
-        st.Page(show_framework_overview, title="The Integrated Framework", icon="🏠"),
+        st.Page(show_welcome_page, title="Welcome & Introduction", icon="🏠"),
     ],
-    "The GxP Product Lifecycle": [
-        st.Page(show_design_and_development, title="1. Design & Development", icon="📐"),
-        st.Page(show_process_characterization, title="2. Process Characterization", icon="🧪"),
-        st.Page(show_process_validation_ppq, title="3. Process Validation (PPQ)", icon="✔️"),
-        st.Page(show_cpv_and_monitoring, title="4. Continued Verification", icon="🔄"),
+    "The DMAIC Lifecycle": [
+        st.Page(show_define_phase, title="Define: Project Mandate & Design", icon="🌀"),
+        st.Page(show_measure_phase, title="Measure: Baseline & Validation", icon="🔬"),
+        st.Page(show_analyze_phase, title="Analyze: Root Cause & Failure Modes", icon="📈"),
+        st.Page(show_improve_phase, title="Improve: Optimization & Robustness", icon="⚙️"),
+        st.Page(show_control_phase, title="Control: Monitoring & Surveillance", icon="📡"),
     ],
-    "Key Quality System (QMS) Modules": [
-        st.Page(show_qrm, title="Quality Risk Management", icon="⚠️"),
-        st.Page(show_capa_rca, title="CAPA & Root Cause Analysis", icon="🔍"),
-        st.Page(show_post_market_surveillance, title="Post-Market Surveillance", icon="🌐"),
-    ],
-    "Advanced & Strategic Topics": [
-        st.Page(show_digital_health_samd, title="Digital Health / SaMD", icon="🤖"),
+    "Strategic & Regulatory Synthesis": [
         st.Page(show_hybrid_manifesto, title="The Hybrid Manifesto & GxP", icon="🤝")
     ]
 }
 
 # --- Sidebar Rendering ---
 st.sidebar.title("🧬 Bio-AI Framework")
-st.sidebar.markdown("##### Compliant Development Playbook")
-st.sidebar.markdown("Navigate the product lifecycle and QMS modules below.")
+st.sidebar.markdown("##### DMAIC Development Playbook")
+st.sidebar.markdown("Navigate the lifecycle below.")
 
 # Create the navigation menu from the dictionary of pages
 pg = st.navigation(PAGES)
@@ -89,7 +78,7 @@ pg = st.navigation(PAGES)
 # --- Sidebar Footer ---
 st.sidebar.divider()
 st.sidebar.info(
-    "This application demonstrates a framework for integrating Machine Learning into the "
+    "This app demonstrates a framework for integrating Machine Learning into the "
     "biotech lifecycle to achieve superior performance while maintaining full regulatory compliance."
 )
 st.sidebar.markdown(
