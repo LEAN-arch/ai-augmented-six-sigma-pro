@@ -66,7 +66,16 @@ def show_define_phase():
             st.markdown("---")
             st.markdown("##### **Tool: Kano Model**")
             st.plotly_chart(plot_kano_visual(), use_container_width=True)
-            
+            with st.expander("Methodology & Interpretation"):
+                st.markdown("""
+                **Methodology:** The Kano model is a framework for categorizing product or service features based on how they impact customer satisfaction. It helps prioritize development efforts.
+                - **Basic (Must-be):** Features that are taken for granted. Their absence causes dissatisfaction, but their presence doesn't increase satisfaction (e.g., a car having brakes).
+                - **Performance:** Features for which more is better. Satisfaction is proportional to how well they are implemented (e.g., a car's fuel efficiency).
+                - **Excitement (Delighter):** Unexpected features that create high satisfaction when present, but their absence does not cause dissatisfaction (e.g., the first time a car had a built-in GPS).
+                
+                **Interpretation:** This model provides a strategic framework to justify which features are critical for the product's intended use and which are secondary. This helps focus validation and verification efforts on what matters most to the end-user (e.g., the clinician), a key principle of user-centric design praised by regulators.
+                """)
+
         with tab2:
             st.markdown("##### **Tool: NLP on Scientific Literature (VOC Analysis)**")
             st.plotly_chart(plot_voc_bubble_chart(), use_container_width=True)
@@ -99,7 +108,7 @@ def show_define_phase():
 def show_measure_phase():
     st.title("🔬 Measure: Baseline & System Validation")
     st.markdown("**Objective:** To validate measurement systems, collect data, and establish a robust, data-driven baseline of the current process performance and capability.")
-    st.markdown("> **Applicable Regulatory Stages:** FDA Process Validation (Stage 1), ICH Q8/Q11")
+    st.markdown("> **Applicable Regulatory Stages:** FDA Process Validation (Stage 1), ICH Q8/Q11, Analytical Method Validation")
     st.markdown("---")
 
     with st.container(border=True):
@@ -198,6 +207,12 @@ def show_analyze_phase():
             st.plotly_chart(fig_anova, use_container_width=True)
             if p_val < 0.05: st.error(f"P-value is {p_val:.4f}. A statistically significant difference exists.", icon="🚨")
             else: st.success(f"P-value is {p_val:.4f}. No significant difference detected.", icon="✅")
+            with st.expander("Methodology & Regulatory Significance"):
+                st.markdown("""
+                **Methodology:** Hypothesis tests like **ANOVA** (for 3+ groups) or **t-tests** (for 2 groups) are used to determine if observed differences between group means are statistically significant or just due to random chance.
+                
+                **Regulatory Significance:** This is the standard, auditable method for providing statistical evidence during a **CAPA investigation** or process characterization study. A low p-value provides the justification for implementing a corrective action (e.g., disqualifying a raw material lot).
+                """)
         with tab2:
             st.markdown("##### **ML Augmentation: Permutation Testing**")
             st.plotly_chart(plot_permutation_test(anova_data), use_container_width=True)
@@ -213,6 +228,12 @@ def show_analyze_phase():
         with col4:
             st.markdown("##### **ML Augmentation: XAI to Find Root Cause**")
             st.plotly_chart(plot_shap_summary(model, X_reg), use_container_width=True)
+            with st.expander("Methodology & Regulatory Significance"):
+                st.markdown("""
+                **Methodology:** While standard **Regression analysis** is a classical tool, it often fails with complex, non-linear biological data. Fitting a more powerful ML model (like a Random Forest) and using **SHAP** provides a much more accurate view of which parameters are truly driving the outcome. Regularized regression like **Lasso/ElasticNet** can also be used for automated feature selection.
+                
+                **Regulatory Significance:** This provides a far more robust method for identifying **Critical Process Parameters (CPPs)** as required by ICH Q11. If the ML model is significantly more predictive than a linear model, its feature importance rankings provide stronger, more reliable evidence for classifying parameters as critical.
+                """)
             
     with st.container(border=True):
         st.subheader("4. Process Failure Analysis")
@@ -226,6 +247,12 @@ def show_analyze_phase():
         with tab4:
             st.markdown("##### **Tool: NLP and Clustering on CAPA/Deviation Logs**")
             st.plotly_chart(plot_nlp_on_capa_logs(), use_container_width=True)
+            with st.expander("Methodology & Regulatory Significance"):
+                st.markdown("""
+                **Methodology:** Uses **NLP Topic Modeling** to automatically read and categorize thousands of unstructured text entries from deviation logs. **Clustering** (e.g., k-means, DBSCAN) can then group similar failure events together.
+                
+                **Regulatory Significance:** This demonstrates a mature, proactive quality system. While a **5 Whys** analysis is sufficient for a single CAPA, an NLP analysis provides evidence that the organization is monitoring for *systemic* issues, a key tenet of **21 CFR 820.100**.
+                """)
 
 # ==============================================================================
 # PAGE 4: IMPROVE PHASE
@@ -326,6 +353,12 @@ def show_control_phase():
         st.subheader("3. Digital Health / SaMD Control Plan")
         st.markdown("Managing the lifecycle of an AI/ML medical device.")
         st.plotly_chart(plot_pccp_monitoring(), use_container_width=True)
+        with st.expander("Methodology & Regulatory Significance"):
+            st.markdown("""
+            **Methodology:** A **Pre-determined Change Control Plan (PCCP)** is a comprehensive plan submitted to regulators that prospectively defines how an AI/ML model will be monitored and updated.
+            
+            **Regulatory Significance:** This demonstrates a controlled, auditable process for managing a learning algorithm, satisfying FDA's need for safety and effectiveness while allowing for state-of-the-art model maintenance under **Good Machine Learning Practice (GMLP)**. The **Control Plan** includes performance monitoring, re-validation plans, and robust **MLOps pipelines**.
+            """)
 
 # ==============================================================================
 # PAGE 6 & 7: COMPARISON & MANIFESTO
