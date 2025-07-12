@@ -7,65 +7,71 @@ import pandas as pd
 # Import all necessary helper functions from the single, definitive helper file.
 from app_helpers import *
 
+
 # ==============================================================================
-# PAGE 0: WELCOME & FRAMEWORK OVERVIEW
+# PAGE 0: WELCOME & FRAMEWORK
 # ==============================================================================
 def show_welcome_page():
     st.title("Welcome to the Bio-AI Excellence Framework")
-    st.markdown("##### An interactive, expert-level playbook for **compliant** and **accelerated** development of drugs, devices, and diagnostics.")
+    st.markdown("##### An interactive playbook for developing and optimizing robust genomic assays and devices.")
     st.markdown("---")
-
-    st.subheader("The Core Philosophy: DMAIC as the Engine for Regulated Industries")
-    st.markdown("""
-    In the life sciences, process improvement is not just about efficiency; it's about **quality, safety, and compliance**. The **DMAIC (Define, Measure, Analyze, Improve, Control)** framework provides a robust, structured, and auditable methodology to drive this improvement. 
-    
-    This application demonstrates how to supercharge the traditional DMAIC cycle by integrating modern Machine Learning and AI tools alongside the classical, regulatory-accepted Six Sigma methods. Each phase of the DMAIC lifecycle is presented with tools relevant to key GxP milestones, from initial **Design & Development** to **Post-Market Surveillance**.
-    """)
-    
-    st.info("""
-    - **🏛️ Classical Tools:** The established, FDA-accepted methods that form the backbone of any QMS (e.g., DOE, FMEA, SPC).
-    - **🤖 ML Augmentations:** The advanced data science techniques that provide unprecedented speed, predictive power, and insight (e.g., NLP, Predictive Modeling, Clustering).
-    """)
-    st.success("Use the sidebar to navigate through the DMAIC lifecycle. Each page is a deep dive into the tools and strategies that drive excellence in the modern biotech organization.")
+    st.info("""**This application is designed for a technically proficient audience** (e.g., R&D Scientists, Bioinformaticians, Lab Directors, QA/RA Professionals). It moves beyond introductory concepts to demonstrate a powerful, unified framework that fuses the **inferential rigor of classical statistics** with the **predictive power of modern Machine Learning**.""")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.subheader("Classical Six Sigma & Quality Tools")
+        st.markdown("- **Core Strength:** Establishing causality, ensuring statistical rigor for regulatory submissions (e.g., FDA, ICH), and providing a structured, auditable trail (e.g., QFD, FMEA, DOE).")
+    with col2:
+        st.subheader("ML & Bioinformatics Augmentation")
+        st.markdown("- **Core Strength:** Prediction, biomarker discovery, handling complexity, and extracting signals from noisy, high-dimensional data (e.g., NLP, Predictive Modeling, Clustering).")
+    st.subheader("The Hybrid Lab Philosophy: Augmentation, Not Replacement")
+    st.markdown("The most effective path to developing breakthrough diagnostics lies in the **synergistic integration** of these two disciplines. Use the navigation panel to explore the R&D lifecycle (framed as **DMAIC**). Each phase presents classical tools alongside their AI-augmented counterparts, enriched with their relevance to regulatory milestones.")
+    st.success("Click on a phase in the sidebar to begin your exploration.")
 
 # ==============================================================================
 # PAGE 1: DEFINE PHASE
 # ==============================================================================
 def show_define_phase():
-    st.title("🌀 Define: Project Mandate & Product Design")
-    st.markdown("**Objective:** To clearly articulate the project goals, translate user needs into quantifiable design specifications, and establish the initial risk management framework.")
+    st.title("🌀 Define: Clinical Need & Product Design")
+    st.markdown("**Objective:** To clearly articulate the clinical problem, establish project goals, define the assay scope, and translate clinical needs into quantifiable 'Critical to Quality' (CTQ) assay performance characteristics.")
     st.markdown("> **Applicable Regulatory Stages:** FDA Design Controls (21 CFR 820.30), ICH Q8 (Pharmaceutical Development)")
     st.markdown("---")
     
     with st.container(border=True):
-        st.subheader("1. Requirements Translation & Design Input Prioritization")
+        st.subheader("1. The Mandate: Project Charter & High-Level Scope")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown("##### **Classical Tool: Project Charter**")
+            st.plotly_chart(plot_project_charter_visual(), use_container_width=True)
+        with col2:
+            st.markdown("##### **Classical Tool: SIPOC Diagram**")
+            st.plotly_chart(plot_sipoc_visual(), use_container_width=True)
+
+    with st.container(border=True):
+        st.subheader("2. Requirements Translation & Design Input Prioritization")
         st.markdown("Translating the **Voice of the Customer (VOC)** into the **Voice of the Engineer**.")
         
-        tab1, tab2 = st.tabs(["🏛️ Classical: QFD & Kano Model", "🤖 ML Augmentation: Data-Driven Feature Importance"])
+        tab1, tab2 = st.tabs(["🏛️ Classical Tools", "🤖 ML Augmentation"])
         with tab1:
-            st.markdown("##### **Quality Function Deployment (QFD) - House of Quality**")
+            st.markdown("##### **Tool: Critical to Quality (CTQ) Tree**")
+            st.plotly_chart(plot_ctq_tree_plotly(), use_container_width=True)
+            st.markdown("---")
+            st.markdown("##### **Tool: Quality Function Deployment (QFD)**")
             st.plotly_chart(plot_qfd_house_of_quality(), use_container_width=True)
             with st.expander("Methodology & Regulatory Significance (QFD)"):
                 st.markdown("""
-                **Methodology:** QFD is a structured method for translating customer requirements into design specifications. The 'House of Quality' matrix maps customer needs (the 'Whats') to technical characteristics (the 'Hows'), creating a traceable link.
+                **Methodology:** QFD is a structured method for translating customer requirements into design specifications. The 'House of Quality' matrix maps customer needs to technical characteristics, creating a traceable link.
                 
                 **Regulatory Significance:** This creates a **documented, traceable link** between user needs and design inputs, a core requirement of FDA Design Controls. It provides objective evidence for *why* certain technical specifications were prioritized for the **Design History File (DHF)**.
                 """)
-            
             st.markdown("---")
-            st.markdown("##### **Kano Model for Feature Prioritization**")
+            st.markdown("##### **Tool: Kano Model**")
             st.plotly_chart(plot_kano_visual(), use_container_width=True)
-            with st.expander("Methodology & Regulatory Significance (Kano)"):
-                st.markdown("""
-                **Methodology:** The Kano model categorizes features based on how they impact customer satisfaction, helping prioritize development.
-                - **Basic (Must-be):** Taken for granted. Absence causes dissatisfaction.
-                - **Performance:** More is better. Satisfaction is proportional to implementation.
-                - **Excitement (Delighter):** Unexpected features that create high satisfaction.
-                
-                **Regulatory Significance:** The Kano model provides a strategic framework to justify which features are critical for the product's intended use and which are secondary. This helps focus validation and verification efforts on what matters most to the end-user (e.g., the clinician), a key principle of user-centric design praised by regulators.
-                """)
+            
         with tab2:
-            st.markdown("##### **Dimensionality Reduction (PCA) & Feature Importance**")
+            st.markdown("##### **Tool: NLP on Scientific Literature (VOC Analysis)**")
+            st.plotly_chart(plot_voc_bubble_chart(), use_container_width=True)
+            st.markdown("---")
+            st.markdown("##### **Tool: Dimensionality Reduction (PCA) & Feature Importance**")
             df_reg = generate_nonlinear_data()
             _, model, X_reg = train_and_plot_regression_models(df_reg)
             st.plotly_chart(plot_shap_summary(model, X_reg), use_container_width=True)
@@ -75,42 +81,30 @@ def show_define_phase():
                 
                 **Regulatory Significance:** While not a replacement for QFD, this provides powerful, data-driven evidence to **support or challenge** the assumptions made in the QFD. If SHAP reveals a parameter thought to be unimportant is actually critical, this is a vital finding for de-risking the project and must be documented in the DHF as evidence of a data-driven design process.
                 """)
-
+    
     with st.container(border=True):
-        st.subheader("2. Early Risk Assessment")
+        st.subheader("3. Early Risk Assessment")
         st.markdown("Proactively identifying potential failures and emergent risks *before* they are locked into the product design.")
         tab3, tab4 = st.tabs(["🏛️ Classical: DFMEA & Fishbone", "🤖 ML Augmentation: Unsupervised Risk Clustering"])
         with tab3:
-            st.markdown("##### **Design Failure Mode & Effects Analysis (DFMEA)**")
+            st.markdown("##### **Tool: Design FMEA (DFMEA)**")
             st.plotly_chart(plot_dfmea_table(), use_container_width=True)
-            with st.expander("Methodology & Regulatory Significance (DFMEA)"):
-                st.markdown("""
-                **Methodology:** A systematic, bottom-up analysis of potential failure modes in a product's design. Each failure is scored for Severity (S), Occurrence (O), and Detection (D) to calculate a Risk Priority Number (RPN = S x O x D).
-                
-                **Regulatory Significance:** DFMEA is a cornerstone of risk management under **ISO 14971** and a required part of the Design History File. It demonstrates that risks have been considered and prioritized for mitigation. A Preliminary Hazard Analysis (PHA) often precedes this for a broader, system-level view.
-                """)
         with tab4:
-            st.markdown("##### **Unsupervised Clustering for Risk Signal Grouping**")
+            st.markdown("##### **Tool: Unsupervised Clustering for Risk Signal Grouping**")
             st.plotly_chart(plot_risk_signal_clusters(), use_container_width=True)
-            with st.expander("Methodology & Regulatory Significance"):
-                st.markdown("""
-                **Methodology:** Unsupervised ML algorithms (like DBSCAN) are applied to multi-parameter process data from early development runs. The algorithm identifies 'clusters' of data that behave similarly and flags anomalies, without any prior labels.
-                
-                **Regulatory Significance:** This can uncover **hidden failure modes or process interactions** not conceived of during the DFMEA. Discovering an underperforming cluster from 'Line A' would trigger an investigation and an update to the FMEA, demonstrating a data-driven and proactive approach to risk management that regulators value.
-                """)
 
 # ==============================================================================
 # PAGE 2: MEASURE PHASE
 # ==============================================================================
 def show_measure_phase():
-    st.title("🔬 Measure: Baseline Performance & Validation")
+    st.title("🔬 Measure: Baseline & System Validation")
     st.markdown("**Objective:** To validate measurement systems, collect data, and establish a robust, data-driven baseline of the current process performance and capability.")
     st.markdown("> **Applicable Regulatory Stages:** FDA Process Validation (Stage 1), ICH Q8/Q11")
     st.markdown("---")
 
     with st.container(border=True):
-        st.subheader("1. Measurement System Analysis (MSA)")
-        st.markdown("You cannot trust your process data until you trust your measurement system. **Gage R&R** is the foundational tool to ensure observed variability comes from the process, not the measurement tool.")
+        st.subheader("1. Prerequisite: Measurement System Analysis (MSA)")
+        st.warning("**You cannot trust your process data until you trust your measurement system.** MSA ensures observed variability comes from the biology, not the lab process.")
         st.plotly_chart(plot_gage_rr_pareto(), use_container_width=True)
         with st.expander("Methodology & Regulatory Significance"):
             st.markdown("""
@@ -120,35 +114,56 @@ def show_measure_phase():
             """)
 
     with st.container(border=True):
-        st.subheader("2. Establishing Baseline Process Capability")
-        st.markdown("Comparing the 'Voice of the Process' to the 'Voice of the Customer' (specifications).")
-        st.sidebar.header("🔬 Simulators"); st.sidebar.markdown("---"); st.sidebar.subheader("Capability Simulator")
-        lsl = st.sidebar.slider("Lower Spec Limit (LSL)", 80.0, 88.0, 85.0, key="m_lsl")
-        usl = st.sidebar.slider("Upper Spec Limit (USL)", 110.0, 120.0, 115.0, key="m_usl")
-        process_mean = st.sidebar.slider("Process Mean (μ)", 95.0, 105.0, 100.0, key="m_mean")
-        process_std = st.sidebar.slider("Process Std Dev (σ)", 1.0, 5.0, 2.0, key="m_std")
+        st.subheader("2. Understanding the End-to-End Workflow")
+        tab1, tab2 = st.tabs(["🗺️ Value Stream Mapping (VSM)", "🤖 Process Mining"])
+        with tab1:
+            st.markdown("##### **Classical Tool: Value Stream Mapping (VSM)**")
+            st.plotly_chart(plot_vsm(), use_container_width=True)
+        with tab2:
+            st.markdown("##### **ML Augmentation: Process Mining on LIMS Data**")
+            st.plotly_chart(plot_process_mining_plotly(), use_container_width=True)
 
-        data = generate_process_data(process_mean, process_std, 300)
+    with st.container(border=True):
+        st.subheader("3. Establishing Baseline Assay Capability")
+        st.sidebar.header("🔬 Simulators"); st.sidebar.markdown("---"); st.sidebar.subheader("Assay Capability")
+        lsl = st.sidebar.slider("Lower Spec Limit (LSL)", 0.5, 2.0, 0.8, key="m_lsl")
+        usl = st.sidebar.slider("Upper Spec Limit (USL)", 8.0, 10.0, 9.0, key="m_usl")
+        process_mean = st.sidebar.slider("Assay Mean (μ)", 2.0, 8.0, 4.0, key="m_mean")
+        process_std = st.sidebar.slider("Assay Std Dev (σ)", 0.2, 2.0, 0.5, key="m_std")
+        
+        data = generate_process_data(process_mean, process_std, 2000)
         fig_cap, cp, cpk = plot_capability_analysis_pro(data, lsl, usl)
-        st.plotly_chart(fig_cap, use_container_width=True)
+        
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            st.plotly_chart(fig_cap, use_container_width=True)
+        with col2:
+            st.markdown("##### **Capability Indices**")
+            cp_color = "success" if cp >= 1.33 else ("warning" if cp >= 1.0 else "error")
+            cpk_color = "success" if cpk >= 1.33 else ("warning" if cp >= 1.0 else "error")
+            st.metric(label="Process Potential (Cp)", value=f"{cp:.2f}", help="Measures potential. Target: > 1.33")
+            st.markdown(f'<hr style="margin-top:0; margin-bottom:0.5rem; border-color:{COLORS[cp_color]}">', unsafe_allow_html=True)
+            st.metric(label="Process Capability (Cpk)", value=f"{cpk:.2f}", help="Measures performance. Target: > 1.33")
+            st.markdown(f'<hr style="margin-top:0; margin-bottom:0.5rem; border-color:{COLORS[cpk_color]}">', unsafe_allow_html=True)
+            
         with st.expander("Methodology & Regulatory Significance"):
             st.markdown("""
             **Methodology:** Process Capability analysis uses metrics like **Cp and Cpk** to measure how well a process can meet its specification limits. Cpk is the key metric, as it accounts for both process variation and centering.
             
             **Regulatory Significance:** Establishing a baseline Cpk is a critical part of the 'Measure' phase. It quantifies the problem. Later, during **Process Validation (PPQ)**, a Cpk value ≥ 1.33 is the widely accepted industry standard to demonstrate that a process is robust and in a state of control.
             """)
-
+            
     with st.container(border=True):
-        st.subheader("3. Validating Supporting Models")
+        st.subheader("4. Validating Supporting Models")
         st.markdown("Rigorously assessing the performance of any statistical or ML models used in the process.")
         st.plotly_chart(plot_model_validation_ci(), use_container_width=True)
         with st.expander("Methodology & Regulatory Significance"):
             st.markdown("""
-            **Methodology:** Instead of reporting a single performance metric (e.g., Accuracy = 95%), a more rigorous approach is to calculate a **Confidence Interval (CI)**. Bootstrapping is a powerful method to do this by resampling the validation dataset thousands of times to create a distribution of the metric. **Cross-validation (CV)** is another key technique where the model is trained and tested on different subsets of the data to ensure it generalizes well.
+            **Methodology:** Instead of reporting a single performance metric, a more rigorous approach is to calculate a **Confidence Interval (CI)**. Bootstrapping is a powerful method to do this by resampling the validation dataset thousands of times to create a distribution of the metric. **Cross-validation (CV)** is another key technique where the model is trained and tested on different subsets of the data to ensure it generalizes well.
             
             **Regulatory Significance:** Reporting a CI (e.g., "The model accuracy is 95% with a 95% CI of [93.5%, 96.5%]") is far more transparent to a regulator than a single point estimate. It demonstrates a deep understanding of the model's uncertainty and stability. This is especially critical when validating an ML model as part of a device or process.
             """)
-            
+
 # ==============================================================================
 # PAGE 3: ANALYZE PHASE
 # ==============================================================================
@@ -159,72 +174,58 @@ def show_analyze_phase():
     st.markdown("---")
 
     with st.container(border=True):
-        st.subheader("1. Qualitative Root Cause Brainstorming & Prioritization")
+        st.subheader("1. Qualitative Root Cause Analysis & Prioritization")
         col1, col2 = st.columns(2)
         with col1:
-            st.markdown("##### **Fishbone (Ishikawa) Diagram**")
+            st.markdown("##### **Classical Tool: Fishbone Diagram**")
             st.plotly_chart(plot_fishbone_plotly(), use_container_width=True)
-            with st.expander("Methodology"):
-                st.markdown("A structured brainstorming tool used to explore all potential causes of a problem, grouped into categories (e.g., Man, Machine, Method).")
         with col2:
-            st.markdown("##### **Pareto Chart**")
+            st.markdown("##### **Classical Tool: Pareto Chart**")
             st.plotly_chart(plot_pareto_chart(), use_container_width=True)
-            with st.expander("Methodology"):
-                st.markdown("The 80/20 rule in action. This chart identifies the 'vital few' causes that contribute to the majority of problems, allowing teams to focus their efforts.")
 
     with st.container(border=True):
-        st.subheader("2. Statistical Root Cause Analysis")
-        st.markdown("Using data to prove or disprove the hypotheses generated during brainstorming.")
+        st.subheader("2. Statistical Root Cause Analysis: Comparing Groups")
         st.sidebar.header("🔬 Simulators"); st.sidebar.markdown("---"); st.sidebar.subheader("Group Comparison")
-        mean1 = st.sidebar.slider("Lot A Mean", 18.0, 22.0, 19.5, 0.1, key='a1')
-        mean2 = st.sidebar.slider("Lot B Mean", 18.0, 22.0, 20.0, 0.1, key='a2')
-        mean3 = st.sidebar.slider("Lot C Mean", 18.0, 22.0, 20.5, 0.1, key='a3')
+        mean1 = st.sidebar.slider("Lot A Mean Yield (ng/µL)", 18.0, 22.0, 19.5, 0.1, key='a1')
+        mean2 = st.sidebar.slider("Lot B Mean Yield (ng/µL)", 18.0, 22.0, 20.0, 0.1, key='a2')
+        mean3 = st.sidebar.slider("Lot C Mean Yield (ng/µL)", 18.0, 22.0, 20.5, 0.1, key='a3')
         anova_data = generate_anova_data(means=[mean1, mean2, mean3], stds=[0.8, 0.8, 0.8], n=20)
         
-        tab1, tab2 = st.tabs(["🏛️ Classical: Hypothesis Testing", "🤖 ML Augmentation: Advanced Modeling"])
+        tab1, tab2 = st.tabs(["🔬 ANOVA", "💻 Permutation Testing"])
         with tab1:
-            st.markdown("##### **ANOVA & t-Tests**")
+            st.markdown("##### **Classical: Analysis of Variance (ANOVA)**")
             fig_anova, p_val = plot_anova_groups(anova_data)
             st.plotly_chart(fig_anova, use_container_width=True)
-            if p_val < 0.05: st.error(f"ANOVA P-value is {p_val:.4f}. A statistically significant difference exists between lots.", icon="🚨")
-            else: st.success(f"ANOVA P-value is {p_val:.4f}. No significant difference detected between lots.", icon="✅")
-            with st.expander("Methodology & Regulatory Significance"):
-                st.markdown("""
-                **Methodology:** Hypothesis tests like **ANOVA** (for 3+ groups) or **t-tests** (for 2 groups) are used to determine if observed differences between group means are statistically significant or just due to random chance.
-                
-                **Regulatory Significance:** This is the standard, auditable method for providing statistical evidence during a **CAPA investigation** or process characterization study. A low p-value provides the justification for implementing a corrective action (e.g., disqualifying a raw material lot).
-                """)
+            if p_val < 0.05: st.error(f"P-value is {p_val:.4f}. A statistically significant difference exists.", icon="🚨")
+            else: st.success(f"P-value is {p_val:.4f}. No significant difference detected.", icon="✅")
         with tab2:
-            st.markdown("##### **Regression & SHAP for CPP Identification**")
-            df_reg = generate_nonlinear_data()
-            fig_reg, model, X_reg = train_and_plot_regression_models(df_reg)
-            st.plotly_chart(fig_reg, use_container_width=True)
-            st.plotly_chart(plot_shap_summary(model, X_reg), use_container_width=True)
-            with st.expander("Methodology & Regulatory Significance"):
-                st.markdown("""
-                **Methodology:** While standard **Regression analysis** is a classical tool, it often fails with complex, non-linear biological data. Fitting a more powerful ML model (like a Random Forest) and using **SHAP** provides a much more accurate view of which parameters are truly driving the outcome. Regularized regression like **Lasso/ElasticNet** can also be used for automated feature selection.
-                
-                **Regulatory Significance:** This provides a far more robust method for identifying **Critical Process Parameters (CPPs)** as required by ICH Q11. If the ML model is significantly more predictive than a linear model, its feature importance rankings provide stronger, more reliable evidence for classifying parameters as critical.
-                """)
+            st.markdown("##### **ML Augmentation: Permutation Testing**")
+            st.plotly_chart(plot_permutation_test(anova_data), use_container_width=True)
 
     with st.container(border=True):
-        st.subheader("3. Process Failure Analysis")
+        st.subheader("3. Finding the Drivers: Modeling Assay Performance")
+        df_reg = generate_nonlinear_data()
+        fig_reg, model, X_reg = train_and_plot_regression_models(df_reg)
+        col3, col4 = st.columns(2)
+        with col3:
+            st.markdown("##### **Classical vs. ML Model Fit**")
+            st.plotly_chart(fig_reg, use_container_width=True)
+        with col4:
+            st.markdown("##### **ML Augmentation: XAI to Find Root Cause**")
+            st.plotly_chart(plot_shap_summary(model, X_reg), use_container_width=True)
+            
+    with st.container(border=True):
+        st.subheader("4. Process Failure Analysis")
         tab3, tab4 = st.tabs(["🏛️ Classical: FMEA & FTA", "🤖 ML Augmentation: NLP & Clustering on Logs"])
         with tab3:
-            st.markdown("##### **Fault Tree Analysis (FTA)**")
+            st.markdown("##### **Tool: Fault Tree Analysis (FTA)**")
             st.plotly_chart(plot_fault_tree_plotly(), use_container_width=True)
-            with st.expander("Methodology & Regulatory Significance"):
-                st.markdown("FTA is a top-down, deductive failure analysis that is invaluable for understanding complex failure pathways. It's a key tool in **Quality Risk Management (ICH Q9)**.")
+            st.markdown("##### **Tool: 5 Whys Analysis**")
+            st.plotly_chart(plot_5whys_diagram(), use_container_width=True)
         with tab4:
-            st.markdown("##### **NLP and Clustering on CAPA/Deviation Logs**")
+            st.markdown("##### **Tool: NLP and Clustering on CAPA/Deviation Logs**")
             st.plotly_chart(plot_nlp_on_capa_logs(), use_container_width=True)
-            with st.expander("Methodology & Regulatory Significance"):
-                st.markdown("""
-                **Methodology:** Uses **NLP Topic Modeling** to automatically read and categorize thousands of unstructured text entries from deviation logs. **Clustering** (e.g., k-means, DBSCAN) can then group similar failure events together.
-                
-                **Regulatory Significance:** This demonstrates a mature, proactive quality system. While a **5 Whys** analysis is sufficient for a single CAPA, an NLP analysis provides evidence that the organization is monitoring for *systemic* issues, a key tenet of **21 CFR 820.100**.
-                """)
-                
+
 # ==============================================================================
 # PAGE 4: IMPROVE PHASE
 # ==============================================================================
@@ -235,97 +236,94 @@ def show_improve_phase():
     st.markdown("---")
 
     with st.container(border=True):
-        st.subheader("1. Design Space & Process Optimization")
-        st.markdown("Finding the combination of process parameters that reliably delivers a quality product.")
-        tab1, tab2 = st.tabs(["🏛️ Classical: DOE & Response Surface", "🤖 ML Augmentation: Surrogate Modeling"])
+        st.subheader("1. Finding Optimal Protocol Settings")
+        tab1, tab2 = st.tabs(["🧪 Design of Experiments (DOE) & RSM", "🤖 Bayesian Optimization"])
         with tab1:
-            st.markdown("##### **Design of Experiments (DOE) & Response Surface Methodology (RSM)**")
-            doe_data = generate_doe_data()
-            fig_main, fig_int = plot_doe_effects(doe_data)
+            st.markdown("##### **Classical: Design of Experiments (DOE)**")
+            doe_data = generate_doe_data(); fig_doe_main, fig_doe_interaction = plot_doe_effects(doe_data)
             col1, col2 = st.columns(2)
-            with col1: st.plotly_chart(fig_main, use_container_width=True)
-            with col2: st.plotly_chart(fig_int, use_container_width=True)
+            with col1: st.plotly_chart(plot_doe_cube(doe_data), use_container_width=True)
+            with col2: st.plotly_chart(fig_doe_main, use_container_width=True); st.plotly_chart(fig_doe_interaction, use_container_width=True)
             st.markdown("---")
+            st.markdown("##### **Classical: Response Surface Methodology (RSM)**")
             st.plotly_chart(plot_rsm_contour(generate_rsm_data()), use_container_width=True)
-            with st.expander("Methodology & Regulatory Significance"):
-                st.markdown("""
-                **Methodology:** DOE and RSM are the gold standard for efficiently exploring process parameters and their interactions to find an optimal operating window.
-                
-                **Regulatory Significance:** This is the primary method for defining and justifying the **Design Space** under ICH Q8. A well-defined Design Space provides operational flexibility and is a sign of a deep process understanding, which is highly valued by regulators.
-                """)
         with tab2:
-            st.markdown("##### **Surrogate Modeling for Accelerated Optimization**")
-            st.info("Here, an ML model like a **Gaussian Process Regression (GPR)** acts as a 'digital twin' of the process, learning from limited experimental data to predict the outcome for any combination of parameters.")
-            st.warning("Live GPR Surrogate Model visualization is pending implementation.")
-            with st.expander("Methodology & Regulatory Significance"):
-                st.markdown("""
-                **Methodology:** A GPR model is trained on the results of an initial, smaller DOE. This allows for intelligent subsequent experimentation (see Bayesian Optimization) to find the true optimum faster.
-                
-                **Regulatory Significance:** Surrogate models can drastically reduce the number of physical experiments needed to map a complex design space. The model is used for *exploration*; the final proposed Design Space must still be **confirmed with physical validation runs**. The model development and its use in guiding experiments is documented in the DHF, showcasing a state-of-the-art, efficient development process.
-                """)
+            st.markdown("##### **ML Augmentation: Bayesian Optimization**")
+            st.sidebar.header("🔬 Simulators"); st.sidebar.markdown("---"); st.sidebar.subheader("Bayesian Optimization")
+            x_range = np.linspace(0, 20, 400); true_func = lambda x: (np.sin(x*0.8)*15) + (np.cos(x*2.5)*5) - (x/10)**3
+            if 'sampled_points' not in st.session_state: st.session_state.sampled_points = {'x': [2.0, 18.0], 'y': [true_func(2.0), true_func(18.0)]}
+            if st.sidebar.button("Run Next Smart Experiment", key='bo_sample'):
+                _, next_point = plot_bayesian_optimization_interactive(true_func, x_range, st.session_state.sampled_points)
+                st.session_state.sampled_points['x'].append(next_point); st.session_state.sampled_points['y'].append(true_func(next_point))
+            if st.sidebar.button("Reset Simulation", key='bo_reset'): st.session_state.sampled_points = {'x': [2.0, 18.0], 'y': [true_func(2.0), true_func(18.0)]}
+            fig_bo, _ = plot_bayesian_optimization_interactive(true_func, x_range, st.session_state.sampled_points)
+            st.plotly_chart(fig_bo, use_container_width=True)
 
+    with st.container(border=True):
+        st.subheader("2. Proactively Mitigating Risks in the Improved Process")
+        col3, col4 = st.columns(2)
+        with col3:
+            st.markdown("##### **Classical: FMEA**")
+            st.plotly_chart(plot_fmea_table(), use_container_width=True)
+        with col4:
+            st.markdown("##### **ML Augmentation: Predictive Maintenance**")
+            st.plotly_chart(plot_rul_prediction(generate_sensor_degradation_data()), use_container_width=True)
+            
 # ==============================================================================
 # PAGE 5: CONTROL PHASE
 # ==============================================================================
 def show_control_phase():
-    st.title("📡 Control: Monitoring & Surveillance")
-    st.markdown("**Objective:** To implement a robust Quality Control (QC) system to monitor the optimized process, ensuring performance remains stable and compliant over time.")
+    st.title("📡 Control: Lab Operations & Post-Market Surveillance")
+    st.markdown("**Objective:** To implement a robust Quality Control (QC) system to monitor the optimized process, ensuring performance remains stable and compliant over time, and to actively monitor post-market data.")
     st.markdown("> **Applicable Regulatory Stages:** Continued Process Verification (CPV, FDA Stage 3), Post-Market Surveillance (PMS)")
     st.markdown("---")
-    
+
     with st.container(border=True):
-        st.subheader("1. Ongoing Process Monitoring (CPV)")
-        st.markdown("Using Statistical Process Control (SPC) to ensure the process remains in its validated state.")
-        st.sidebar.header("🔬 Simulators"); st.sidebar.markdown("---"); st.sidebar.subheader("SPC Simulator")
-        shift_mag = st.sidebar.slider("Shift Magnitude (Std Devs)", 0.2, 3.0, 0.8, 0.1, key="ctrl_shift")
+        st.subheader("1. Monitoring for Stability: Statistical Process Control (SPC)")
+        st.sidebar.header("🔬 Simulators"); st.sidebar.markdown("---"); st.sidebar.subheader("QC Simulator")
+        shift_mag = st.sidebar.slider("Magnitude of Shift (in Std Devs)", 0.2, 3.0, 0.8, 0.1, key="ctrl_shift_mag")
+        ewma_lambda = st.sidebar.slider("EWMA Lambda (λ)", 0.1, 0.5, 0.2, 0.05, help="Higher λ reacts faster to shifts.")
         chart_data = generate_control_chart_data(shift_magnitude=shift_mag)
-
-        tab1, tab2 = st.tabs(["🏛️ Classical: SPC Control Charts", "🤖 ML Augmentation: Predictive Monitoring"])
+        
+        tab1, tab2, tab3, tab4 = st.tabs(["📊 Levey-Jennings", "📈 EWMA", "📉 CUSUM", "🤖 Multivariate QC"])
         with tab1:
-            st.markdown("##### **Levey-Jennings & Trend Charts**")
+            st.markdown("##### **Classical: Levey-Jennings Chart (Shewhart)**")
             st.plotly_chart(plot_shewhart_chart(chart_data), use_container_width=True)
-            with st.expander("Methodology & Regulatory Significance"):
-                st.markdown("""
-                **Methodology:** **Control Charts** (like the Levey-Jennings chart shown) are the fundamental tool of SPC. They plot process data over time against statistically derived control limits. **Trend Charts** and **Cpk Trending** are also used to monitor performance over longer periods.
-                
-                **Regulatory Significance:** A robust CPV program using SPC charts is a regulatory expectation under FDA's Stage 3 Validation guidance. It provides ongoing assurance that the process remains in the validated state.
-                """)
         with tab2:
-            st.markdown("##### **Predictive Maintenance & Drift Detection**")
-            st.info("ML models can be used to predict equipment failure (Predictive Maintenance) or detect subtle, multivariate process drifts that individual SPC charts might miss. This includes **Time Series Models (ARIMA, LSTM)** and **Ensemble Models (XGBoost, RF)** for early warning classification.")
-            st.warning("Predictive maintenance visualization is pending implementation.")
-
-    with st.container(border=True):
-        st.subheader("2. Post-Market Surveillance (PMS)")
-        st.markdown("Actively monitoring real-world data to ensure continued safety and effectiveness.")
-        tab3, tab4 = st.tabs(["🏛️ Classical: Manual Review & Trending", "🤖 ML Augmentation: Automated Signal Detection"])
+            st.markdown("##### **Advanced: EWMA Chart**")
+            st.plotly_chart(plot_ewma_chart(chart_data, lambda_val=ewma_lambda), use_container_width=True)
         with tab3:
-            st.markdown("##### **Manual Complaint Categorization & Trend Charts**")
-            st.info("The classical approach involves manually reading and categorizing complaints/adverse events, then using **Trend Charts** or **Stratified Analysis** to look for patterns. This is slow and struggles with unstructured data.")
+            st.markdown("##### **Advanced: CUSUM Chart**")
+            st.plotly_chart(plot_cusum_chart(chart_data), use_container_width=True)
         with tab4:
-            st.markdown("##### **NLP on Adverse Event Reports**")
+            st.markdown("##### **ML Augmentation: Multivariate QC**")
+            st.plotly_chart(plot_hotelling_t2_chart(), use_container_width=True)
+            
+    with st.container(border=True):
+        st.subheader("2. Formalizing the Gains & Post-Market Activities")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown("##### **Classical: The Control Plan**")
+            st.plotly_chart(plot_control_plan(), use_container_width=True)
+        with col2:
+            st.markdown("##### **ML Augmentation: PMS Signal Detection**")
             st.plotly_chart(plot_adverse_event_clusters(), use_container_width=True)
-            with st.expander("Methodology & Regulatory Significance"):
-                st.markdown("""
-                **Methodology:** **NLP** and **Topic Modeling** process thousands of unstructured text reports to automatically group them into clusters of similar events. This can also be used for **sentiment analysis** on patient feedback.
-                
-                **Regulatory Significance:** This is highly aligned with the FDA's **Real-World Evidence (RWE)** program. It enables much earlier detection of safety signals (e.g., unexpected combinations of side effects) than manual review, demonstrating a state-of-the-art PMS system.
-                """)
 
     with st.container(border=True):
         st.subheader("3. Digital Health / SaMD Control Plan")
         st.markdown("Managing the lifecycle of an AI/ML medical device.")
         st.plotly_chart(plot_pccp_monitoring(), use_container_width=True)
-        with st.expander("Methodology & Regulatory Significance"):
-            st.markdown("""
-            **Methodology:** A **Pre-determined Change Control Plan (PCCP)** is a comprehensive plan submitted to regulators that prospectively defines how an AI/ML model will be monitored and updated.
-            
-            **Regulatory Significance:** This demonstrates a controlled, auditable process for managing a learning algorithm, satisfying FDA's need for safety and effectiveness while allowing for state-of-the-art model maintenance under **Good Machine Learning Practice (GMLP)**. The **Control Plan** includes performance monitoring, re-validation plans, and robust **MLOps pipelines**.
-            """)
 
 # ==============================================================================
-# PAGE 6: STRATEGIC & REGULATORY SYNTHESIS
+# PAGE 6 & 7: COMPARISON & MANIFESTO
 # ==============================================================================
+def show_comparison_matrix():
+    st.title("Head-to-Head: Classical DOE vs. ML/Bioinformatics")
+    st.markdown("A visual comparison of the core philosophies and practical strengths of the two approaches.")
+    st.markdown("---")
+    with st.container(border=True): st.subheader("Strengths Profile: A Multi-Dimensional View"); st.plotly_chart(plot_comparison_radar(), use_container_width=True)
+    with st.container(border=True): st.subheader("The Verdict: Which Approach Excels for Which Task?"); st.plotly_chart(plot_verdict_barchart(), use_container_width=True)
+
 def show_hybrid_manifesto():
     st.title("🤝 The Hybrid Manifesto & GxP Compliance")
     st.markdown("The most competitive biotech organizations do not choose one methodology over the other; they build a **Bio-AI framework** that leverages the unique strengths of each to achieve superior outcomes while maintaining impeccable compliance.")
@@ -379,9 +377,10 @@ def show_hybrid_manifesto():
         })
         st.dataframe(tool_comp_df, use_container_width=True, hide_index=True)
 
-    st.success("""**Executive Summary: The Hybrid Mandate**
-    - **Classical Statistics is the language of compliance.** It is used to generate the definitive, auditable evidence for your Design History File and regulatory submissions.
-    - **Machine Learning is the engine of discovery and efficiency.** It is used to find patterns, predict outcomes, and automate analysis at a scale and speed that classical methods cannot match.
-    
-    An integrated, hybrid approach is not optional; it is the new standard for excellence and competitiveness in the regulated life sciences.
-    """)
+    with st.container(border=True):
+        st.subheader("Interactive Solution Recommender")
+        guidance_data = get_guidance_data(); scenarios = list(guidance_data.keys())
+        selected_scenario = st.selectbox("Choose your R&D scenario:", scenarios)
+        if selected_scenario:
+            st.markdown(f"##### Recommended Approach: {guidance_data[selected_scenario]['approach']}")
+            st.markdown(f"**Rationale:** {guidance_data[selected_scenario]['rationale']}")
