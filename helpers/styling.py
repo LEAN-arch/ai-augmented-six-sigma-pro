@@ -6,7 +6,8 @@ It defines the color palette, generates the main CSS stylesheet, and provides
 utility functions for color manipulation.
 
 By isolating styling concerns, we ensure a consistent look and feel across the
-entire application and make global style changes easy to implement.
+entire application and make global style changes easy to implement. This follows
+the Single Responsibility Principle.
 
 Author: AI Engineering SME
 Version: 23.1 (Commercial Grade Refactor)
@@ -57,7 +58,7 @@ def get_custom_css() -> str:
             background-color: {COLORS['background']};
             color: {COLORS['text']};
         }}
-        
+
         /* --- Typography --- */
         h1, h2 {{
             color: {COLORS['dark_gray']};
@@ -66,27 +67,28 @@ def get_custom_css() -> str:
         }}
         h3 {{ color: {COLORS['primary']}; }}
         h4, h5 {{ color: {COLORS['dark_gray']}; }}
-        
+
         /* --- Containers and Borders --- */
         /* Targets custom containers for a card-like effect */
-        div[data-testid="stBlock"], 
+        div[data-testid="stBlock"],
         div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] {{
             border: 1px solid {COLORS['light_gray']};
             border-radius: 0.5rem;
             box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+            padding: 1rem 1rem 0 1rem; /* Add padding to bordered containers */
         }}
-        
+
         /* --- Widgets Styling --- */
         button[data-testid="stButton"] > button {{
             border-radius: 0.5rem;
         }}
-        
+
         .stTabs [data-baseweb="tab-list"] button {{
             background-color: transparent;
             border-bottom: 2px solid transparent;
             transition: all 0.3s ease-in-out;
         }}
-        
+
         .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {{
             border-bottom: 2px solid {COLORS['primary']};
             color: {COLORS['primary']};
@@ -110,18 +112,22 @@ def hex_to_rgba(hex_color: str, alpha: float) -> str:
     :param alpha: The alpha (transparency) value, from 0.0 (fully transparent)
                   to 1.0 (fully opaque).
     :type alpha: float
+    :raises ValueError: If alpha is out of bounds or hex_color has an invalid format.
     :return: The RGBA color string (e.g., "rgba(r, g, b, a)").
     :rtype: str
     """
     if not (0.0 <= alpha <= 1.0):
         raise ValueError("Alpha value must be between 0.0 and 1.0.")
-    
+
     hex_color = hex_color.lstrip('#')
     if len(hex_color) != 6:
-        raise ValueError("Invalid HEX color format. Must be 6 characters long.")
-        
-    r = int(hex_color[0:2], 16)
-    g = int(hex_color[2:4], 16)
-    b = int(hex_color[4:6], 16)
-    
+        raise ValueError(f"Invalid HEX color format '{hex_color}'. Must be 6 characters long.")
+
+    try:
+        r = int(hex_color[0:2], 16)
+        g = int(hex_color[2:4], 16)
+        b = int(hex_color[4:6], 16)
+    except ValueError as e:
+        raise ValueError(f"Invalid character in HEX string '{hex_color}'.") from e
+
     return f"rgba({r}, {g}, {b}, {alpha})"
