@@ -18,7 +18,7 @@ handles the "scaffolding" and "routing," while content and logic are delegated
 to dedicated modules.
 
 Author: AI Engineering SME
-Version: 23.4 (Bulletproof Refactor)
+Version: 23.5 (Definitive Production Release)
 Date: 2023-10-26
 """
 
@@ -48,7 +48,6 @@ def main():
     # --- 0.2. Dynamic & Resilient Module Imports ---
     try:
         from helpers.styling import get_custom_css
-        # Other helper imports can be added here if needed globally
         logger.debug("Successfully imported 'helpers' modules.")
     except ImportError as e:
         logger.error(f"Fatal error: Failed to import critical helper modules. {e}")
@@ -78,6 +77,8 @@ def main():
     except ImportError as e:
         logger.error(f"Error importing page modules: {e}. The app may be unstable.")
         st.toast(f"Warning: A page module failed to load. {e}", icon="⚠️")
+        # In a real scenario, you might want to exit or handle this more gracefully
+        # For now, we'll let it proceed, but some pages might be broken.
 
     # ==============================================================================
     # 1. GLOBAL PAGE CONFIGURATION (WITH GRACEFUL DEGRADATION)
@@ -85,9 +86,12 @@ def main():
     app_meta = st.secrets.get("app_meta", {})
     app_version = app_meta.get("version", "N/A")
 
-    # --- Dynamically build the menu_items dictionary ---
-    # This is the key fix. We only add menu items if their corresponding
-    # URLs are defined in secrets.toml. This prevents the StreamlitInvalidURLError.
+    # --- DEFINITIVE FIX: Dynamically build the menu_items dictionary ---
+    # This logic prevents the StreamlitInvalidURLError by only adding menu
+    # items if a valid URL is actually provided in the secrets.toml file.
+    # It does not use invalid placeholders like "#".
+    
+    # Start with the 'About' item, which is always present.
     menu_items = {
         'About': f"""
         ## 🧬 The Bio-AI Excellence Framework
@@ -97,16 +101,21 @@ def main():
         **Version:** {app_version}
         """
     }
+    
     url_config = st.secrets.get("urls", {})
+    
+    # Safely get each URL. .get() will return None if the key doesn't exist.
     help_url = url_config.get("help")
     bug_report_url = url_config.get("bug_report")
     source_code_url = url_config.get("source_code")
 
+    # Only add items to the dictionary if the URL was found.
     if help_url:
         menu_items['Get Help'] = help_url
     if bug_report_url:
         menu_items['Report a bug'] = bug_report_url
 
+    # Now, call set_page_config with the safely constructed dictionary.
     st.set_page_config(
         page_title="Bio-AI Excellence Framework",
         page_icon="🧬",
@@ -131,7 +140,7 @@ def main():
     logger.debug("Configuring application navigation.")
     PAGES = [
         st.Page(page_func, title=title, icon=icon)
-        for title, page_func, icon in page_modules
+        for title, page_func, in page_modules
     ]
 
     with st.sidebar:
