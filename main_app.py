@@ -13,19 +13,14 @@ This script is responsible for:
 5.  Rendering the main application layout, including the sidebar.
 6.  Executing the selected page's rendering logic.
 
-This architecture ensures a clean separation of concerns, where this main script
-handles the "scaffolding" and "routing," while content and logic are delegated
-to dedicated modules.
-
 Author: AI Engineering SME
-Version: 23.5 (Definitive Production Release)
+Version: 23.6 (Final Verification Build)
 Date: 2023-10-26
 """
 
 import streamlit as st
 import logging
 import sys
-from typing import List, Callable
 
 # ==============================================================================
 # 0. APPLICATION BOOTSTRAP & INITIALIZATION
@@ -34,6 +29,11 @@ def main():
     """
     Main function to configure and run the Streamlit application.
     """
+    # --- VERIFICATION STEP ---
+    # If you see balloons, you are running the correct version of this file.
+    # If the app crashes without showing balloons, the file was not updated.
+    st.balloons()
+    
     # --- 0.1. Logging Configuration ---
     log_config = st.secrets.get("logging", {})
     log_level_str = log_config.get("level", "INFO").upper()
@@ -43,7 +43,7 @@ def main():
         stream=sys.stdout,
     )
     logger = logging.getLogger(__name__)
-    logger.info("Application starting up.")
+    logger.info("Application starting up. Verification build is running.")
 
     # --- 0.2. Dynamic & Resilient Module Imports ---
     try:
@@ -76,9 +76,8 @@ def main():
         logger.debug("Successfully imported all page modules.")
     except ImportError as e:
         logger.error(f"Error importing page modules: {e}. The app may be unstable.")
-        st.toast(f"Warning: A page module failed to load. {e}", icon="⚠️")
-        # In a real scenario, you might want to exit or handle this more gracefully
-        # For now, we'll let it proceed, but some pages might be broken.
+        st.error(f"Failed to load page definitions from app_pages.py. Error: {e}")
+        st.stop()
 
     # ==============================================================================
     # 1. GLOBAL PAGE CONFIGURATION (WITH GRACEFUL DEGRADATION)
@@ -87,11 +86,6 @@ def main():
     app_version = app_meta.get("version", "N/A")
 
     # --- DEFINITIVE FIX: Dynamically build the menu_items dictionary ---
-    # This logic prevents the StreamlitInvalidURLError by only adding menu
-    # items if a valid URL is actually provided in the secrets.toml file.
-    # It does not use invalid placeholders like "#".
-    
-    # Start with the 'About' item, which is always present.
     menu_items = {
         'About': f"""
         ## 🧬 The Bio-AI Excellence Framework
@@ -101,21 +95,16 @@ def main():
         **Version:** {app_version}
         """
     }
-    
     url_config = st.secrets.get("urls", {})
-    
-    # Safely get each URL. .get() will return None if the key doesn't exist.
     help_url = url_config.get("help")
     bug_report_url = url_config.get("bug_report")
     source_code_url = url_config.get("source_code")
 
-    # Only add items to the dictionary if the URL was found.
     if help_url:
         menu_items['Get Help'] = help_url
     if bug_report_url:
         menu_items['Report a bug'] = bug_report_url
 
-    # Now, call set_page_config with the safely constructed dictionary.
     st.set_page_config(
         page_title="Bio-AI Excellence Framework",
         page_icon="🧬",
@@ -126,10 +115,7 @@ def main():
 
     # --- 1.1. Custom Styling ---
     try:
-        # SECURITY NOTE: The 'unsafe_allow_html' parameter is used with trusted,
-        # internal CSS. Do not pass user-generated strings here.
         st.markdown(get_custom_css(), unsafe_allow_html=True)
-        logger.debug("Custom CSS applied successfully.")
     except Exception as e:
         logger.warning(f"Failed to apply custom CSS. Error: {e}")
         st.toast("Could not load custom theme.", icon="🎨")
@@ -137,30 +123,24 @@ def main():
     # ==============================================================================
     # 2. APPLICATION NAVIGATION & SIDEBAR
     # ==============================================================================
-    logger.debug("Configuring application navigation.")
     PAGES = [
         st.Page(page_func, title=title, icon=icon)
-        for title, page_func, in page_modules
+        for title, page_func, icon in page_modules
     ]
 
     with st.sidebar:
         st.title("🧬 Bio-AI Framework")
         st.markdown("##### Assay Development Playbook")
         st.markdown("Navigate the R&D lifecycle below.")
-
         pg = st.navigation(PAGES)
-
         st.divider()
         st.info(
             "This app demonstrates integrating ML into the biotech R&D lifecycle "
             "for superior performance and reliability."
         )
-        # Conditionally display the source code link
         if source_code_url:
             st.markdown(f"**[View Source on GitHub]({source_code_url})**")
         st.caption(f"Version: {app_version}")
-
-    logger.info("Sidebar rendered and navigation configured.")
 
     # ==============================================================================
     # 3. PAGE RENDERING LOGIC WITH ERROR BOUNDARY
