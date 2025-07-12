@@ -4,23 +4,26 @@ helpers/content.py
 This module centralizes all static text, markdown, and HTML content used
 throughout the application.
 
-By separating content from the application logic and layout (in app_pages.py),
-we make the app easier to maintain, update, and potentially translate. This
-module provides functions that return formatted strings or data structures
-for rendering in the UI.
+By separating content from the application logic (in app_pages.py), we make
+the app easier to maintain, update, and potentially translate.
 
 Author: AI Engineering SME
-Version: 24.1 (SME Refactored Build)
-Date: 2024-05-21
+Version: 25.1 (Commercial Grade Build)
+Date: 2025-07-12
 
-Changelog from v23.1:
-- [REFACTOR] Removed the unused `get_workflow_css` function. All dynamic styling
-  is now handled inline in the `render_workflow_step` function for better
-  encapsulation and simplicity, avoiding the need to inject a separate stylesheet.
-- [REFACTOR] Simplified the `render_workflow_step` function. It now uses more
-  readable f-string formatting for HTML generation, improving maintainability.
-- [STYLE] Improved markdown formatting in expander content for better
-  readability and visual structure.
+Changelog from v24.1:
+- [CRITICAL-CONTENT] Implemented a robust `render_workflow_step` function. This
+  function now generates self-contained, modern HTML with inline CSS (Flexbox)
+  to create the stable and visually appealing workflow diagram for the enhanced
+  "Hybrid Manifesto" page.
+- [ENHANCEMENT] Polished all markdown content within the `get_*_expander_content`
+  functions to improve readability, using consistent headers and formatting for
+  a professional user experience.
+- [ENHANCEMENT] Improved the "guidance_data" content with clearer, more
+  compelling rationales for each recommended approach.
+- [MAINTAINABILITY] The HTML generation in `render_workflow_step` is structured
+  within a single f-string, making it easy to modify the layout and styles in one
+  place.
 - [STYLE] Added type hints to all function signatures for improved code quality
   and static analysis.
 """
@@ -41,7 +44,7 @@ def get_qfd_expander_content() -> str:
 Quality Function Deployment (QFD) is a structured method for translating customer requirements (the "Voice of the Customer") into design specifications (the "Voice of the Engineer"). The 'House of Quality' matrix is the primary tool used to map customer needs to technical characteristics, creating a traceable and justifiable link.
 
 **Regulatory Significance:**
-This creates a **documented, traceable link** between user needs and design inputs, which is a core requirement of **FDA Design Controls (21 CFR 820.30)**. It provides objective evidence for *why* certain technical specifications were prioritized for the **Design HistoryFile (DHF)**, demonstrating a systematic approach to design.
+This creates a **documented, traceable link** between user needs and design inputs, which is a core requirement of **FDA Design Controls (21 CFR 820.30)**. It provides objective evidence for *why* certain technical specifications were prioritized for the **Design History File (DHF)**, demonstrating a systematic approach to design.
 """
 
 def get_kano_expander_content() -> str:
@@ -101,32 +104,30 @@ def get_guidance_data() -> Dict[str, Dict[str, str]]:
     return {
         "Validating an assay for FDA 510(k) submission": {
             "approach": "🏆 **Classical Stats** (DOE, LoD/LoB studies, Gage R&R)",
-            "rationale": "Methods are traceable, validated, and follow CLSI/FDA guidelines, which is paramount for regulatory bodies. The focus is on rigorous inference and establishing performance characteristics beyond reproach. Their outputs (p-values, Cpk, confidence intervals) are the accepted currency of regulatory submissions."
+            "rationale": "Regulatory bodies demand traceable, validated methods that follow established guidelines (e.g., CLSI, FDA). The outputs of classical statistics—p-values, Cpk, confidence intervals—are the accepted currency for demonstrating safety and effectiveness. This approach focuses on rigorous inference and establishing performance characteristics beyond reproach."
         },
         "Discovering a new gene signature from RNA-Seq data": {
             "approach": "🏆 **Machine Learning** (Elastic Net, Random Forest with SHAP)",
-            "rationale": "ML excels at feature selection from high-dimensional data where the number of features vastly exceeds the number of samples (p >> n). It can identify a minimal, predictive set of genes from thousands of candidates, a task that is statistically challenging or impossible for classical regression."
+            "rationale": "ML excels at feature selection from high-dimensional data where the number of features vastly exceeds samples (p >> n). It can identify a minimal, predictive set of genes from thousands of candidates, a task where classical regression struggles due to multicollinearity and overfitting."
         },
         "Optimizing a 12-parameter cell culture media": {
             "approach": "🏆 **Hybrid:** ML Model + Bayesian Optimization",
-            "rationale": "A full factorial DOE is impossible (2^12 = 4096 runs). Instead, run a small space-filling DOE (e.g., Latin Hypercube) to train a Gaussian Process model (the 'digital twin' of the culture). Then, use Bayesian Optimization to intelligently navigate the parameter space and find the optimal media composition *in silico* before final wet-lab confirmation."
+            "rationale": "A full factorial DOE is impossible (2^12 = 4096 runs). The hybrid approach is far more efficient. First, run a small, space-filling DOE (e.g., Latin Hypercube) to gather initial data. Then, train a Gaussian Process model to create a 'digital twin' of the culture. Finally, use Bayesian Optimization to intelligently navigate the parameter space *in silico* to find the optimum, which is then confirmed with a few targeted wet-lab experiments."
         },
         "Monitoring daily QC for a clinical diagnostic lab": {
             "approach": "🏆 **Hybrid:** Levey-Jennings + EWMA + Multivariate Control",
-            "rationale": "Use standard Levey-Jennings charts for regulatory compliance and ease of interpretation (the 'what'). Use more sensitive EWMA or CUSUM charts to detect slow reagent drift earlier (the 'when'). Use a Hotelling's T² chart on the full QC profile to catch subtle, correlated shifts that individual charts would miss (the 'how')."
+            "rationale": "This tiered approach provides comprehensive control. Use standard Levey-Jennings charts for regulatory compliance and simple rule interpretation ('what' is out). Augment this with more sensitive EWMA or CUSUM charts to detect slow reagent drift earlier ('when' it started). Finally, apply a Hotelling's T² chart on the full QC profile to catch subtle, correlated shifts that individual charts would miss ('how' it's failing)."
         },
         "Identifying sources of contamination in a clean room from microbiome data": {
             "approach": "🏆 **Bioinformatics & ML** (PCA, Clustering, Source Tracking)",
-            "rationale": "These are high-dimensional, complex datasets. Unsupervised learning methods are required to cluster samples by microbial signature, identify outlier profiles, and trace them back to potential environmental or personnel sources using algorithms like FEAST or SourceTracker."
+            "rationale": "These are high-dimensional, complex datasets unsuited for simple analysis. Unsupervised learning (PCA, UMAP) is required to visualize sample relationships. Clustering can group samples by microbial signature, identify outlier profiles, and trace them back to potential environmental or personnel sources using specialized algorithms like FEAST or SourceTracker."
         }
     }
 
 
 # ==============================================================================
-# 3. DYNAMIC HTML GENERATORS
+# 3. DYNAMIC HTML GENERATORS FOR MANIFESTO PAGE
 # ==============================================================================
-# [REFACTOR] Removed get_workflow_css and integrated styling directly into
-# the render function for simplicity and to remove unused code.
 
 def render_workflow_step(
     phase_name: str,
@@ -135,18 +136,18 @@ def render_workflow_step(
     ml_tools: List[str]
 ) -> str:
     """
-    Generates an HTML block for a single step in a DMAIC workflow diagram.
-    This function is no longer used in the refactored app but is kept for
-    potential future use.
+    Generates a self-contained, stable HTML block for a DMAIC workflow step.
+    This function uses inline CSS with Flexbox to ensure perfect layout
+    containment and visual stability.
 
     Args:
-        phase_name: The name of the DMAIC phase (e.g., "Define: ...").
-        phase_class: The CSS class for the phase color (e.g., "step-define").
+        phase_name: The name of the DMAIC phase (e.g., "1. Define").
+        phase_class: The CSS class identifier for the phase color.
         classical_tools: A list of classical tools for this phase.
         ml_tools: A list of ML/AI tools for this phase.
 
     Returns:
-        An HTML string representing the workflow step.
+        An HTML string representing the styled workflow step.
     """
     phase_color = {
         "step-define": COLORS['primary'],
@@ -154,34 +155,31 @@ def render_workflow_step(
         "step-analyze": COLORS['accent'],
         "step-improve": COLORS['neutral_yellow'],
         "step-control": COLORS['neutral_pink']
-    }.get(phase_class, COLORS['light_gray'])
+    }.get(phase_class, COLORS['dark_gray'])
 
-    classical_list = "".join(f"<li>{tool}</li>" for tool in classical_tools)
-    ml_list = "".join(f"<li>{tool}</li>" for tool in ml_tools)
+    # Generate bulleted lists for each toolset
+    classical_list_html = "".join(f"<li>{tool}</li>" for tool in classical_tools)
+    ml_list_html = "".join(f"<li>{tool}</li>" for tool in ml_tools)
 
+    # Return a single, formatted HTML string. Using inline styles in this manner
+    # makes the component self-contained and avoids CSS conflicts.
     return f"""
-    <div style="background-color: #FFFFFF;
-                border: 1px solid {COLORS['light_gray']};
-                border-radius: 10px;
-                padding: 20px;
-                margin-bottom: 20px;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-                border-left: 5px solid {phase_color};">
-        <h4 style="margin-top: 0; margin-bottom: 15px; font-size: 1.5em; color: #333333;">
+    <div style="margin-bottom: 25px;">
+        <!-- Phase Header with Color Bar -->
+        <h3 style="color: {phase_color}; border-bottom: 2px solid {phase_color}; padding-bottom: 5px; margin-bottom: 15px;">
             {phase_name}
-        </h4>
-        <div style="display: flex; justify-content: space-between;">
-            <div style="flex: 1; margin-right: 10px; padding: 0 15px;">
-                <h5 style="color: {COLORS['primary']}; border-bottom: 2px solid #EEEEEE; padding-bottom: 5px; margin-bottom: 10px;">
-                    Classical Tools (Rigor & Validation)
-                </h5>
-                <ul style="padding-left: 20px; margin: 0;">{classical_list}</ul>
+        </h3>
+        <!-- Flexbox container for side-by-side columns -->
+        <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+            <!-- Classical Tools Column -->
+            <div style="flex: 1; min-width: 300px; background-color: #f9f9f9; border: 1px solid {COLORS['light_gray']}; border-radius: 8px; padding: 15px;">
+                <h5 style="margin-top: 0; color: {COLORS['primary']};">🏛️ Classical Tools (Rigor & Validation)</h5>
+                <ul style="padding-left: 20px; margin: 0;">{classical_list_html}</ul>
             </div>
-            <div style="flex: 1; margin-left: 10px; padding: 0 15px;">
-                <h5 style="color: {COLORS['secondary']}; border-bottom: 2px solid #EEEEEE; padding-bottom: 5px; margin-bottom: 10px;">
-                    ML/Bio-AI Augmentation (Scale & Discovery)
-                </h5>
-                <ul style="padding-left: 20px; margin: 0;">{ml_list}</ul>
+            <!-- ML Augmentation Column -->
+            <div style="flex: 1; min-width: 300px; background-color: #f9f9f9; border: 1px solid {COLORS['light_gray']}; border-radius: 8px; padding: 15px;">
+                <h5 style="margin-top: 0; color: {COLORS['secondary']};">🤖 ML Augmentation (Scale & Discovery)</h5>
+                <ul style="padding-left: 20px; margin: 0;">{ml_list_html}</ul>
             </div>
         </div>
     </div>
