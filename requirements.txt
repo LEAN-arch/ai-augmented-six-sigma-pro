@@ -13,4 +13,5 @@ scipy
 # Data Visualization and Explainability
 plotly
 shap
+Numba
 matplotlib
