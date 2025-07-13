@@ -7,12 +7,15 @@ explanations directly alongside every plot, figure, and table, and features
 a substantially improved narrative across all pages.
 
 Author: Bio-AI Excellence SME Collective
-Version: 32.1 (Syntax Hotfix Build)
-Date: 2025-07-15
+Version: 33.0 (Elite Visualization Build)
+Date: 2025-07-16
 
-Changelog from v32.0:
-- [CRITICAL-FIX] Corrected a SyntaxError on line 124 of the welcome page
-  caused by improper string quoting. The application now loads correctly.
+Changelog from v32.1:
+- [BUGFIX] Corrected the SyntaxError on the welcome page.
+- [LAYOUT] Updated the 'Improve' phase layout to accommodate the new 3D
+  Response Surface plot for DOE analysis.
+- [INTEGRATION] Confirmed seamless integration with all new and upgraded
+  elite-tier visualizations from `helpers/visualizations.py`.
 """
 
 import streamlit as st
@@ -112,8 +115,7 @@ def show_welcome_page() -> None:
         - **Core Tools:** Random Forests, Gradient Boosting, Clustering, Deep Learning, Natural Language Processing (NLP).
         - **Regulatory Significance:** This is the world of **discovery** and **monitoring**. It's essential for biomarker discovery, optimizing highly complex processes (e.g., cell culture media), and post-market surveillance (PMS) signal detection.
         """)
-        
-    # FIX: Corrected a SyntaxError with nested quotes. Changed outer quotes to single quotes.
+    
     st.subheader('The Synthesis: From "Or" to "And"')
     st.markdown("""
     An outdated mindset pits these two worlds against each other. The Bio-AI Excellence Framework is built on the philosophy of **synergy**. The most successful and competitive organizations do not choose one; they master the art of using them together.
@@ -237,7 +239,7 @@ def show_define_phase() -> None:
                 - **What is it?** The application of Explainable AI (XAI) techniques, like SHAP (SHapley Additive exPlanations), to an early predictive model to understand which input parameters have the most significant impact on a key outcome.
                 - **Why do it?** To use early experimental or historical data to support or challenge the team's assumptions about which process parameters are truly critical. It can uncover unexpected drivers of performance.
                 - **How is it done?** A machine learning model (e.g., Random Forest) is trained on the data. The SHAP algorithm then computes the contribution of each feature to each individual prediction, 'explaining' the model's logic.
-                - **Purpose & Meaning of Results:** The SHAP summary plot ranks the features by their overall impact. This provides a data-driven, prioritized list of factors that should be considered critical design inputs, complementing the qualitative insights from tools like QFD.
+                - **Purpose & Meaning of Results:** This sophisticated plot shows not just the rank of important features, but the distribution of their impact. The position of each box shows its typical impact, while the width shows the range of impacts. This provides a data-driven, prioritized list of factors that should be considered critical design inputs, complementing the qualitative insights from tools like QFD.
                 """
             )
 
@@ -297,10 +299,10 @@ def show_measure_phase() -> None:
             tool_function=plot_gage_rr_pareto,
             tool_args={'df_gage': df_gage},
             explanation_text="""
-            - **What is it?** A statistical study, typically a Gage Repeatability & Reproducibility (Gage R&R) study, designed to quantify the amount of variation in your data that comes from the measurement system itself.
+            - **What is it?** A statistical study designed to quantify the amount of variation in your data that comes from the measurement system itself.
             - **Why do it?** This is a non-negotiable prerequisite for any data-based decision-making. If your measurement system is noisy, you cannot trust your process data.
             - **How is it done?** A structured experiment is performed where multiple operators measure multiple samples multiple times. The resulting data is analyzed using ANOVA to partition the total observed variance into its components: the true Part-to-Part variation and the measurement error (Gage R&R).
-            - **Purpose & Meaning of Results:** The Pareto chart visualizes the `% Contribution` of each source of variation. The key guideline is that the total Gage R&R should contribute **less than 10%** of the total variation. If it's higher, the measurement system is unacceptable and must be improved before proceeding.
+            - **Purpose & Meaning of Results:** This dashboard visualizes the variance components. The stacked bar on the left shows the total variation, with the red 'Gage R&R' portion representing measurement error. The donut chart on the right breaks this error down into its sources. The key guideline is that the total Gage R&R should contribute **less than 10%** of the total variation for the system to be deemed 'Acceptable'.
             """
         )
 
@@ -386,8 +388,8 @@ def show_analyze_phase() -> None:
                 explanation_text="""
                 - **What is it?** A visualization from Explainable AI (XAI) that summarizes the output of a SHAP analysis. It shows which features are most important to a machine learning model and what their impact is.
                 - **Why do it?** To open the "black box" of a complex model. After establishing that the ML model is accurate, SHAP is used to understand *why* it is accurate, turning the model into a powerful root cause analysis tool.
-                - **How is it done?** The beeswarm plot shows the impact of each feature on every individual prediction. The bar chart shows the global feature importance by averaging the absolute SHAP values.
-                - **Purpose & Meaning of Results:** The bar chart ranks the features by importance, identifying the most likely root causes. The beeswarm plot provides deeper context. For example, for the top feature, red dots (high values) may push the prediction higher, providing a direct, data-driven insight.
+                - **How is it done?** This advanced 'Lollipop & Box Plot' shows the distribution of SHAP values for each feature. The lollipop shows the mean absolute importance, while the box shows the range and direction of impacts.
+                - **Purpose & Meaning of Results:** The plot ranks features by importance (top is most important). The box plot for each feature reveals if it typically has a positive (right of zero) or negative (left of zero) impact on the outcome, providing a rich, data-driven hypothesis for root cause.
                 """
             )
     with st.container(border=True):
@@ -426,8 +428,8 @@ def show_analyze_phase() -> None:
                 explanation_text="""
                 - **What is it?** The application of Natural Language Processing (NLP), specifically topic modeling, to a large body of unstructured text from CAPA or deviation logs.
                 - **Why do it?** To overcome the limitations of manual review by analyzing thousands of reports to identify systemic, recurring themes and trends that would otherwise be invisible.
-                - **How is it done?** The text from all logs is collected. An NLP model scans each description for patterns and categorizes it into a pre-defined topic. The frequency of each topic is counted.
-                - **Purpose & Meaning of Results:** The resulting bar chart is a Pareto chart for text data. It highlights the most frequent systemic failure themes, allowing management to focus quality improvement efforts on the biggest systemic problems.
+                - **How is it done?** The text from all logs is categorized into topics. The frequency of each topic is then visualized using a Treemap, where the area of each rectangle is proportional to its frequency.
+                - **Purpose & Meaning of Results:** The Treemap makes it instantly clear which failure themes are most prevalent. This allows management to focus quality improvement efforts on the biggest systemic problems (e.g., the largest rectangles) rather than just reacting to individual incidents.
                 """
             )
 
@@ -456,18 +458,31 @@ def show_improve_phase() -> None:
             st.markdown("##### **Classical: Design of Experiments (DOE)**")
             doe_data = generate_doe_data()
             fig_doe_main, fig_doe_interaction = plot_doe_effects(doe_data)
+            
             col1, col2 = st.columns(2)
             with col1:
+                st.markdown("###### DOE Cube Plot (Design Points)")
                 st.plotly_chart(plot_doe_cube(doe_data), use_container_width=True)
             with col2:
+                st.markdown("###### 3D Response Surface (Predicted Model)")
+                st.plotly_chart(plot_doe_3d_surface(doe_data), use_container_width=True)
+
+            st.markdown("###### Factor Effects")
+            col3, col4 = st.columns(2)
+            with col3:
                 st.plotly_chart(fig_doe_main, use_container_width=True)
+            with col4:
                 st.plotly_chart(fig_doe_interaction, use_container_width=True)
+
             with st.expander("Methodology, Purpose, and Interpretation"):
                 st.markdown("""
                 - **What is it?** A structured and statistically powerful approach to experimentation where multiple factors are varied simultaneously to understand their individual and interactive effects on a process output.
                 - **Why do it?** It is vastly more efficient and informative than the traditional "One-Factor-at-a-Time" (OFAT) approach. DOE can reveal interactions between factors which OFAT can never detect.
-                - **How is it done?** A structured experimental plan is created (the "design matrix"). The experiments are run, and a statistical model calculates the **Effect** of each factor and interaction.
-                - **Purpose & Meaning of Results:** The **Effects Plots** rank the factors by the magnitude of their effect, showing which are the most powerful levers for controlling the process. The **Cube Plot** visualizes the response at each corner of the design space, providing an intuitive feel for the relationships.
+                - **How is it done?** A structured experimental plan is created. The experiments are run, and a statistical model calculates the **Effect** of each factor and interaction.
+                - **Purpose & Meaning of Results:**
+                  - **Effects Plots:** Rank factors by their effect magnitude, showing the most powerful levers for control.
+                  - **Cube Plot:** Visualizes the response at each corner of the design space.
+                  - **3D Response Surface:** Visualizes the predicted process model over the entire design space, providing an intuitive topographical map of performance.
                 """)
             st.divider()
             _render_analysis_tool(
