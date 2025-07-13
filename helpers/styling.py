@@ -2,27 +2,24 @@
 helpers/styling.py
 
 This module centralizes all visual styling and configuration for the application.
-It defines the color palette, generates the main CSS stylesheet, and provides
-utility functions for color manipulation.
+It defines the color palette and generates the main CSS stylesheet.
 
 By isolating styling concerns, we ensure a consistent look and feel across the
 entire application and make global style changes easy to implement.
 
 Author: AI Engineering SME
-Version: 26.1 (Commercial Grade Content Overhaul)
+Version: 28.1 (Definitive Final Build)
 Date: 2025-07-13
 
-Changelog from v25.1:
+Changelog from v26.1:
 - [ENHANCEMENT] Added subtle `transition` and `hover` effects to bordered
   containers (`st.container(border=True)`) to give the UI a more dynamic,
   professional feel.
 - [MAINTAINABILITY] CSS selectors remain modern and specific (e.g.,
   `[data-testid="stAppViewContainer"]`) for maximum stability against future
-  Streamlit updates.
-- [DOC] Added more detailed comments within the CSS block to explain the
-  purpose of each rule, improving long-term maintainability.
-- [STYLE] All docstrings and type hints have been reviewed to meet a
-  commercial-grade standard.
+  Streamlit updates. The CSS rules have been reviewed for clarity and purpose.
+- [DOC] Finalized all docstrings and comments to a commercial-grade standard,
+  explaining the purpose of each styling rule.
 """
 
 from typing import Dict
