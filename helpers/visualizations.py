@@ -192,15 +192,76 @@ def plot_kano_visual(df_kano: pd.DataFrame) -> go.Figure:
     for ann in annotations: fig.add_annotation(x=ann['x'], y=ann['y'], text=ann['text'], showarrow=True, arrowhead=2, arrowwidth=2, ax=ann['ax'], ay=ann['ay'], font=dict(size=12, color=ann['font_color']), bgcolor='rgba(255,255,255,0.7)')
     fig.update_layout(title='<b>Kano Model:</b> Prioritizing Diagnostic Features', xaxis_title='<b>← Dysfunctional ... Functional →</b><br>Feature Implementation', yaxis_title='<b>← Dissatisfaction ... Satisfaction →</b><br>Clinician Response', legend=dict(orientation='v', y=0.99, x=0.01, yanchor='top', xanchor='left', bgcolor='rgba(255,255,255,0.8)')); return fig
 
-def plot_gage_rr_pareto(df_gage: pd.DataFrame) -> go.Figure:
-    part_var = df_gage[df_gage['Source of Variation'] == 'Assay Variation (Biology)']['Contribution (%)'].iloc[0]; repeatability = df_gage[df_gage['Source of Variation'] == 'Repeatability (Sequencer)']['Contribution (%)'].iloc[0]; reproducibility = df_gage[df_gage['Source of Variation'] == 'Reproducibility (Operator)']['Contribution (%)'].iloc[0]; gage_rr_total = repeatability + reproducibility
-    verdict = "Acceptable" if gage_rr_total < 10 else "Marginal" if gage_rr_total < 30 else "Unacceptable"; verdict_color = COLORS['success'] if verdict == "Acceptable" else COLORS['warning'] if verdict == "Marginal" else COLORS['danger']
-    fig = make_subplots(rows=1, cols=2, specs=[[{"type": "bar"}, {"type": "pie"}]], column_widths=[0.6, 0.4])
-    fig.add_trace(go.Bar(y=['Total Variation'], x=[part_var], name='Part-to-Part (Good)', orientation='h', marker_color=COLORS['primary'], text=f"{part_var:.1f}%", textposition='inside'), row=1, col=1)
-    fig.add_trace(go.Bar(y=['Total Variation'], x=[gage_rr_total], name='Gage R&R (Bad)', orientation='h', marker_color=COLORS['danger'], text=f"{gage_rr_total:.1f}%", textposition='inside'), row=1, col=1)
-    fig.add_trace(go.Pie(labels=['Repeatability', 'Reproducibility'], values=[repeatability, reproducibility], hole=0.5, marker_colors=[hex_to_rgba(COLORS['accent'], 0.8), hex_to_rgba(COLORS['warning'], 0.8)], textinfo='label+percent', hoverinfo='label+value', insidetextorientation='radial'), row=1, col=2)
-    fig.update_layout(title=f"<b>Gage R&R Dashboard — Verdict: <span style='color:{verdict_color};'>{verdict}</span></b>", barmode='stack', showlegend=False, plot_bgcolor='white', xaxis=dict(range=[0, 100], showticklabels=False, showgrid=False, zeroline=False), yaxis=dict(showticklabels=False), annotations=[dict(text='<b>Variance<br>Source</b>', x=0.25, y=1.15, xref='paper', yref='paper', showarrow=False, font_size=16), dict(text='<b>Gage R&R<br>Breakdown</b>', x=0.85, y=1.15, xref='paper', yref='paper', showarrow=False, font_size=16)]); return fig
+def plot_gage_rr_sunburst(df_gage: pd.DataFrame) -> go.Figure:
+    """
+    Creates an elegant and highly informative Sunburst chart to visualize the
+    hierarchical decomposition of variance in a Gage R&R study.
+    """
+    # --- 1. Data Preparation ---
+    part_var = df_gage.loc[df_gage['Source of Variation'] == 'Assay Variation (Biology)', 'Contribution (%)'].iloc[0]
+    repeatability = df_gage.loc[df_gage['Source of Variation'] == 'Repeatability (Sequencer)', 'Contribution (%)'].iloc[0]
+    reproducibility = df_gage.loc[df_gage['Source of Variation'] == 'Reproducibility (Operator)', 'Contribution (%)'].iloc[0]
+    gage_rr_total = repeatability + reproducibility
+    
+    # Determine the verdict based on AIAG guidelines
+    verdict = "Acceptable" if gage_rr_total < 10 else "Marginal" if gage_rr_total < 30 else "Unacceptable"
+    verdict_color = COLORS['success'] if verdict == "Acceptable" else COLORS['warning'] if verdict == "Marginal" else COLORS['danger']
 
+    # --- 2. Create Hierarchical Data Structure for Sunburst ---
+    data = dict(
+        ids=[
+            "Total", 
+            "Process Variation", "Measurement System", 
+            "Repeatability", "Reproducibility"
+        ],
+        labels=[
+            "Total Variation", 
+            "Process Variation<br>(Good)", "Measurement System<br>(Gage R&R)", 
+            "Repeatability<br>(Equipment)", "Reproducibility<br>(Operator)"
+        ],
+        parents=[
+            "", 
+            "Total", "Total", 
+            "Measurement System", "Measurement System"
+        ],
+        values=[
+            100, 
+            part_var, gage_rr_total, 
+            repeatability, reproducibility
+        ]
+    )
+
+    # --- 3. Build the Figure ---
+    fig = go.Figure()
+
+    fig.add_trace(go.Sunburst(
+        ids=data["ids"],
+        labels=data["labels"],
+        parents=data["parents"],
+        values=data["values"],
+        branchvalues="total",
+        insidetextorientation='radial',
+        hoverinfo='label+percent parent',
+        marker=dict(
+            colors=[
+                # Define colors for each level
+                COLORS['light_gray'],  # Total
+                COLORS['primary'],     # Process Variation
+                COLORS['danger'],      # Measurement System
+                COLORS['accent'],      # Repeatability
+                COLORS['warning'],     # Reproducibility
+            ],
+            line=dict(color='white', width=2)
+        )
+    ))
+
+    # --- 4. Final Layout and Styling ---
+    fig.update_layout(
+        title=f"<b>Gage R&R Variance Decomposition — Verdict: <span style='color:{verdict_color};'>{verdict}</span> ({gage_rr_total:.1f}%)</b>",
+        margin=dict(t=100, l=10, r=10, b=10),
+    )
+
+    return fig
 def plot_capability_analysis_pro(data: np.ndarray, lsl: float, usl: float) -> Tuple[go.Figure, float, float]:
     if data is None or len(data) < 2: return go.Figure().update_layout(title_text="<b>Error:</b> Insufficient data for analysis."), 0, 0
     mean, std = np.mean(data), np.std(data, ddof=1);
