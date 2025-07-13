@@ -14,19 +14,17 @@ This script is responsible for:
 6.  Executing the selected page's rendering logic with robust error handling.
 
 Author: AI Engineering SME
-Version: 26.1 (Commercial Grade Content Overhaul)
+Version: 28.1 (Definitive Final Build)
 Date: 2025-07-13
 
-Changelog from v25.3:
-- [ROBUSTNESS] Enhanced the fatal ImportError handler to explicitly instruct
-  the user to install dependencies via `requirements.txt`, directly addressing
-  potential setup issues.
-- [MAINTAINABILITY] Refined the `BioAIApp` class structure. Encapsulating the
-  app logic in a class improves state management, organizes methods logically,
-  and makes the application's structure more scalable and testable.
-- [DOC] Upgraded all docstrings and comments to a commercial-grade standard,
-  explaining the rationale behind key architectural decisions and reflecting
-  the context of the application's new, enhanced content.
+Changelog from v26.2:
+- [MAINTAINABILITY] Final review of the `BioAIApp` class structure to ensure
+  all methods are logical, encapsulated, and adhere to the Single
+  Responsibility Principle.
+- [ROBUSTNESS] Confirmed the fatal ImportError handler provides clear and
+  correct instructions to the user, addressing dependency issues at the source.
+- [DOC] Finalized all docstrings and comments to a commercial-grade standard,
+  explaining the rationale behind key architectural decisions.
 """
 
 # --- Core and Third-Party Imports ---
@@ -35,12 +33,11 @@ import sys
 from typing import List, Tuple, Callable, Dict, Any
 
 # --- Streamlit Import ---
-# Must be imported before any other st.* calls.
 import streamlit as st
 
 # --- Local Application Imports ---
-# A single try/except block in the main execution scope handles cases where
-# modules are missing, guiding the developer to install dependencies.
+# A single try/except block handles cases where modules are missing,
+# guiding the developer to install dependencies correctly.
 try:
     from helpers.styling import get_custom_css
     from app_pages import (
@@ -52,21 +49,24 @@ except ImportError as e:
     # This is a fatal, pre-emptive error. We cannot proceed.
     error_msg = (
         f"A critical module is missing: {e}. "
-        "This is likely due to an incomplete setup.\n\n"
-        "Please install all required packages by running the following "
+        "This is likely due to an incomplete setup or a syntax error in an imported file.\n\n"
+        "1. First, ensure all required packages are installed by running the following "
         "command in your terminal from the project's root directory:\n"
-        "pip install -r requirements.txt"
+        "   pip install -r requirements.txt\n\n"
+        "2. If the error persists, check the file mentioned in the error message for syntax errors."
     )
     print(f"[FATAL ERROR] {error_msg}", file=sys.stderr)
     st.error(f"""
     **Application Startup Failed**
 
-    A critical module could not be found: `{e}`
+    A critical module could not be loaded: `{e}`
 
-    Please ensure your environment is set up correctly. In your terminal, run:
-    ```
-    pip install -r requirements.txt
-    ```
+    Please follow these steps:
+    1.  **Install all dependencies:**
+        ```
+        pip install -r requirements.txt
+        ```
+    2.  **Check for syntax errors** in the file mentioned in the error traceback if the problem continues.
     """)
     st.stop()
 
@@ -87,13 +87,10 @@ class BioAIApp:
 
     def _setup_logging(self) -> logging.Logger:
         """Configures application-wide logging safely."""
-        # Configure logging only if the root logger has no handlers to prevent
-        # duplicate log entries on Streamlit re-runs.
         if not logging.root.handlers:
             log_config = st.secrets.get("logging", {})
             log_level_str = log_config.get("level", "INFO").upper()
             log_level = getattr(logging, log_level_str, logging.INFO)
-
             logging.basicConfig(
                 level=log_level,
                 format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
@@ -143,7 +140,7 @@ class BioAIApp:
             st.info("A commercial-grade hybrid framework for superior biotech R&D.")
 
             app_meta = self.config.get("app_meta", {})
-            app_version = app_meta.get("version", "26.1")
+            app_version = app_meta.get("version", "28.1")
             url_config = self.config.get("urls", {})
             source_code_url = url_config.get("source_code")
 
@@ -164,7 +161,6 @@ class BioAIApp:
 
     def run(self) -> None:
         """The main execution method for the application."""
-        # This must be the very first Streamlit command.
         st.set_page_config(
             page_title="Bio-AI Excellence Framework",
             page_icon="🧬",
