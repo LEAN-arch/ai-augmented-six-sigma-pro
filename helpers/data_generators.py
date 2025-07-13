@@ -9,10 +9,10 @@ controlled by a seeded random number generator. This is essential for
 consistent demonstrations and testing.
 
 Author: AI Engineering SME
-Version: 28.1 (Definitive Final Build)
+Version: 29.1 (Definitive Final Build)
 Date: 2025-07-13
 
-Changelog from v26.1:
+Changelog from v28.1:
 - [DOC] Upgraded all function docstrings to a consistent, professional format
   (Google-style) that clearly defines arguments and return values.
 - [STYLE] Reviewed and confirmed comprehensive type hints for all function
