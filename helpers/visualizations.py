@@ -11,7 +11,7 @@ Version: 26.4 (Definitive Final Build)
 Date: 2025-07-13
 
 Changelog from v26.3:
-- [CRITICAL-FIX] Restored the `plot_risk_signal_clusters` function, which was
+- [CRITICAL-FIX] Restored the `plot_gage_rr_pareto` function, which was
   mistakenly deleted, resolving the fatal `ImportError`.
 - [MAINTAINABILITY] Conducted a final, meticulous review of the entire file to
   ensure all functions are correctly formatted, syntactically valid, and adhere
@@ -112,30 +112,29 @@ def plot_qfd_house_of_quality_pro(weights: pd.DataFrame, rel_df: pd.DataFrame) -
     return fig
 
 def plot_kano_visual(df_kano: pd.DataFrame) -> go.Figure:
-    fig = go.Figure(); fig.add_shape(type="rect", x0=0, y0=0, x1=10, y1=10, fillcolor=hex_to_rgba(COLORS['success'], 0.1), line_width=0, layer='below'); fig.add_shape(type="rect", x0=0, y0=-10, x1=10, y1=0, fillcolor=hex_to_rgba(COLORS['danger'], 0.1), line_width=0, layer='below')
+    fig = go.Figure()
+    fig.add_shape(type="rect", x0=0, y0=0, x1=10, y1=10, fillcolor=hex_to_rgba(COLORS['success'], 0.1), line_width=0, layer='below')
+    fig.add_shape(type="rect", x0=0, y0=-10, x1=10, y1=0, fillcolor=hex_to_rgba(COLORS['danger'], 0.1), line_width=0, layer='below')
     colors = {'Basic (Must-be)': COLORS['accent'], 'Performance': COLORS['primary'], 'Excitement (Delighter)': COLORS['secondary']}
     for cat, color in colors.items():
         subset = df_kano[df_kano['category'] == cat]
         fig.add_trace(go.Scatter(x=subset['functionality'], y=subset['satisfaction'], mode='lines', name=cat, line=dict(color=color, width=4)))
-    fig.add_annotation(x=8, y=8, text="<b>Excitement</b><br>e.g., Detects new<br>resistance mutation", showarrow=True, arrowhead=1, ax=-50, ay=-40, font_color=COLORS['secondary']); fig.add_annotation(x=8, y=4, text="<b>Performance</b><br>e.g., VAF quantification<br>accuracy", showarrow=True, arrowhead=1, ax=0, ay=-40, font_color=COLORS['primary']); fig.add_annotation(x=8, y=-8, text="<b>Basic</b><br>e.g., Detects known<br>KRAS hotspot", showarrow=True, arrowhead=1, ax=0, ay=40, font_color=COLORS['accent'])
+    fig.add_annotation(x=8, y=8, text="<b>Excitement</b><br>e.g., Detects new<br>resistance mutation", showarrow=True, arrowhead=1, ax=-50, ay=-40, font_color=COLORS['secondary'])
+    fig.add_annotation(x=8, y=4, text="<b>Performance</b><br>e.g., VAF quantification<br>accuracy", showarrow=True, arrowhead=1, ax=0, ay=-40, font_color=COLORS['primary'])
+    fig.add_annotation(x=8, y=-8, text="<b>Basic</b><br>e.g., Detects known<br>KRAS hotspot", showarrow=True, arrowhead=1, ax=0, ay=40, font_color=COLORS['accent'])
     fig.update_layout(title='<b>Kano Model:</b> Prioritizing Diagnostic Features', xaxis_title='Feature Performance / Implementation →', yaxis_title='← Clinician Dissatisfaction ... Satisfaction →')
     return fig
 
 def plot_dfmea_table_pro(df: pd.DataFrame) -> go.Figure:
-    df_display = df.copy(); df_display.rename(columns={'Potential Failure Mode': 'Failure Mode', 'Potential Effect': 'Effect', 'Current Controls': 'Controls'}, inplace=True)
+    df_display = df.copy()
+    df_display.rename(columns={'Potential Failure Mode': 'Failure Mode', 'Potential Effect': 'Effect', 'Current Controls': 'Controls'}, inplace=True)
     rpn_colors = [hex_to_rgba(COLORS['danger'], 0.5) if r > 200 else hex_to_rgba(COLORS['warning'], 0.5) if r > 100 else 'white' for r in df['RPN']]
     fig = go.Figure(data=[go.Table(columnwidth=[3, 2.5, 0.8, 2.5, 0.8, 2, 0.8, 0.8], header=dict(values=[f'<b>{col.replace(" ", "<br>")}</b>' for col in df_display.columns], fill_color=COLORS['dark_gray'], font=dict(color='white', size=12), align='center', height=50, line_color='darkslategray'), cells=dict(values=[df_display[k] for k in df_display], fill_color=[['white']*len(df)]*(len(df.columns)-1) + [rpn_colors], align='left', font_size=11, height=40, line_color='darkslategray'))])
     fig.update_layout(title="<b>Design FMEA:</b> Proactive Risk Analysis", margin=dict(l=10, r=10, t=100, b=10))
     return fig
 
-# --- RESTORED FUNCTION ---
 def plot_risk_signal_clusters(df_clustered: pd.DataFrame) -> go.Figure:
-    """Creates a scatter plot of clustered risk signals."""
-    fig = px.scatter(
-        df_clustered, x='Temp_C', y='Pressure_psi', color='cluster', symbol='Source',
-        color_discrete_map={'0': COLORS['primary'], '1': COLORS['secondary'], 'Outlier/Anomaly': COLORS['danger']},
-        title="<b>ML Clustering of Process Data for Risk Signal Detection</b>"
-    )
+    fig = px.scatter(df_clustered, x='Temp_C', y='Pressure_psi', color='cluster', symbol='Source', color_discrete_map={'0': COLORS['primary'], '1': COLORS['secondary'], 'Outlier/Anomaly': COLORS['danger']}, title="<b>ML Clustering of Process Data for Risk Signal Detection</b>")
     fig.update_layout(legend_title="Identified Group", xaxis_title="Temperature (°C)", yaxis_title="Pressure (psi)")
     fig.update_traces(marker=dict(size=10, line=dict(width=1, color='DarkSlateGrey')))
     return fig
@@ -180,14 +179,29 @@ def plot_control_plan_pro() -> go.Figure:
     fig.update_layout(title="<b>Assay Control Plan:</b> Formalizing QC Procedures", margin=dict(l=10, r=10, t=100, b=10))
     return fig
 
+# --- RESTORED & REFORMATTED FUNCTIONS ---
+def plot_gage_rr_pareto(df_gage: pd.DataFrame) -> go.Figure:
+    df_sorted = df_gage.sort_values('Contribution (%)', ascending=False).reset_index(drop=True)
+    df_sorted['Cumulative Percentage'] = df_sorted['Contribution (%)'].cumsum()
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+    fig.add_trace(go.Bar(x=df_sorted['Source of Variation'], y=df_sorted['Contribution (%)'], name='Contribution', marker_color=[COLORS['primary'], COLORS['warning'], COLORS['accent']]), secondary_y=False)
+    fig.add_trace(go.Scatter(x=df_sorted['Source of Variation'], y=df_sorted['Cumulative Percentage'], name='Cumulative %', mode='lines+markers', line_color=COLORS['dark_gray']), secondary_y=True)
+    fig.update_layout(title='<b>Gage R&R Pareto:</b> Identifying Sources of Measurement Error', xaxis_title="Source of Variation", legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
+    fig.update_yaxes(title_text="Percent Contribution", secondary_y=False, range=[0, 100], ticksuffix='%')
+    fig.update_yaxes(title_text="Cumulative Percentage", secondary_y=True, range=[0, 101], ticksuffix='%')
+    return fig
+
 def plot_fishbone_plotly() -> go.Figure:
-    fig = _create_network_fig(height=500, x_range=[-1, 10], y_range=[0, 10]); fig.add_annotation(x=8.5, y=5, text="<b>Low Library<br>Yield</b>", showarrow=False, font=dict(color=COLORS['text'], size=14), bgcolor=hex_to_rgba(COLORS['danger'], 0.15), bordercolor=COLORS['danger'], borderwidth=2, borderpad=10, align="center"); fig.add_shape(type="line", x0=0, y0=5, x1=8.2, y1=5, line=dict(color=COLORS['dark_gray'], width=3))
+    fig = _create_network_fig(height=500, x_range=[-1, 10], y_range=[0, 10])
+    fig.add_annotation(x=8.5, y=5, text="<b>Low Library<br>Yield</b>", showarrow=False, font=dict(color=COLORS['text'], size=14), bgcolor=hex_to_rgba(COLORS['danger'], 0.15), bordercolor=COLORS['danger'], borderwidth=2, borderpad=10, align="center")
+    fig.add_shape(type="line", x0=0, y0=5, x1=8.2, y1=5, line=dict(color=COLORS['dark_gray'], width=3))
     bones = {'Reagents': {'pos': 1, 'angle': 45, 'causes': ['Enzyme Inactivity']}, 'Equipment': {'pos': 3, 'angle': 45, 'causes': ['Pipette Out of Cal']}, 'Method': {'pos': 5, 'angle': 45, 'causes': ['Incorrect Incubation Time']}, 'Technician': {'pos': 2, 'angle': -45, 'causes': ['Inconsistent Pipetting']}, 'Sample': {'pos': 4, 'angle': -45, 'causes': ['Low DNA Input']}, 'Environment': {'pos': 6, 'angle': -45, 'causes': ['High Humidity']}}
     for name, data in bones.items():
         angle_rad=np.deg2rad(data['angle']); x_start, y_start = data['pos'], 5; x_end = x_start + 2.5 * np.cos(angle_rad); y_end = y_start + 2.5 * np.sin(angle_rad); fig.add_shape(type="line", x0=x_start, y0=y_start, x1=x_end, y1=y_end, line=dict(color=COLORS['dark_gray'], width=1.5)); fig.add_annotation(x=x_end, y=y_end + 0.4 * np.sign(y_end - 5), text=f"<b>{name}</b>", showarrow=False, font=dict(color=COLORS['primary']))
         for i, cause in enumerate(data['causes']):
             sub_x_start=x_start + (1.5 + i*1.0) * np.cos(angle_rad); sub_y_start=y_start + (1.5 + i*1.0) * np.sin(angle_rad); fig.add_shape(type="line", x0=sub_x_start - 0.5*np.cos(angle_rad), y0=sub_y_start - 0.5*np.sin(angle_rad), x1=sub_x_start, y1=sub_y_start, line=dict(color=COLORS['dark_gray'], width=1)); fig.add_annotation(x=sub_x_start, y=sub_y_start, text=cause, showarrow=False, font=dict(size=10), textangle=0, bgcolor='white', xshift=10 if data['angle'] > 0 else -10)
-    fig.update_layout(title="<b>Fishbone (Ishikawa) Diagram</b> for Root Cause Analysis"); return fig
+    fig.update_layout(title="<b>Fishbone (Ishikawa) Diagram</b> for Root Cause Analysis")
+    return fig
 
 def plot_pareto_chart(df_pareto: pd.DataFrame) -> go.Figure:
     df_sorted = df_pareto.sort_values('Frequency', ascending=False); df_sorted['Cumulative Percentage'] = df_sorted['Frequency'].cumsum() / df_sorted['Frequency'].sum() * 100; fig = make_subplots(specs=[[{"secondary_y": True}]]); fig.add_trace(go.Bar(x=df_sorted['QC_Failure_Mode'], y=df_sorted['Frequency'], name='Failure Count', marker_color=COLORS['primary']), secondary_y=False); fig.add_trace(go.Scatter(x=df_sorted['QC_Failure_Mode'], y=df_sorted['Cumulative Percentage'], name='Cumulative %', mode='lines+markers', line_color=COLORS['accent']), secondary_y=True); fig.add_hline(y=80, line=dict(color=COLORS['dark_gray'], dash='dot'), secondary_y=True, annotation_text="80% Line", annotation_position="bottom right"); fig.update_layout(title_text="<b>Pareto Chart:</b> Identifying the 'Vital Few' Failure Modes", xaxis_title="QC Failure Mode", legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)); fig.update_yaxes(title_text="Frequency", secondary_y=False); fig.update_yaxes(title_text="Cumulative Percentage", secondary_y=True, range=[0, 101], ticksuffix='%'); return fig
