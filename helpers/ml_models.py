@@ -10,10 +10,10 @@ that uses it. Caching is used heavily to prevent re-training models on every
 user interaction, ensuring a responsive user experience.
 
 Author: AI Engineering SME
-Version: 26.1 (Commercial Grade Content Overhaul)
+Version: 28.1 (Definitive Final Build)
 Date: 2025-07-13
 
-Changelog from v25.1:
+Changelog from v26.1:
 - [ROBUSTNESS] Added comprehensive checks in all functions to handle empty or
   invalid input DataFrames gracefully, preventing runtime errors and providing
   clear warnings to the user.
