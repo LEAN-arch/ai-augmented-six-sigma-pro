@@ -9,22 +9,20 @@ By isolating styling concerns, we ensure a consistent look and feel across the
 entire application and make global style changes easy to implement.
 
 Author: AI Engineering SME
-Version: 25.1 (Commercial Grade Build)
-Date: 2025-07-12
+Version: 26.1 (Commercial Grade Content Overhaul)
+Date: 2025-07-13
 
-Changelog from v24.1:
-- [ROBUSTNESS] In `hex_to_rgba`, added more robust validation to handle missing '#'
-  prefixes and ensure the input is a valid 6-digit hex string, preventing
-  `ValueError` on malformed input.
-- [MAINTAINABILITY] The `get_custom_css` function now uses more specific and
-  modern Streamlit selectors (e.g., `[data-testid="stAppViewContainer"]`,
-  `[data-testid="stVerticalBlockBorderWrapper"]`) for more reliable styling that is
-  less likely to break with future Streamlit updates.
-- [ENHANCEMENT] Improved styling for tabs to provide better visual feedback
-  on hover and selection, creating a more polished user experience.
-- [DOC] Upgraded all docstrings to a professional standard, providing clear
-  explanations for the styling choices and utility functions.
-- [STYLE] Added comprehensive type hints to all function signatures.
+Changelog from v25.1:
+- [ENHANCEMENT] Added subtle `transition` and `hover` effects to bordered
+  containers (`st.container(border=True)`) to give the UI a more dynamic,
+  professional feel.
+- [MAINTAINABILITY] CSS selectors remain modern and specific (e.g.,
+  `[data-testid="stAppViewContainer"]`) for maximum stability against future
+  Streamlit updates.
+- [DOC] Added more detailed comments within the CSS block to explain the
+  purpose of each rule, improving long-term maintainability.
+- [STYLE] All docstrings and type hints have been reviewed to meet a
+  commercial-grade standard.
 """
 
 from typing import Dict
@@ -69,10 +67,11 @@ def get_custom_css() -> str:
     return f"""
     <style>
         /* --- Global App & Typography --- */
+        /* Set main background and default text color for the entire app view */
         div[data-testid="stAppViewContainer"] > main {{
             background-color: {COLORS['background']};
         }}
-        .stApp, .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp p {{
+        .stApp {{
              color: {COLORS['text']};
         }}
         h1, h2 {{
@@ -81,21 +80,28 @@ def get_custom_css() -> str:
         }}
         h3 {{ color: {COLORS['primary']}; }}
 
-        /* --- Containers with Borders (st.container(border=True)) --- */
-        /* Targets the specific container used when border=True is set. */
+        /* --- Bordered Containers (st.container(border=True)) --- */
+        /* Targets the specific container wrapper used when border=True is set. */
         div[data-testid="stVerticalBlockBorderWrapper"] {{
             background-color: white;
             border-radius: 0.5rem;
-            box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
             border: 1px solid {COLORS['light_gray']};
+            transition: all 0.2s ease-in-out; /* Add smooth transition for hover */
+        }}
+        /* Add a subtle lift effect on hover for interactivity */
+        div[data-testid="stVerticalBlockBorderWrapper"]:hover {{
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transform: translateY(-2px);
         }}
 
-        /* --- Widget Styling --- */
+        /* --- Widget Styling: Buttons and Tabs --- */
         .stButton > button {{
             border-radius: 0.5rem;
             font-weight: 600;
         }}
 
+        /* Style the tabs for a cleaner, more modern look */
         .stTabs [data-baseweb="tab-list"] button {{
             background-color: transparent;
             border-bottom: 2px solid transparent !important;
@@ -138,13 +144,9 @@ def hex_to_rgba(hex_color: str, alpha: float) -> str:
     if not (0.0 <= alpha <= 1.0):
         raise ValueError("Alpha value must be between 0.0 and 1.0.")
 
-    # Ensure consistent handling of '#' prefix.
     hex_color_clean = hex_color.lstrip('#')
-
     if len(hex_color_clean) != 6:
-        raise ValueError(
-            f"Invalid HEX color format '{hex_color}'. Must be 6 hex characters."
-        )
+        raise ValueError(f"Invalid HEX color format '{hex_color}'. Must be 6 hex characters.")
 
     try:
         r = int(hex_color_clean[0:2], 16)
