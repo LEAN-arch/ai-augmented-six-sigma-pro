@@ -90,6 +90,8 @@ def plot_ctq_tree_plotly() -> go.Figure:
     edges = [('need', 'driver1'), ('need', 'driver2'), ('driver1', 'ctq1'), ('driver1', 'ctq2'), ('driver2', 'ctq3')]
     return _create_network_diagram("Critical-to-Quality (CTQ) Tree", nodes, edges, height=500, x_range=[-1, 5])
 
+# In helpers/visualizations.py, replace the existing QFD function with this one.
+
 def plot_qfd_house_of_quality_pro(weights: pd.DataFrame, rel_df: pd.DataFrame) -> go.Figure:
     """
     Creates a single, cohesive, and aesthetically superior House of Quality plot.
@@ -98,44 +100,80 @@ def plot_qfd_house_of_quality_pro(weights: pd.DataFrame, rel_df: pd.DataFrame) -
     making it highly intuitive and actionable.
     """
     tech_chars, cust_reqs = rel_df.columns.tolist(), rel_df.index.tolist()
-    rel_map = {9: 1.0, 3: 0.6, 1: 0.2, 0: 0.0}; rel_heatmap_z = rel_df.map(lambda x: rel_map.get(x, 0))
+    
+    # --- 1. Data Preparation ---
+    # Convert relationship scores to a numerical scale for the heatmap
+    rel_map = {9: 1.0, 3: 0.6, 1: 0.2, 0: 0.0}
+    rel_heatmap_z = rel_df.map(lambda x: rel_map.get(x, 0))
+    
+    # Calculate the final technical importance scores
     tech_importance = (rel_heatmap_z.T * weights['Importance'].values).T.sum()
+    
+    # Create a placeholder correlation matrix for the 'roof'
+    # In a real scenario, this would come from data analysis.
     corr_matrix = pd.DataFrame(np.identity(len(tech_chars)), index=tech_chars, columns=tech_chars)
-    corr_matrix.iloc[0, 1] = 0.7; corr_matrix.iloc[1, 0] = 0.7; corr_matrix.iloc[2, 3] = -0.6; corr_matrix.iloc[3, 2] = -0.6
+    corr_matrix.iloc[0, 1] = 0.7  # Strong Positive
+    corr_matrix.iloc[1, 0] = 0.7
+    corr_matrix.iloc[2, 3] = -0.6 # Strong Negative
+    corr_matrix.iloc[3, 2] = -0.6
+    
+    # Mask for the triangular roof
     mask = np.triu(np.ones_like(corr_matrix, dtype=bool), k=1)
     
-    # FIX: Corrected the specs to properly define the grid layout.
-    # The bar chart on the left spans two rows, and the one at the bottom
-    # exists in its own cell.
+    # --- 2. Figure Construction with Subplots ---
     fig = make_subplots(
         rows=3, cols=2,
-        shared_xaxes=True,
+        shared_xaxes='columns',
+        shared_yaxes='rows',
         column_widths=[0.25, 0.75], 
         row_heights=[0.25, 0.55, 0.2],
         specs=[
             [{"rowspan": 2}, {"type": "heatmap"}],
-            [None,          {"type": "heatmap"}],
-            [None,          {"type": "bar"}]
+            [None, {"type": "heatmap"}],
+            [None, {"type": "bar"}]
         ],
         horizontal_spacing=0.01,
         vertical_spacing=0.01
     )
 
+    # --- 3. Populate Subplots ---
     # a) Correlation Roof (Top Right)
-    fig.add_trace(go.Heatmap(z=corr_matrix.where(mask), x=tech_chars, y=tech_chars, colorscale='RdBu', zmin=-1, zmax=1, showscale=False, hovertemplate='Correlation: %{z:.2f}<extra></extra>'), row=1, col=2)
-    
-    # b) Customer Importance (Left Bar Chart) - Placed in cell (1,1) which spans rows
-    fig.add_trace(go.Bar(y=cust_reqs, x=weights['Importance'], orientation='h', marker=dict(color=COLORS['primary'], opacity=0.7), text=weights['Importance'], textposition='auto'), row=1, col=1)
+    fig.add_trace(go.Heatmap(
+        z=corr_matrix.where(mask),
+        x=tech_chars, y=tech_chars,
+        colorscale='RdBu', zmin=-1, zmax=1, showscale=False,
+        hovertemplate='Correlation: %{z:.2f}<extra></extra>'
+    ), row=1, col=2)
+
+    # b) Customer Importance (Left Bar Chart)
+    fig.add_trace(go.Bar(
+        y=cust_reqs, x=weights['Importance'], orientation='h',
+        marker=dict(color=COLORS['primary'], opacity=0.7),
+        text=weights['Importance'], textposition='auto'
+    ), row=1, col=1)
 
     # c) Central Relationship Matrix (Main Heatmap)
-    fig.add_trace(go.Heatmap(z=rel_heatmap_z, y=cust_reqs, x=tech_chars, colorscale='Blues', showscale=False, customdata=rel_df.values, hovertemplate='Requirement: %{y}<br>Tech Characteristic: %{x}<br><b>Relationship Strength: %{customdata}</b><extra></extra>'), row=2, col=2)
+    fig.add_trace(go.Heatmap(
+        z=rel_heatmap_z, y=cust_reqs, x=tech_chars,
+        colorscale='Blues', showscale=False, customdata=rel_df.values,
+        hovertemplate='Requirement: %{y}<br>Tech Characteristic: %{x}<br><b>Relationship Strength: %{customdata}</b><extra></extra>'
+    ), row=2, col=2)
 
     # d) Final Technical Priorities (Bottom Bar Chart)
-    fig.add_trace(go.Bar(x=tech_chars, y=tech_importance, marker=dict(color=COLORS['secondary'])), row=3, col=2)
+    fig.add_trace(go.Bar(
+        x=tech_chars, y=tech_importance,
+        marker=dict(color=COLORS['secondary'])
+    ), row=3, col=2)
     
-    fig.update_layout(title_text="<b>The House of Quality (QFD):</b> From Customer Needs to Technical Priorities", plot_bgcolor='white', showlegend=False, margin=dict(t=100, b=20, l=20, r=20), bargap=0.2)
-    
-    # Style axes
+    # --- 4. Final Layout and Styling ---
+    fig.update_layout(
+        title_text="<b>The House of Quality (QFD):</b> From Customer Needs to Technical Priorities",
+        plot_bgcolor='white',
+        showlegend=False,
+        margin=dict(t=100, b=20, l=20, r=20),
+        bargap=0.2
+    )
+    # Style axes to create the 'house' effect
     fig.update_xaxes(showticklabels=False, row=1, col=2)
     fig.update_xaxes(showticklabels=False, row=2, col=2)
     fig.update_xaxes(title_text="Technical Characteristics", tickangle=-45, row=3, col=2)
