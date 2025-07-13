@@ -3,21 +3,22 @@ app_pages.py
 
 Contains the rendering logic for each main page of the Bio-AI Excellence
 Framework application. This is the definitive version, with all content and
-visualizations enhanced to a commercial-grade standard.
+visualizations re-architected to a commercial-grade standard.
 
 Author: AI Engineering SME
-Version: 28.1 (Definitive Final Build)
+Version: 29.1 (Definitive Final Build)
 Date: 2025-07-13
 
-Changelog from v26.2:
+Changelog from v28.2:
 - [CRITICAL-REWRITE] All page layouts now use a combination of `st.container`
   and columns to guarantee stable, professional, and visually appealing layouts
   with no element overlap.
 - [CRITICAL-VIS] Updated all visualization calls to use the new and enhanced
-  `_pro` functions, including the re-architected `plot_qfd_house_of_quality_pro`
-  and the new `generate_html_table` for superior FMEA and Control Plan tables.
-- [CRITICAL-CONTENT] All `st.expander` sections now call the `_pro` suffixed
-  content functions, providing the requested in-depth SME-level explanations.
+  `_pro` functions and the `generate_html_table` function for superior,
+  professional-grade tables (FMEA, SIPOC, Control Plan).
+- [CRITICAL-CONTENT] All expanders now call the `_pro` suffixed content
+  functions to display the requested in-depth SME-level explanations. All
+  original content, including the Fault Tree Analysis, is restored and enhanced.
 - [ROBUSTNESS] All imports have been verified, and all page content is confirmed
   to be present and correctly rendered, resolving all previous `ImportError`
   and layout issues.
@@ -42,7 +43,6 @@ from helpers.data_generators import (
     generate_dfmea_data, generate_qfd_data,
     generate_kano_data, generate_pareto_data,
     generate_risk_signal_data, generate_adverse_event_data,
-
     generate_pccp_data,
     generate_control_chart_data, generate_hotelling_data,
     generate_process_data, generate_capa_data
@@ -56,8 +56,8 @@ from helpers.visualizations import (
     # Generic helpers
     generate_html_table,
     # Define page plots
-    plot_project_charter_visual, plot_sipoc_visual, plot_ctq_tree_plotly,
-    plot_qfd_house_of_quality_pro, plot_kano_visual,
+    plot_project_charter_visual, plot_ctq_tree_plotly,
+    plot_qfd_house_of_quality_pro, plot_kano_visual, plot_risk_signal_clusters,
     # Measure page plots
     plot_gage_rr_pareto, plot_capability_analysis_pro,
     # Analyze page plots
@@ -138,13 +138,8 @@ def show_define_phase() -> None:
             st.plotly_chart(plot_project_charter_visual(), use_container_width=True)
         with col2:
             st.markdown("##### **Classical Tool: SIPOC Diagram**")
-            st.html(generate_html_table(pd.DataFrame({
-                'Suppliers': ['• Reagent Vendors<br>• Instrument Mfr.<br>• LIMS Provider'],
-                'Inputs': ['• Patient Sample<br>• Reagent Kits<br>• SOP'],
-                'Process': ['1. Sample Prep<br>2. Library Prep<br>3. Sequencing<br>4. Bioinformatics<br>5. Reporting'],
-                'Outputs': ['• VCF File<br>• QC Report<br>• Clinical Report'],
-                'Customers': ['• Oncologists<br>• Patients<br>• Pharma Partners']
-            }), title="SIPOC: High-Level NGS Assay Workflow"))
+            sipoc_df = pd.DataFrame({'Suppliers': ['• Reagent Vendors<br>• Instrument Mfr.<br>• LIMS Provider'], 'Inputs': ['• Patient Sample<br>• Reagent Kits<br>• SOP'], 'Process': ['1. Sample Prep<br>2. Library Prep<br>3. Sequencing<br>4. Bioinformatics<br>5. Reporting'], 'Outputs': ['• VCF File<br>• QC Report<br>• Clinical Report'], 'Customers': ['• Oncologists<br>• Patients<br>• Pharma Partners']})
+            st.html(generate_html_table(sipoc_df, title="SIPOC: High-Level NGS Assay Workflow"))
 
     with st.container(border=True):
         st.subheader("2. Requirements Translation & Design Input Prioritization")
@@ -168,11 +163,15 @@ def show_define_phase() -> None:
             st.plotly_chart(plot_shap_summary(shap_explanation), use_container_width=True)
 
     with st.container(border=True):
-        st.subheader("3. Early Risk Assessment (FMEA)")
+        st.subheader("3. Early Risk Assessment")
         st.markdown("Proactively identifying potential failures *before* they are locked into the product design.")
-        st.markdown("##### **Classical Tool: Design FMEA (DFMEA)**")
-        df_dfmea = generate_dfmea_data()
-        st.html(generate_html_table(df_dfmea, title="Design Failure Mode and Effects Analysis (DFMEA)"))
+        tab1, tab2 = st.tabs(["🏛️ Classical: DFMEA", "🤖 ML Augmentation"])
+        with tab1:
+            st.markdown("##### **Tool: Design FMEA (DFMEA)**")
+            st.html(generate_html_table(generate_dfmea_data(), title="Design Failure Mode and Effects Analysis (DFMEA)"))
+        with tab2:
+            st.markdown("##### **Tool: Unsupervised Clustering for Risk Signal Grouping**")
+            st.plotly_chart(plot_risk_signal_clusters(perform_risk_signal_clustering(generate_risk_signal_data())), use_container_width=True)
 
 # ==============================================================================
 # PAGE 2: MEASURE PHASE
