@@ -14,23 +14,19 @@ This script is responsible for:
 6.  Executing the selected page's rendering logic with robust error handling.
 
 Author: AI Engineering SME
-Version: 25.1 (Commercial Grade Build)
-Date: 2025-07-12
+Version: 26.1 (Commercial Grade Content Overhaul)
+Date: 2025-07-13
 
-Changelog from v24.1:
-- [CRITICAL] Enhanced the fatal ImportError handler to explicitly instruct the
-  user to install dependencies via `requirements.txt`, directly addressing the
-  `ModuleNotFoundError` traceback.
-- [REFACTOR] Encapsulated all application logic within a `BioAIApp` class.
-  This object-oriented approach improves state management, organizes logic
-  cleanly, and makes the application's structure more scalable and testable.
-- [ROBUSTNESS] The logging setup is now an instance method (`_setup_logging`),
-  ensuring it's tied to the app's lifecycle and preventing global scope pollution.
-- [MAINTAINABILITY] Configuration, pages, and UI rendering are now managed by
-  separate methods within the class (`_load_config`, `_build_sidebar`, `_render_page`),
-  adhering to the Single Responsibility Principle.
+Changelog from v25.3:
+- [ROBUSTNESS] Enhanced the fatal ImportError handler to explicitly instruct
+  the user to install dependencies via `requirements.txt`, directly addressing
+  potential setup issues.
+- [MAINTAINABILITY] Refined the `BioAIApp` class structure. Encapsulating the
+  app logic in a class improves state management, organizes methods logically,
+  and makes the application's structure more scalable and testable.
 - [DOC] Upgraded all docstrings and comments to a commercial-grade standard,
-  explaining the rationale behind key architectural decisions.
+  explaining the rationale behind key architectural decisions and reflecting
+  the context of the application's new, enhanced content.
 """
 
 # --- Core and Third-Party Imports ---
@@ -43,8 +39,8 @@ from typing import List, Tuple, Callable, Dict, Any
 import streamlit as st
 
 # --- Local Application Imports ---
-# A single try/except block in the main execution scope will handle cases where
-# these modules are missing, guiding the developer to install dependencies.
+# A single try/except block in the main execution scope handles cases where
+# modules are missing, guiding the developer to install dependencies.
 try:
     from helpers.styling import get_custom_css
     from app_pages import (
@@ -53,13 +49,12 @@ try:
         show_comparison_matrix, show_hybrid_manifesto
     )
 except ImportError as e:
-    # This is a fatal, pre-emptive error. We cannot proceed if a core module
-    # is missing. We print to stderr and show a user-friendly Streamlit error.
+    # This is a fatal, pre-emptive error. We cannot proceed.
     error_msg = (
         f"A critical module is missing: {e}. "
         "This is likely due to an incomplete setup.\n\n"
         "Please install all required packages by running the following "
-        "command in your terminal:\n"
+        "command in your terminal from the project's root directory:\n"
         "pip install -r requirements.txt"
     )
     print(f"[FATAL ERROR] {error_msg}", file=sys.stderr)
@@ -84,20 +79,16 @@ class BioAIApp:
     promoting maintainability and scalability.
     """
     def __init__(self):
-        """Initializes the application components."""
+        """Initializes the application's components."""
         self.logger = self._setup_logging()
         self.config: Dict[str, Any] = {}
         self.pages: List[st.Page] = []
         self.selected_page: st.Page = None
 
     def _setup_logging(self) -> logging.Logger:
-        """
-        Configures application-wide logging safely.
-
-        This method prevents adding duplicate handlers on Streamlit re-runs,
-        which is a common issue in Streamlit apps.
-        """
-        # Configure logging only if the root logger has no handlers.
+        """Configures application-wide logging safely."""
+        # Configure logging only if the root logger has no handlers to prevent
+        # duplicate log entries on Streamlit re-runs.
         if not logging.root.handlers:
             log_config = st.secrets.get("logging", {})
             log_level_str = log_config.get("level", "INFO").upper()
@@ -106,14 +97,12 @@ class BioAIApp:
             logging.basicConfig(
                 level=log_level,
                 format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-                stream=sys.stderr, # Standard for application logs.
+                stream=sys.stderr,
             )
         return logging.getLogger(__name__)
 
     def _load_config(self) -> None:
         """Loads all necessary configurations from st.secrets."""
-        # Fetching st.secrets once at the start is more efficient than
-        # multiple lookups throughout the app.
         self.config = st.secrets
         self.logger.info("Configuration loaded.")
 
@@ -154,7 +143,7 @@ class BioAIApp:
             st.info("A commercial-grade hybrid framework for superior biotech R&D.")
 
             app_meta = self.config.get("app_meta", {})
-            app_version = app_meta.get("version", "N/A")
+            app_version = app_meta.get("version", "26.1")
             url_config = self.config.get("urls", {})
             source_code_url = url_config.get("source_code")
 
@@ -163,13 +152,10 @@ class BioAIApp:
             st.caption(f"Version: {app_version}")
 
     def _render_page(self) -> None:
-        """
-        Executes the rendering logic for the selected page with error handling.
-        """
+        """Executes the rendering logic for the selected page."""
         page_title = self.selected_page.title
         self.logger.info(f"Rendering page: '{page_title}'")
         try:
-            # Executes the rendering function of the page selected in the sidebar.
             self.selected_page.run()
         except Exception as e:
             self.logger.error(f"Error rendering page '{page_title}'", exc_info=True)
@@ -177,9 +163,7 @@ class BioAIApp:
             st.exception(e)
 
     def run(self) -> None:
-        """
-        The main execution method for the application.
-        """
+        """The main execution method for the application."""
         # This must be the very first Streamlit command.
         st.set_page_config(
             page_title="Bio-AI Excellence Framework",
