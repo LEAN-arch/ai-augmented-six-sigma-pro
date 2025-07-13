@@ -2,153 +2,29 @@
 helpers/content.py
 
 This module centralizes all static text, markdown, and HTML content used
-throughout the application. It has been substantially enhanced to provide
-commercial-grade, in-depth explanations for each methodology.
+throughout the application.
 
-Author: AI Engineering SME
-Version: 30.0 (Gold-Standard Build)
-Date: 2025-07-14
+Author: Bio-AI Excellence SME Collective
+Version: 31.0 (Content-Rich Gold Build)
+Date: 2025-07-15
 
-Changelog from v29.1:
-- [REVIEW] Content reviewed and confirmed to be of gold-standard quality,
-  perfectly aligning with the narrative of the upgraded v30.0 visualizations.
-  No changes were required.
+Changelog from v30.1:
+- [REFACTOR] Removed obsolete `get_*_expander_content_pro` functions.
+  All detailed explanations have been moved directly into `app_pages.py` to
+  be co-located with their respective visualizations, improving maintainability.
 """
 
 from typing import List, Dict
 from .styling import COLORS
 
 # ==============================================================================
-# 1. ENHANCED (PRO) MARKDOWN CONTENT FOR EXPANDERS
-# ==============================================================================
-
-def get_qfd_expander_content_pro() -> str:
-    """Returns the enhanced, in-depth content for the QFD expander."""
-    return """
-**Purpose:**
-To systematically translate vague customer needs into specific, quantifiable, and actionable technical requirements for product development. QFD ensures that the final product design is directly driven by the "Voice of the Customer" (VOC).
-
-**Methodology:**
-The "House of Quality" is the primary matrix used in QFD. The process involves:
-1.  **Identify Customer Requirements (WHATs):** Capture the VOC through surveys, interviews, and market analysis.
-2.  **Assign Importance:** The customer rates the importance of each requirement, typically on a 1-5 scale.
-3.  **Identify Technical Characteristics (HOWs):** The engineering team determines the technical specifications that can fulfill the customer needs (e.g., LOD, reagent stability).
-4.  **Fill the Relationship Matrix:** The core of the house, where the team determines the strength of the relationship between each "WHAT" and "HOW".
-5.  **Build the "Roof" (Correlation Matrix):** Assess the interactions between technical characteristics (e.g., does improving one negatively impact another?).
-6.  **Calculate Technical Priorities:** A weighted score is calculated for each technical characteristic to identify the most critical areas for development focus.
-
-**Key Concepts & Math:**
-- **Relationship Strength:** A common scoring system is used:
-    - **9:** Strong relationship
-    - **3:** Moderate relationship
-    - **1:** Weak relationship
-    - **0 (blank):** No relationship
-- **Technical Priority Score:** For each technical characteristic (column), the score is calculated as:
-  `Σ (Customer Importance * Relationship Strength)`
-
-**Interpretation of the Result:**
-The bar chart at the bottom of the House of Quality visually ranks the technical characteristics by their importance score. This tells the development team exactly where to focus their resources to achieve the maximum impact on customer satisfaction. A high score means a technical feature is critical for delivering on important customer needs.
-
-**Regulatory Significance:**
-QFD provides a **rigorous, documented audit trail** that directly links user needs to design inputs, a cornerstone of **FDA Design Controls (21 CFR 820.30)**. It serves as objective evidence in the Design History File (DHF) to justify design choices and risk analysis priorities.
-"""
-
-def get_kano_expander_content_pro() -> str:
-    """Returns the enhanced, in-depth content for the Kano Model expander."""
-    return """
-**Purpose:**
-To go beyond simply asking customers what they want by categorizing features based on their emotional impact. The Kano Model helps teams prioritize development to not only satisfy customers but also to delight and differentiate from competitors.
-
-**Methodology:**
-Features are classified into three primary categories based on user feedback to functional/dysfunctional questions (e.g., "How would you feel if the assay *had* this feature?" and "How would you feel if it *didn't*?").
-1.  **Basic (Must-be):** Expected features whose absence causes extreme dissatisfaction, but whose presence is taken for granted. Think of these as the "cost of entry."
-2.  **Performance:** Linear features where "more is better." Satisfaction is directly proportional to the execution of the feature. This is where companies often compete head-to-head.
-3.  **Excitement (Delighters):** Unexpected, innovative features that create high satisfaction when present but cause no dissatisfaction when absent because the customer wasn't expecting them.
-
-**Interpretation of the Result:**
-- **Prioritize all Basic needs:** These are non-negotiable.
-- **Be competitive on Performance needs:** These are the features customers will use to compare you to others.
-- **Invest in a few Excitement needs:** These are the features that create a loyal user base and generate a "wow" factor.
-Over time, Excitement features become Performance features, and Performance features become Basic needs. A car's backup camera, once a delighter, is now a basic expectation.
-
-**Regulatory Significance:**
-While not a direct regulatory requirement, the Kano Model provides a powerful rationale for the **Intended Use** and **User Needs** documentation (part of 21 CFR 820.30). It helps justify why certain features are critical to safety and effectiveness (Basic needs) versus others that are enhancements (Performance/Excitement), focusing V&V efforts appropriately.
-"""
-
-def get_msa_expander_content_pro() -> str:
-    """Returns the enhanced, in-depth content for the MSA expander."""
-    return """
-**Purpose:**
-To determine if a measurement system is adequate for its intended purpose. Before you can analyze or improve a process, you must **trust your data**. Measurement System Analysis (MSA) quantifies the variation introduced by the measurement system itself.
-
-**Methodology (Gage R&R):**
-A Gage Repeatability & Reproducibility (Gage R&R) study is the most common form of MSA. A typical study involves:
-1.  Selecting multiple operators (e.g., 3 scientists).
-2.  Selecting multiple parts/samples (e.g., 10 patient samples).
-3.  Each operator measures each part multiple times (e.g., 3 repeats).
-The results are analyzed using ANOVA to partition the total observed variance.
-
-**Key Concepts & Math:**
-The total variance is broken down into:
-- **Product Variation:** The true, actual variation between the parts/samples. This is what you *want* to measure.
-- **Measurement Variation (Gage R&R):** The "noise" from the measurement system, which is further divided into:
-    - **Repeatability:** Variation when one operator measures the same part multiple times with the same device. (Equipment Variation)
-    - **Reproducibility:** Variation when different operators measure the same part. (Appraiser Variation)
-
-- **% Contribution:** This key metric is calculated as:
-  `(% Contribution) = (Variance Component / Total Variance) * 100`
-
-**Interpretation of the Result:**
-- **< 10% Contribution from Gage R&R:** The measurement system is **acceptable**.
-- **10% - 30% Contribution:** The system is **conditionally acceptable**, depending on the application's criticality.
-- **> 30% Contribution:** The system is **unacceptable**. The measurement error is masking the true process variation, and the system must be improved before it can be used for process control or validation.
-
-**Regulatory Significance:**
-MSA is a **non-negotiable prerequisite** for **Analytical Method Validation** and **Process Validation (FDA)**. It provides objective evidence that the tools used to measure critical quality attributes are reliable and accurate. Without a valid MSA, no subsequent process data can be considered trustworthy for regulatory submissions.
-"""
-
-def get_cpk_expander_content_pro() -> str:
-    """Returns the enhanced, in-depth content for Process Capability (Cpk)."""
-    return """
-**Purpose:**
-To provide a simple, standardized index that quantifies how capable a process is of meeting its specification limits. Cpk answers the question: "Is our process centered and precise enough to consistently produce good parts?"
-
-**Methodology:**
-Process capability is determined by collecting data from a stable process (i.e., a process in statistical control) and comparing its distribution to the engineering or customer-defined specification limits (USL and LSL).
-
-**Key Concepts & Math:**
-The Cpk index is calculated by considering the "distance" from the process mean (μ) to the nearest specification limit, divided by three standard deviations (σ). It accounts for both spread and centering.
-
-- **Formula:** `Cpk = min[ (USL - μ) / 3σ, (μ - LSL) / 3σ ]`
-    - **USL:** Upper Specification Limit
-    - **LSL:** Lower Specification Limit
-    - **μ:** Process Mean
-    - **σ:** Process Standard Deviation (Sample)
-
-**Interpretation of the Result:**
-Cpk is a direct measure of how many standard deviations "fit" between the process mean and the nearest specification limit.
-- **Cpk = 1.0:** The process is meeting specifications approximately 99.73% of the time (a "3-sigma" process). This is often considered the minimum acceptable for many industries.
-- **Cpk = 1.33:** A widely accepted industry standard for a capable process (a "4-sigma" process).
-- **Cpk = 1.67:** A world-class or "6-sigma" level of performance, indicating an extremely low defect rate.
-- **Cpk < 1.0:** The process is **not capable** and is producing a significant number of defects.
-
-**Regulatory Significance:**
-During **Process Validation (PV)**, especially Stage 2 (Process Performance Qualification - PPQ), Cpk is a key metric used to demonstrate that a manufacturing process is robust and consistently produces product that meets its pre-defined quality attributes. High Cpk values provide strong evidence of a state of control to regulatory bodies like the FDA.
-"""
-
-
-# ==============================================================================
-# 2. UI DATA STRUCTURES
+# 1. UI DATA STRUCTURES
 # ==============================================================================
 
 def get_guidance_data() -> Dict[str, Dict[str, str]]:
     """
     Returns a dictionary of scenarios and recommended approaches for the
     interactive solution recommender widget.
-
-    Returns:
-        A dictionary where keys are scenarios and values are dicts
-        containing the recommended approach and rationale.
     """
     return {
         "Validating an assay for FDA 510(k) submission": {
@@ -173,9 +49,8 @@ def get_guidance_data() -> Dict[str, Dict[str, str]]:
         }
     }
 
-
 # ==============================================================================
-# 3. DYNAMIC HTML GENERATORS FOR MANIFESTO PAGE
+# 2. DYNAMIC HTML GENERATORS FOR MANIFESTO PAGE
 # ==============================================================================
 
 def render_workflow_step(
@@ -186,17 +61,6 @@ def render_workflow_step(
 ) -> str:
     """
     Generates a self-contained, stable HTML block for a DMAIC workflow step.
-    This function uses inline CSS with Flexbox to ensure perfect layout
-    containment and visual stability.
-
-    Args:
-        phase_name: The name of the DMAIC phase (e.g., "1. Define").
-        phase_class: The CSS class identifier for the phase color.
-        classical_tools: A list of classical tools for this phase.
-        ml_tools: A list of ML/AI tools for this phase.
-
-    Returns:
-        An HTML string representing the styled workflow step.
     """
     phase_color = {"step-define": COLORS['primary'], "step-measure": COLORS['secondary'], "step-analyze": COLORS['accent'], "step-improve": COLORS['neutral_yellow'], "step-control": COLORS['neutral_pink']}.get(phase_class, COLORS['dark_gray'])
     classical_list_html = "".join(f"<li>{tool}</li>" for tool in classical_tools)
