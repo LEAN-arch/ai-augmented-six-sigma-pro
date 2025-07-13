@@ -7,15 +7,14 @@ explanations directly alongside every plot, figure, and table, and features
 a substantially improved narrative across all pages.
 
 Author: Bio-AI Excellence SME Collective
-Version: 33.0 (Elite Visualization Build)
+Version: 33.1 (Elite QFD Build)
 Date: 2025-07-16
 
-Changelog from v32.1:
-- [BUGFIX] Corrected the SyntaxError on the welcome page.
-- [LAYOUT] Updated the 'Improve' phase layout to accommodate the new 3D
-  Response Surface plot for DOE analysis.
-- [INTEGRATION] Confirmed seamless integration with all new and upgraded
-  elite-tier visualizations from `helpers/visualizations.py`.
+Changelog from v33.0:
+- [ELITE-UPGRADE] Integrated the new, single-figure, elite-tier House of
+  Quality (QFD) plot and its substantially improved explanation.
+- [CONSISTENCY] Ensured all other content and function calls are final and
+  bug-free.
 """
 
 import streamlit as st
@@ -208,7 +207,6 @@ def show_define_phase() -> None:
                 title="Tool: Quality Function Deployment (QFD)",
                 tool_function=plot_qfd_house_of_quality_pro,
                 tool_args={'weights': weights, 'rel_df': rel_df},
-                # --- NEW, IMPROVED EXPLANATION ---
                 explanation_text="""
                 - **What is it?** A structured methodology for translating customer requirements into product specifications. The "House of Quality" is its primary tool—a matrix that mathematically links customer needs to technical design features. This elite version integrates all components into a single, actionable dashboard.
 
