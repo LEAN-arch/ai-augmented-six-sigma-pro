@@ -88,7 +88,7 @@ class BioAIApp:
             self.selected_page = st.navigation(self.pages)
             st.divider()
             st.info("A commercial-grade hybrid framework for superior biotech R&D.")
-            app_version = self.config.get("app_meta", {}).get("version", "29.2")
+            app_version = self.config.get("app_meta", {}).get("version", "30.0") # Version bumped for new release
             source_code_url = self.config.get("urls", {}).get("source_code")
             if source_code_url: st.markdown(f"**[View Source on GitHub]({source_code_url})**")
             st.caption(f"Version: {app_version}")
