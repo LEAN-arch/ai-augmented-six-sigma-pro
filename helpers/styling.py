@@ -8,10 +8,10 @@ By isolating styling concerns, we ensure a consistent look and feel across the
 entire application and make global style changes easy to implement.
 
 Author: AI Engineering SME
-Version: 28.1 (Definitive Final Build)
+Version: 29.1 (Definitive Final Build)
 Date: 2025-07-13
 
-Changelog from v26.1:
+Changelog from v28.1:
 - [ENHANCEMENT] Added subtle `transition` and `hover` effects to bordered
   containers (`st.container(border=True)`) to give the UI a more dynamic,
   professional feel.
