@@ -7,20 +7,12 @@ explanations directly alongside every plot, figure, and table, and features
 a substantially improved narrative across all pages.
 
 Author: Bio-AI Excellence SME Collective
-Version: 32.0 (Definitive Content-Rich Build)
+Version: 32.1 (Syntax Hotfix Build)
 Date: 2025-07-15
 
-Changelog from v31.0:
-- [MAJOR-CONTENT-REWRITE] The introductory and explanatory text for every
-  single page (Define, Measure, Analyze, Improve, Control, Comparison,
-  Manifesto) has been completely rewritten to a new, gold-standard of quality.
-- [NARRATIVE-ENHANCEMENT] Each page now begins with a more robust 'Phase
-  Objective' and 'Regulatory Context' section, framing the tools within a
-  professional drug/device development lifecycle.
-- [PEDAGOGY] Explanations are now more thorough, explicitly stating the
-  strategic purpose and interpretation of each tool in a biotech R&D setting.
-- [CONSISTENCY] The authoritative and educational tone established in the new
-  Welcome Page is now consistent throughout the entire application.
+Changelog from v32.0:
+- [CRITICAL-FIX] Corrected a SyntaxError on line 124 of the welcome page
+  caused by improper string quoting. The application now loads correctly.
 """
 
 import streamlit as st
@@ -120,8 +112,9 @@ def show_welcome_page() -> None:
         - **Core Tools:** Random Forests, Gradient Boosting, Clustering, Deep Learning, Natural Language Processing (NLP).
         - **Regulatory Significance:** This is the world of **discovery** and **monitoring**. It's essential for biomarker discovery, optimizing highly complex processes (e.g., cell culture media), and post-market surveillance (PMS) signal detection.
         """)
-
-    st.subheader("The Synthesis: From "Or" to "And"")
+        
+    # FIX: Corrected a SyntaxError with nested quotes. Changed outer quotes to single quotes.
+    st.subheader('The Synthesis: From "Or" to "And"')
     st.markdown("""
     An outdated mindset pits these two worlds against each other. The Bio-AI Excellence Framework is built on the philosophy of **synergy**. The most successful and competitive organizations do not choose one; they master the art of using them together.
 
@@ -592,7 +585,6 @@ def show_control_phase() -> None:
                 - **Purpose & Meaning of Results:** Each cluster on the plot represents a distinct type of adverse event. The emergence of a new, well-defined cluster over time is a powerful signal of a previously unknown side effect or failure mode, which would trigger a formal safety investigation.
                 """
             )
-        # Added PCCP Monitoring as a standalone tool for clarity
         st.divider()
         _render_analysis_tool(
             title="AI/ML Device Control: PCCP Monitoring",
