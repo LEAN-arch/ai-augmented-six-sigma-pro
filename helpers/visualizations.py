@@ -92,23 +92,96 @@ def plot_ctq_tree_plotly() -> go.Figure:
     return _create_network_diagram("Critical-to-Quality (CTQ) Tree", nodes, edges, height=500, x_range=[-1, 5])
 
 def plot_qfd_house_of_quality_pro(weights: pd.DataFrame, rel_df: pd.DataFrame) -> go.Figure:
-    tech_chars, cust_reqs = rel_df.columns.tolist(), rel_df.index.tolist(); tech_importance = (rel_df.T * weights['Importance'].values).T.sum(); fig = go.Figure(); N_CUST, N_TECH = len(cust_reqs), len(tech_chars); X_START, Y_START = 2, 0; CELL_SIZE = 1; rel_map = {9: "⚫", 3: "🔵", 1: "⚪"}
-    for r, req in enumerate(cust_reqs):
-        for c, char in enumerate(tech_chars):
-            val = rel_df.loc[req, char];
-            if val > 0: fig.add_annotation(x=X_START + c * CELL_SIZE, y=Y_START + (N_CUST - 1 - r) * CELL_SIZE, text=f"<b>{rel_map[val]}</b>", showarrow=False, font=dict(size=18, color=COLORS['primary'] if val == 3 else COLORS['dark_gray']))
-    for r, req in enumerate(cust_reqs): y_pos = Y_START + (N_CUST - 1 - r) * CELL_SIZE; fig.add_annotation(x=X_START - 0.5, y=y_pos, text=f"<b>{req}</b>", showarrow=False, xanchor='right', font_size=12); fig.add_annotation(x=X_START - 2, y=y_pos, text=f"{weights.iloc[r, 0]}", showarrow=False, font_size=12, bgcolor=hex_to_rgba(COLORS['neutral_yellow'], 0.5), borderpad=4)
-    for c, char in enumerate(tech_chars): fig.add_annotation(x=X_START + c * CELL_SIZE, y=Y_START + N_CUST * CELL_SIZE, text=char.replace(" ", "<br>"), showarrow=False, textangle=-45, yshift=10)
-    max_importance = tech_importance.max()
-    for c, char in enumerate(tech_chars): score = tech_importance[char]; bar_height = (score / max_importance) * 1.5 if max_importance > 0 else 0; fig.add_shape(type="rect", x0=X_START+c-0.4, y0=Y_START-2, x1=X_START+c+0.4, y1=Y_START-2+bar_height, fillcolor=COLORS['secondary'], line_width=0); fig.add_annotation(x=X_START+c, y=Y_START-2.2, text=f"<b>{score}</b>", showarrow=False, yanchor='top')
-    corr_map = {1: '✚', -1: '—', 0: ''}
-    for i in range(N_TECH):
-        for j in range(i + 1, N_TECH):
-            corr_val = np.random.choice([-1, 0, 1]) if (i+j)%2==0 else 0
-            if corr_val != 0: x_pos = X_START + i + (j-i)/2; y_pos = Y_START + N_CUST + (j-i)/2; fig.add_annotation(x=x_pos, y=y_pos, text=f"<b>{corr_map[corr_val]}</b>", showarrow=False, font=dict(color=COLORS['success'] if corr_val==1 else COLORS['danger'], size=16))
-    fig.add_shape(type='rect', x0=X_START-0.5, y0=Y_START-0.5, x1=X_START+N_TECH-0.5, y1=Y_START+N_CUST-0.5, line=dict(color=COLORS['light_gray'])); fig.add_shape(type='line', x0=X_START-0.5, y0=Y_START+N_CUST-0.5, x1=X_START+N_TECH/2-0.5, y1=Y_START+N_CUST-0.5+N_TECH/2, line=dict(color=COLORS['light_gray'])); fig.add_shape(type='line', x0=X_START+N_TECH-0.5, y0=Y_START+N_CUST-0.5, x1=X_START+N_TECH/2-0.5, y1=Y_START+N_CUST-0.5+N_TECH/2, line=dict(color=COLORS['light_gray']))
-    fig.update_layout(title="<b>House of Quality (QFD): An Integrated View</b>", xaxis=dict(visible=False, range=[-1, X_START + N_TECH + 1]), yaxis=dict(visible=False, range=[Y_START - 3, Y_START + N_CUST + N_TECH/2 + 1]), plot_bgcolor='white', margin=dict(t=80, b=20, l=20, r=20)); return fig
+    """
+    Creates a single, cohesive, and aesthetically superior House of Quality plot.
+    This elite version uses a single figure canvas with carefully arranged subplots
+    to build the classic 'house' structure, including the correlation roof,
+    making it highly intuitive and actionable.
+    """
+    tech_chars, cust_reqs = rel_df.columns.tolist(), rel_df.index.tolist()
+    
+    # --- 1. Data Preparation ---
+    # Convert relationship scores to a numerical scale for the heatmap
+    rel_map = {9: 1.0, 3: 0.6, 1: 0.2, 0: 0.0}
+    rel_heatmap_z = rel_df.map(lambda x: rel_map.get(x, 0))
+    
+    # Calculate the final technical importance scores
+    tech_importance = (rel_heatmap_z.T * weights['Importance'].values).T.sum()
+    
+    # Create a placeholder correlation matrix for the 'roof'
+    # In a real scenario, this would come from data analysis.
+    corr_matrix = pd.DataFrame(np.identity(len(tech_chars)), index=tech_chars, columns=tech_chars)
+    corr_matrix.iloc[0, 1] = 0.7  # Strong Positive
+    corr_matrix.iloc[1, 0] = 0.7
+    corr_matrix.iloc[2, 3] = -0.6 # Strong Negative
+    corr_matrix.iloc[3, 2] = -0.6
+    
+    # Mask for the triangular roof
+    mask = np.triu(np.ones_like(corr_matrix, dtype=bool), k=1)
+    
+    # --- 2. Figure Construction with Subplots ---
+    fig = make_subplots(
+        rows=3, cols=2,
+        shared_xaxes='columns',
+        shared_yaxes='rows',
+        column_widths=[0.25, 0.75], 
+        row_heights=[0.25, 0.55, 0.2],
+        specs=[
+            [{"type": "bar", "rowspan": 2}, {"type": "heatmap"}],
+            [None, {"type": "heatmap"}],
+            [None, {"type": "bar"}]
+        ],
+        horizontal_spacing=0.01,
+        vertical_spacing=0.01
+    )
 
+    # --- 3. Populate Subplots ---
+    # a) Correlation Roof (Top Right)
+    fig.add_trace(go.Heatmap(
+        z=corr_matrix.where(mask),
+        x=tech_chars, y=tech_chars,
+        colorscale='RdBu', zmin=-1, zmax=1, showscale=False,
+        hovertemplate='Correlation: %{z:.2f}<extra></extra>'
+    ), row=1, col=2)
+
+    # b) Customer Importance (Left Bar Chart)
+    fig.add_trace(go.Bar(
+        y=cust_reqs, x=weights['Importance'], orientation='h',
+        marker=dict(color=COLORS['primary'], opacity=0.7),
+        text=weights['Importance'], textposition='auto'
+    ), row=2, col=1)
+
+    # c) Central Relationship Matrix (Main Heatmap)
+    fig.add_trace(go.Heatmap(
+        z=rel_heatmap_z, y=cust_reqs, x=tech_chars,
+        colorscale='Blues', showscale=False, customdata=rel_df.values,
+        hovertemplate='Requirement: %{y}<br>Tech Characteristic: %{x}<br><b>Relationship Strength: %{customdata}</b><extra></extra>'
+    ), row=2, col=2)
+
+    # d) Final Technical Priorities (Bottom Bar Chart)
+    fig.add_trace(go.Bar(
+        x=tech_chars, y=tech_importance,
+        marker=dict(color=COLORS['secondary'])
+    ), row=3, col=2)
+    
+    # --- 4. Final Layout and Styling ---
+    fig.update_layout(
+        title_text="<b>The House of Quality (QFD):</b> From Customer Needs to Technical Priorities",
+        plot_bgcolor='white',
+        showlegend=False,
+        margin=dict(t=100, b=20, l=20, r=20),
+        bargap=0.2
+    )
+    # Style axes to create the 'house' effect
+    fig.update_xaxes(showticklabels=False, row=1, col=2)
+    fig.update_xaxes(showticklabels=False, row=2, col=2)
+    fig.update_xaxes(title_text="Technical Characteristics", tickangle=-45, row=3, col=2)
+    fig.update_yaxes(title_text="Customer Needs", autorange="reversed", row=2, col=1)
+    fig.update_yaxes(showticklabels=False, row=1, col=1)
+    fig.update_yaxes(title_text="Priority Score", row=3, col=2)
+    fig.update_xaxes(title_text="Importance", row=2, col=1)
+    
+    return fig
 def plot_kano_visual(df_kano: pd.DataFrame) -> go.Figure:
     fig = go.Figure(); fig.add_shape(type="rect", x0=0, y0=0, x1=10, y1=10, fillcolor=hex_to_rgba(COLORS['success'], 0.1), line_width=0, layer='below'); fig.add_shape(type="rect", x0=0, y0=-10, x1=10, y1=0, fillcolor=hex_to_rgba(COLORS['danger'], 0.1), line_width=0, layer='below')
     colors = {'Basic (Must-be)': COLORS['accent'], 'Performance': COLORS['primary'], 'Excitement (Delighter)': COLORS['secondary']}
