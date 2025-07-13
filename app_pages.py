@@ -208,11 +208,19 @@ def show_define_phase() -> None:
                 title="Tool: Quality Function Deployment (QFD)",
                 tool_function=plot_qfd_house_of_quality_pro,
                 tool_args={'weights': weights, 'rel_df': rel_df},
+                # --- NEW, IMPROVED EXPLANATION ---
                 explanation_text="""
-                - **What is it?** A structured methodology for translating customer requirements into product specifications. The "House of Quality" is its primary tool—a matrix that mathematically links customer needs to technical design features.
-                - **Why do it?** To prioritize development efforts on the technical features that will have the greatest impact on customer satisfaction, preventing misallocation of resources.
-                - **How is it done?** The "house" links customer needs (WHATs) and their importance to technical characteristics (HOWs) via a relationship matrix. A weighted score is calculated for each technical characteristic to rank its importance.
-                - **Purpose & Meaning of Results:** The key result is the ranked list of **Technical Priorities**. This provides an objective, data-driven guide for the engineering team, telling them exactly which technical aspects of the assay are most critical to get right. It is a powerful tool for justifying design choices in a regulatory submission.
+                - **What is it?** A structured methodology for translating customer requirements into product specifications. The "House of Quality" is its primary tool—a matrix that mathematically links customer needs to technical design features. This elite version integrates all components into a single, actionable dashboard.
+
+                - **Why do it?** To prioritize development efforts on the technical features that will have the greatest impact on customer satisfaction, preventing misallocation of resources. It provides a rigorous, data-driven, and auditable trail from customer needs to final design specifications.
+
+                - **How to Read This Plot:**
+                  1.  **Left (Blue Bars):** Start with the **Customer Needs** and their importance ratings. Higher bars mean more important needs.
+                  2.  **Center (Heatmap):** The central matrix shows the **Relationship Strength** between customer needs and the technical characteristics your team can control. Darker blue indicates a stronger link. Hover over any cell for details.
+                  3.  **Roof (Triangle Heatmap):** The 'roof' shows **Correlations** between technical characteristics. Green ('✚') indicates a synergistic relationship (improving one helps the other), while red ('—') indicates a trade-off (improving one hurts the other).
+                  4.  **Bottom (Green Bars):** This is the **actionable output**. It shows the calculated **Technical Priority** scores.
+
+                - **Purpose & Meaning of Results:** The bottom bar chart provides the final, data-driven answer. The tallest bars represent the most critical technical characteristics to focus on to maximize customer satisfaction. In this example, 'LOD (VAF %)' and 'Reagent Cost ($)' are the highest priorities and should receive the most engineering attention and resources.
                 """
             )
             st.divider()
