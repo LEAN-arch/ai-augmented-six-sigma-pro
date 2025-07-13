@@ -209,6 +209,7 @@ def show_define_phase() -> None:
                 title="Tool: Quality Function Deployment (QFD)",
                 tool_function=plot_qfd_house_of_quality_pro,
                 tool_args={'weights': weights, 'rel_df': rel_df},
+                # --- NEW, IMPROVED EXPLANATION ---
                 explanation_text="""
                 - **What is it?** A structured methodology for translating customer requirements into product specifications. The "House of Quality" is its primary tool—a matrix that mathematically links customer needs to technical design features. This elite version integrates all components into a single, actionable dashboard.
 
