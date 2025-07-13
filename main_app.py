@@ -14,10 +14,10 @@ This script is responsible for:
 6.  Executing the selected page's rendering logic with robust error handling.
 
 Author: AI Engineering SME
-Version: 28.1 (Definitive Final Build)
+Version: 29.1 (Definitive Final Build)
 Date: 2025-07-13
 
-Changelog from v26.2:
+Changelog from v28.2:
 - [MAINTAINABILITY] Final review of the `BioAIApp` class structure to ensure
   all methods are logical, encapsulated, and adhere to the Single
   Responsibility Principle.
@@ -140,7 +140,7 @@ class BioAIApp:
             st.info("A commercial-grade hybrid framework for superior biotech R&D.")
 
             app_meta = self.config.get("app_meta", {})
-            app_version = app_meta.get("version", "28.1")
+            app_version = app_meta.get("version", "29.1")
             url_config = self.config.get("urls", {})
             source_code_url = url_config.get("source_code")
 
