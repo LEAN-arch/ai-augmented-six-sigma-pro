@@ -304,14 +304,31 @@ def show_measure_phase() -> None:
         """)
         df_gage = pd.DataFrame({'Source of Variation': ['Assay Variation (Biology)', 'Repeatability (Sequencer)', 'Reproducibility (Operator)'], 'Contribution (%)': [92, 5, 3]})
         _render_analysis_tool(
-            title="Tool: Gage R&R Study",
-            tool_function=plot_gage_rr_pareto,
+            title="Tool: Gage R&R Study - Hierarchical Variance Decomposition",
+            # --- CALL THE NEW SUNBURST PLOT ---
+            tool_function=plot_gage_rr_sunburst,
             tool_args={'df_gage': df_gage},
+            # --- NEW, IMPROVED EXPLANATION ---
             explanation_text="""
-            - **What is it?** A statistical study designed to quantify the amount of variation in your data that comes from the measurement system itself.
-            - **Why do it?** This is a non-negotiable prerequisite for any data-based decision-making. If your measurement system is noisy, you cannot trust your process data.
-            - **How is it done?** A structured experiment is performed where multiple operators measure multiple samples multiple times. The resulting data is analyzed using ANOVA to partition the total observed variance into its components: the true Part-to-Part variation and the measurement error (Gage R&R).
-            - **Purpose & Meaning of Results:** This dashboard visualizes the variance components. The stacked bar on the left shows the total variation, with the red 'Gage R&R' portion representing measurement error. The donut chart on the right breaks this error down into its sources. The key guideline is that the total Gage R&R should contribute **less than 10%** of the total variation for the system to be deemed 'Acceptable'.
+            - **What is it?** A statistical study designed to quantify and decompose the total variation observed in a measurement process. This Sunburst Chart provides a hierarchical view of where the variation comes from.
+
+            - **Why do it?** This is a non-negotiable prerequisite for any data-based decision-making. If your measurement system is noisy (i.e., a large portion of the variation comes from the measurement itself), you cannot trust your process data.
+
+            - **How to Read This Plot:**
+              1.  **The Center:** Represents 100% of the total variation observed in the study.
+              2.  **The First Ring:** This shows the primary decomposition.
+                  -   **Process Variation (Blue Slice):** This is the "good" variation. It represents the true differences between the samples being measured. In an ideal world, this would be 100%.
+                  -   **Measurement System (Red Slice):** This is the "bad" variation, or the error contributed by the measurement process itself. This is the total Gage R&R value.
+              3.  **The Outer Ring:** This further decomposes the "bad" Measurement System variation into its two components:
+                  -   **Repeatability (Equipment Error):** Variation observed when the *same operator* measures the *same sample* multiple times. This is inherent noise in the instrument.
+                  -   **Reproducibility (Operator Error):** Variation observed when *different operators* measure the *same sample*. This reflects differences in operator technique or training.
+
+            - **Purpose & Meaning of Results:** The goal is to maximize the blue area and minimize the red area. The Automotive Industry Action Group (AIAG) provides the standard guidelines:
+                - **< 10% Gage R&R:** The measurement system is **Acceptable**.
+                - **10% - 30% Gage R&R:** The system is **Marginal** and may be acceptable based on the application's criticality.
+                - **> 30% Gage R&R:** The system is **Unacceptable** and must be improved.
+            
+            This plot gives a clear, final **Verdict** in the title based on these widely accepted criteria.
             """
         )
 
