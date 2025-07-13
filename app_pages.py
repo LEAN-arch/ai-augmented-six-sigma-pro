@@ -7,14 +7,16 @@ explanations directly alongside every plot, figure, and table, and features
 a substantially improved narrative across all pages.
 
 Author: Bio-AI Excellence SME Collective
-Version: 33.1 (Elite QFD Build)
+Version: 33.1 (Elite Visualization Build)
 Date: 2025-07-16
 
 Changelog from v33.0:
-- [ELITE-UPGRADE] Integrated the new, single-figure, elite-tier House of
-  Quality (QFD) plot and its substantially improved explanation.
-- [CONSISTENCY] Ensured all other content and function calls are final and
-  bug-free.
+- [CRITICAL-FIX] Corrected a SyntaxError on the welcome page.
+- [LAYOUT] Updated the 'Improve' phase layout to accommodate the new 3D
+  Response Surface plot for DOE analysis.
+- [INTEGRATION] Confirmed seamless integration with all new and upgraded
+  elite-tier visualizations from `helpers/visualizations.py`, including the
+  new QFD, SHAP, Gage R&R, and NLP plots.
 """
 
 import streamlit as st
