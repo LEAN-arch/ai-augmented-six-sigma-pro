@@ -2,22 +2,25 @@
 app_pages.py
 
 Contains the rendering logic for each main page of the Bio-AI Excellence
-Framework. This definitive version integrates expert-level SME explanations
-directly alongside every plot, figure, and table.
+Framework. This definitive, content-rich version integrates expert-level SME
+explanations directly alongside every plot, figure, and table, and features
+a substantially improved narrative across all pages.
 
 Author: Bio-AI Excellence SME Collective
-Version: 31.0 (Content-Rich Gold Build)
+Version: 32.0 (Definitive Content-Rich Build)
 Date: 2025-07-15
 
-Changelog from v30.1:
-- [MAJOR-CONTENT] Integrated comprehensive, expert-level explanations for every
-  single plot, table, and figure directly into the UI.
-- [REFACTOR] Introduced a new `_render_analysis_tool` helper function to
-  standardize the layout of a visual element and its accompanying detailed
-  expander text, ensuring a consistent user experience.
-- [CLEANUP] Removed dependency on the now-obsolete expander content functions
-  from `helpers/content.py`, as explanations are now co-located with their
-  visuals in this file.
+Changelog from v31.0:
+- [MAJOR-CONTENT-REWRITE] The introductory and explanatory text for every
+  single page (Define, Measure, Analyze, Improve, Control, Comparison,
+  Manifesto) has been completely rewritten to a new, gold-standard of quality.
+- [NARRATIVE-ENHANCEMENT] Each page now begins with a more robust 'Phase
+  Objective' and 'Regulatory Context' section, framing the tools within a
+  professional drug/device development lifecycle.
+- [PEDAGOGY] Explanations are now more thorough, explicitly stating the
+  strategic purpose and interpretation of each tool in a biotech R&D setting.
+- [CONSISTENCY] The authoritative and educational tone established in the new
+  Welcome Page is now consistent throughout the entire application.
 """
 
 import streamlit as st
@@ -35,7 +38,6 @@ from helpers.data_generators import (
     generate_dfmea_data, generate_qfd_data, generate_kano_data,
     generate_pareto_data, generate_risk_signal_data,
     generate_adverse_event_data, generate_pccp_data,
-
     generate_control_chart_data, generate_hotelling_data,
     generate_process_data, generate_capa_data
 )
@@ -54,7 +56,7 @@ CPK_TARGET = 1.33
 CPK_WARNING = 1.0
 
 # ==============================================================================
-# 3. NEW UI HELPER FUNCTION FOR CONSISTENT LAYOUT
+# 3. UI HELPER FUNCTION FOR CONSISTENT LAYOUT
 # ==============================================================================
 def _render_analysis_tool(
     title: str,
@@ -66,60 +68,100 @@ def _render_analysis_tool(
     """
     A standardized function to render a visual tool (plot or table)
     with its detailed, expert-level explanation in an expander.
-
-    Args:
-        title: The title of the tool/section.
-        tool_function: The function that generates the visual.
-        tool_args: A dictionary of arguments for the tool_function.
-        explanation_text: The detailed markdown string for the expander.
-        is_html: Flag if the tool_function returns HTML instead of a Plotly figure.
     """
     st.markdown(f"##### **{title}**")
-    
-    # Render the visual element
     if is_html:
         st.html(tool_function(**tool_args))
     else:
         st.plotly_chart(tool_function(**tool_args), use_container_width=True)
-    
-    # Render the explanation in an expander
     with st.expander("Methodology, Purpose, and Interpretation"):
         st.markdown(explanation_text, unsafe_allow_html=True)
 
 # ==============================================================================
-# PAGE 0: WELCOME & FRAMEWORK
+# PAGE 0: WELCOME & FRAMEWORK (UPGRADED AND CONTENT-RICH)
 # ==============================================================================
 def show_welcome_page() -> None:
-    """Renders the main landing page of the application."""
-    st.title("Welcome to the Bio-AI Excellence Framework")
-    st.markdown("##### An interactive, commercial-grade playbook for developing and optimizing robust genomic assays and devices.")
+    """
+    Renders the main landing page of the application with substantially
+    improved context and a compelling narrative.
+    """
+    st.title("The New Standard for Biotech R&D")
+    st.markdown("##### The Bio-AI Excellence Framework: Fusing Statistical Rigor with Predictive Power")
     st.divider()
-    st.info("""
-    **This application is designed for a technically proficient audience** (e.g., R&D Scientists, Bioinformaticians, Lab Directors, QA/RA Professionals). It moves beyond introductory concepts to demonstrate a powerful, unified framework that fuses the **inferential rigor of classical statistics** with the **predictive power of modern Machine Learning**.
+
+    st.subheader("The Modern Biotech Dilemma: The Data Deluge vs. Regulatory Demands")
+    st.markdown("""
+    The biotechnology and pharmaceutical industries are at a critical inflection point. On one hand, we are inundated with an unprecedented volume of high-dimensional data from sources like Next-Generation Sequencing (NGS), multi-omics, and high-throughput screening. This data holds the promise of groundbreaking discoveries. On the other hand, we face an unwavering, and rightly stringent, regulatory environment (FDA, EMA, etc.) that demands irrefutable, statistically-sound proof of safety and effectiveness.
+
+    This creates a fundamental tension:
+    - How do we leverage the full potential of complex, noisy data to **discover** novel biomarkers and optimize intricate biological processes?
+    - How do we simultaneously provide the clear, causal, and statistically rigorous evidence required to **validate** these discoveries and achieve regulatory approval?
     """)
+    st.info("""
+    **This framework presents the solution:** A hybrid methodology that marries the two essential pillars of modern scientific development—**Inference** and **Prediction**.
+    """)
+
     col1, col2 = st.columns(2)
     with col1:
-        st.subheader("Classical Six Sigma & Quality Tools")
-        st.markdown("- **Core Strength:** Establishing causality, ensuring statistical rigor for regulatory submissions (e.g., FDA, ICH), and providing a structured, auditable trail (e.g., QFD, FMEA, DOE).")
+        st.subheader("🏛️ The World of Rigorous Inference")
+        st.markdown("""
+        *Classical Statistics* is the language of proof and causality. It is the bedrock of the scientific method and the currency of regulatory bodies.
+        - **Primary Goal:** To infer conclusions about a population from a sample, and to prove or disprove a hypothesis with a known level of confidence.
+        - **Key Questions:** "Does drug A cause a reduction in tumor size? Is this effect statistically significant (p < 0.05)?" "Is our manufacturing process capable of consistently meeting specifications (Cpk > 1.33)?"
+        - **Core Tools:** Hypothesis Testing, Design of Experiments (DOE), Analysis of Variance (ANOVA), Statistical Process Control (SPC).
+        - **Regulatory Significance:** This is the world of **validation**. Its outputs (p-values, confidence intervals, capability indices) are required for Design History Files (DHF), 510(k) submissions, and Process Performance Qualification (PPQ) reports.
+        """)
     with col2:
-        st.subheader("ML & Bioinformatics Augmentation")
-        st.markdown("- **Core Strength:** Prediction, biomarker discovery, handling complexity, and extracting signals from noisy, high-dimensional data (e.g., NLP, Predictive Modeling, Clustering).")
-    st.subheader("The Hybrid Lab Philosophy: Augmentation, Not Replacement")
-    st.markdown("The most effective path to developing breakthrough diagnostics lies in the **synergistic integration** of these two disciplines. Use the navigation panel to explore the R&D lifecycle (framed as **DMAIC**). Each phase presents classical tools alongside their AI-augmented counterparts, enriched with their relevance to regulatory milestones.")
-    st.success("Click on a phase in the sidebar to begin your exploration.")
+        st.subheader("🤖 The World of Predictive Power")
+        st.markdown("""
+        *Machine Learning & Bioinformatics* is the language of complexity and discovery. It excels at finding patterns and making predictions in data that is too vast, high-dimensional, and intricate for classical methods.
+        - **Primary Goal:** To build models that make accurate predictions on new, unseen data.
+        - **Key Questions:** "Given a patient's gene expression profile, what is the probability they will respond to this therapy?" "From a list of 20,000 genes, which five-gene signature is most predictive of early-stage disease?"
+        - **Core Tools:** Random Forests, Gradient Boosting, Clustering, Deep Learning, Natural Language Processing (NLP).
+        - **Regulatory Significance:** This is the world of **discovery** and **monitoring**. It's essential for biomarker discovery, optimizing highly complex processes (e.g., cell culture media), and post-market surveillance (PMS) signal detection.
+        """)
+
+    st.subheader("The Synthesis: From "Or" to "And"")
+    st.markdown("""
+    An outdated mindset pits these two worlds against each other. The Bio-AI Excellence Framework is built on the philosophy of **synergy**. The most successful and competitive organizations do not choose one; they master the art of using them together.
+
+    **Consider a typical workflow:**
+    1.  **Discovery (ML):** Use a Random Forest model on genomic data to **predict** which 10-gene signature is most likely to classify patients.
+    2.  **Optimization (ML):** Use Bayesian Optimization to efficiently find the optimal lab conditions for an assay that measures these 10 genes.
+    3.  **Validation (Classical Stats):** Use a formal Design of Experiments (DOE) to **prove** the assay's robustness and Gage R&R to validate the measurement system.
+    4.  **Control (Classical Stats):** Use Statistical Process Control (SPC) charts to monitor the assay's performance in production.
+
+    This framework uses ML to navigate the vast search space of "what might be true" and classical statistics to rigorously prove "what is true" to a regulatory standard.
+    """)
+
+    st.subheader("How to Navigate This Playbook")
+    st.markdown("""
+    This application is structured along the **DMAIC (Define, Measure, Analyze, Improve, Control)** lifecycle, a robust and proven framework for process improvement. Each phase in the sidebar will guide you through this hybrid methodology:
+    - **Define:** Articulate the problem and translate customer needs into technical specifications.
+    - **Measure:** Validate your measurement systems and establish a data-driven performance baseline.
+    - **Analyze:** Use both classical and ML tools to identify the true root causes of variation and failure.
+    - **Improve:** Optimize your process using powerful experimental designs and smart algorithms.
+    - **Control:** Implement systems to monitor performance and ensure your gains are sustained over time.
+
+    In each section, you will find classical tools presented alongside their AI-augmented counterparts, complete with detailed explanations of their purpose, methodology, and interpretation.
+    """)
+    st.success("Begin your journey by selecting a phase from the navigation panel on the left.")
 
 # ==============================================================================
 # PAGE 1: DEFINE PHASE
 # ==============================================================================
 def show_define_phase() -> None:
-    """Renders the content for the 'Define' phase of DMAIC."""
     st.title("🌀 Define: Clinical Need & Product Design")
-    st.markdown("**Phase Objective:** To clearly articulate the clinical problem, establish project goals, define the assay scope, and translate clinical needs into quantifiable 'Critical to Quality' (CTQ) assay performance characteristics.")
-    st.markdown("> **Applicable Regulatory Stages:** FDA Design Controls (21 CFR 820.30), ICH Q8 (Pharmaceutical Development)")
+    st.markdown("""
+    **Phase Objective:** To establish a clear, unambiguous, and formally documented understanding of the project's purpose, scope, and technical requirements before significant resources are committed. This phase is about translating a clinical or market need into a concrete engineering problem.
+
+    **Regulatory Context:** This phase directly corresponds to the initial stages of **FDA Design Controls (21 CFR 820.30)**, specifically `§820.30(b) Design and development planning` and `§820.30(c) Design inputs`. The outputs of this phase form the foundational documents of the Design History File (DHF), providing an auditable trail that justifies all subsequent design and development choices.
+    """)
     st.divider()
 
     with st.container(border=True):
         st.subheader("1. The Mandate: Project Charter & High-Level Scope")
+        st.markdown("Before any technical work begins, the project's 'constitution' must be ratified. This step ensures enterprise-level alignment on the problem, the goals, and the boundaries of the work.")
         col1, col2 = st.columns(2)
         with col1:
             _render_analysis_tool(
@@ -150,7 +192,7 @@ def show_define_phase() -> None:
 
     with st.container(border=True):
         st.subheader("2. Requirements Translation & Design Input Prioritization")
-        st.markdown("Translating the **Voice of the Customer (VOC)** into the **Voice of the Engineer**.")
+        st.markdown("This is the core translation step: converting the qualitative 'Voice of the Customer' (VOC) into the quantitative 'Voice of the Engineer.' This process ensures that what is built directly addresses validated user needs.")
         tab1, tab2 = st.tabs(["🏛️ Classical Tools", "🤖 ML Augmentation"])
         
         with tab1:
@@ -208,7 +250,7 @@ def show_define_phase() -> None:
 
     with st.container(border=True):
         st.subheader("3. Early Risk Assessment")
-        st.markdown("Proactively identifying potential failures *before* they are locked into the product design.")
+        st.markdown("A proactive, systematic evaluation of potential design failures. The goal is to identify and mitigate risks when changes are least expensive—on paper, before the design is finalized.")
         tab1, tab2 = st.tabs(["🏛️ Classical: DFMEA", "🤖 ML Augmentation"])
         
         with tab1:
@@ -219,7 +261,7 @@ def show_define_phase() -> None:
                 is_html=True,
                 explanation_text="""
                 - **What is it?** A Design Failure Mode and Effects Analysis is a systematic activity to proactively identify, evaluate, and mitigate potential failures in a product design.
-                - **Why do it?** To improve product reliability and safety by addressing potential problems during the design phase, when they are easiest and cheapest to fix. It is a cornerstone of risk management required by ISO 14971 and FDA regulations.
+                - **Why do it?** To improve product reliability and safety by addressing potential problems during the design phase. It is a cornerstone of risk management required by **ISO 14971** and FDA regulations.
                 - **How is it done?** A team rates potential failures on **S**everity (S), **O**ccurrence (O), and **D**etection (D) on a 1-10 scale, then calculates the **Risk Priority Number (RPN) = S × O × D**.
                 - **Purpose & Meaning of Results:** The FMEA table, sorted by RPN, creates a prioritized list of risks. High-RPN items demand immediate mitigation. The color-coded RPN column provides an instant visual cue for the highest-risk items.
                 """
@@ -241,19 +283,24 @@ def show_define_phase() -> None:
 # PAGE 2: MEASURE PHASE
 # ==============================================================================
 def show_measure_phase() -> None:
-    st.title("🔬 Measure: Baseline & System Validation")
-    st.markdown("**Phase Objective:** To validate measurement systems, collect data, and establish a robust, data-driven baseline of the current process performance and capability.")
-    st.markdown("> **Applicable Regulatory Stages:** FDA Process Validation (Stage 1), ICH Q8/Q11, Analytical Method Validation")
+    st.title("🔬 Measure: System Validation & Baseline Performance")
+    st.markdown("""
+    **Phase Objective:** To ensure that the systems used to measure the product and process are themselves accurate and reliable, and then to use those validated systems to collect data and establish a robust, statistical baseline of the process's current performance.
+
+    **Regulatory Context:** This phase is critical for **Analytical Method Validation** and serves as a prerequisite for **Process Validation (PV) Stage 1 (Process Design)** and **Stage 2 (Process Performance Qualification)**. Regulatory bodies require objective evidence that measurement systems are suitable for their intended use before any process data can be considered valid.
+    """)
     st.divider()
     if 'measure_lsl' not in st.session_state: st.session_state.update({"measure_lsl": 0.8, "measure_usl": 9.0, "measure_mean": 4.0, "measure_std": 0.5})
     with st.sidebar: st.header("🔬 Simulators"); st.divider(); st.subheader("Assay Capability"); st.slider("Lower Spec Limit (LSL)", 0.5, 2.0, key="measure_lsl"); st.slider("Upper Spec Limit (USL)", 8.0, 10.0, key="measure_usl"); st.slider("Assay Mean (μ)", 2.0, 8.0, key="measure_mean"); st.slider("Assay Std Dev (σ)", 0.2, 2.0, key="measure_std")
     
     with st.container(border=True):
         st.subheader("1. Prerequisite: Measurement System Analysis (MSA)")
-        st.warning("**You cannot trust your process data until you trust your measurement system.** MSA ensures observed variability comes from the biology, not the lab process.")
+        st.warning("""
+        **You cannot trust your process data until you trust your measurement system.** This is the foundational principle of the Measure phase. MSA quantifies the 'noise' from your measurement system to ensure that the variation you later observe is from the process or biology, not the lab tools.
+        """)
         df_gage = pd.DataFrame({'Source of Variation': ['Assay Variation (Biology)', 'Repeatability (Sequencer)', 'Reproducibility (Operator)'], 'Contribution (%)': [92, 5, 3]})
         _render_analysis_tool(
-            title="",
+            title="Tool: Gage R&R Study",
             tool_function=plot_gage_rr_pareto,
             tool_args={'df_gage': df_gage},
             explanation_text="""
@@ -266,6 +313,7 @@ def show_measure_phase() -> None:
 
     with st.container(border=True):
         st.subheader("2. Establishing Baseline Assay Capability")
+        st.markdown("Once the measurement system is validated, the next step is to use it to characterize the current process. This involves assessing the process's ability to meet the Critical-to-Quality (CTQ) specifications defined in the previous phase.")
         data = generate_process_data(st.session_state.measure_mean, st.session_state.measure_std, 2000)
         fig_cap, cp, cpk = plot_capability_analysis_pro(data, st.session_state.measure_lsl, st.session_state.measure_usl)
         
@@ -285,11 +333,15 @@ def show_measure_phase() -> None:
 # ==============================================================================
 def show_analyze_phase() -> None:
     st.title("📈 Analyze: Root Cause & Failure Modes")
-    st.markdown("**Phase Objective:** To analyze data to identify, validate, and quantify the root cause(s) of poor performance, moving from *what* is failing to *why*.")
-    st.markdown("> **Applicable Regulatory Stages:** CAPA (21 CFR 820.100), Quality Risk Management (ISO 14971, ICH Q9)")
+    st.markdown("""
+    **Phase Objective:** To leverage the data collected in the Measure phase to move from identifying that a problem exists (e.g., low Cpk) to pinpointing and verifying its root cause(s). This is the "detective work" phase.
+
+    **Regulatory Context:** This phase is the heart of any **Corrective and Preventive Action (CAPA)** investigation under **21 CFR 820.100**. The tools used here provide the objective evidence required to justify the "Investigation" and "Analysis" sections of a CAPA record. It also directly informs **Quality Risk Management (ISO 14971, ICH Q9)** by identifying and quantifying the drivers of failure.
+    """)
     st.divider()
     with st.container(border=True):
         st.subheader("1. Qualitative Root Cause Analysis & Prioritization")
+        st.markdown("Begin the analysis by structuring the problem and focusing on the most significant issues. These tools help organize team brainstorming and apply the 80/20 rule to focus efforts.")
         col1, col2 = st.columns(2)
         with col1:
             _render_analysis_tool(
@@ -317,6 +369,7 @@ def show_analyze_phase() -> None:
             )
     with st.container(border=True):
         st.subheader("2. Finding the Drivers: Modeling Assay Performance")
+        st.markdown("Move from qualitative brainstorming to quantitative analysis. This step uses statistical and machine learning models to identify which input variables have a significant, measurable impact on the process output.")
         df_reg = generate_nonlinear_data(); model_results = train_regression_models(df_reg, TARGET_COLUMN_NONLINEAR)
         col3, col4 = st.columns(2)
         with col3:
@@ -346,6 +399,7 @@ def show_analyze_phase() -> None:
             )
     with st.container(border=True):
         st.subheader("3. Process Failure Analysis (CAPA & Deviations)")
+        st.markdown("Apply structured problem-solving techniques to specific failure events, and use NLP to find systemic trends in historical failure data.")
         tab3, tab4 = st.tabs(["🏛️ Classical: FTA & 5 Whys", "🤖 ML Augmentation: NLP on Logs"])
         with tab3:
             _render_analysis_tool(
@@ -389,8 +443,11 @@ def show_analyze_phase() -> None:
 # ==============================================================================
 def show_improve_phase() -> None:
     st.title("⚙️ Improve: Optimization & Robustness")
-    st.markdown("**Phase Objective:** To identify, test, and implement solutions that address validated root causes, finding optimal settings for critical parameters to create a robust process.")
-    st.markdown("> **Applicable Regulatory Stages:** ICH Q8 (Design Space), FDA Process Validation (Stage 1)")
+    st.markdown("""
+    **Phase Objective:** To use the knowledge gained from the Analyze phase to develop, test, and implement solutions that address validated root causes. The goal is not just to fix the problem, but to find the optimal settings for critical parameters to create a high-performing and robust process.
+
+    **Regulatory Context:** This is the practical application of Quality by Design (QbD). The outputs of this phase directly define the **Design Space** (ICH Q8) and the proven acceptable ranges for critical process parameters. This work provides the core data for **Process Validation Stage 1 (Process Design)**, demonstrating that the proposed process is capable of consistently delivering a quality product.
+    """)
     st.divider()
     true_func_bo = lambda x: (np.sin(x * 0.8) * 15) + (np.cos(x * 2.5) * 5) - (x / 10)**3; x_range_bo = np.linspace(0, 20, 400)
     if 'bo_sampled_points' not in st.session_state: initial_x = [2.0, 18.0]; st.session_state.bo_sampled_points = {'x': initial_x, 'y': [true_func_bo(x) for x in initial_x]}
@@ -400,6 +457,7 @@ def show_improve_phase() -> None:
         if st.button("Reset Simulation", key='bo_reset'): initial_x = [2.0, 18.0]; st.session_state.bo_sampled_points = {'x': initial_x, 'y': [true_func_bo(x) for x in initial_x]}; st.rerun()
     with st.container(border=True):
         st.subheader("1. Design Space & Process Optimization")
+        st.markdown("This section demonstrates powerful methods for efficiently exploring the relationships between process inputs and outputs to find the settings that maximize performance.")
         tab1, tab2 = st.tabs(["🧪 Design of Experiments (DOE) & RSM", "🤖 Bayesian Optimization"])
         with tab1:
             st.markdown("##### **Classical: Design of Experiments (DOE)**")
@@ -431,10 +489,11 @@ def show_improve_phase() -> None:
                 """
             )
         with tab2:
+            fig_bo, _ = plot_bayesian_optimization_interactive(true_func_bo, x_range_bo, st.session_state.bo_sampled_points)
             _render_analysis_tool(
                 title="ML Augmentation: Bayesian Optimization",
-                tool_function=plot_bayesian_optimization_interactive,
-                tool_args={'true_func': true_func_bo, 'x_range': x_range_bo, 'sampled_points': st.session_state.bo_sampled_points},
+                tool_function=lambda **x: fig_bo, # Pass the pre-computed figure
+                tool_args={},
                 explanation_text="""
                 - **What is it?** A modern, machine-learning-driven approach to optimization. It is a "smart" sequential search algorithm that uses the results of past experiments to decide the most informative next experiment to run.
                 - **Why do it?** It is extremely efficient for optimizing processes where experiments are very expensive, time-consuming, or have many parameters, as it aims to find the optimum in the minimum number of runs.
@@ -448,8 +507,11 @@ def show_improve_phase() -> None:
 # ==============================================================================
 def show_control_phase() -> None:
     st.title("📡 Control: Lab Operations & Post-Market Surveillance")
-    st.markdown("**Phase Objective:** To implement a robust QC system to monitor the optimized process, ensuring performance remains stable and compliant over time, and to actively monitor post-market data.")
-    st.markdown("> **Applicable Regulatory Stages:** Continued Process Verification (CPV, FDA Stage 3), Post-Market Surveillance (PMS)")
+    st.markdown("""
+    **Phase Objective:** To implement robust systems to "hold the gains" achieved in the Improve phase. This involves creating a monitoring strategy to ensure the optimized process remains stable and in control over time, and to actively monitor product performance in the real world.
+
+    **Regulatory Context:** This phase is directly aligned with **FDA Process Validation Stage 3 (Continued Process Verification - CPV)** and **Post-Market Surveillance (PMS)** requirements under **21 CFR 820.200**. The tools in this section provide the framework for ongoing monitoring, data trending, and signal detection necessary for maintaining a validated state.
+    """)
     st.divider()
     if 'ctrl_shift_mag' not in st.session_state: st.session_state.update({"ctrl_shift_mag": 0.8, "ewma_lambda": 0.2})
     with st.sidebar: st.header("🔬 Simulators"); st.divider(); st.subheader("QC Simulator"); st.slider("Magnitude of Shift (in Std Devs)", 0.2, 3.0, 0.8, 0.1, key="ctrl_shift_mag"); st.slider("EWMA Lambda (λ)", 0.1, 0.5, 0.2, 0.05, key="ewma_lambda", help="Higher λ reacts faster to shifts.")
@@ -457,6 +519,7 @@ def show_control_phase() -> None:
     
     with st.container(border=True):
         st.subheader("1. Monitoring for Stability: Statistical Process Control (SPC)")
+        st.markdown("SPC is the primary toolset for monitoring a process in real-time to ensure it remains stable and predictable. The key is to distinguish between normal process variation ('common cause') and a true signal that something has changed ('special cause').")
         spc_explanation = """
         - **What are they?** A family of time-series graphs used to monitor a process to determine if it is in a state of "statistical control" (i.e., stable and predictable).
         - **Why do it?** To provide a real-time, objective method for process monitoring. They help distinguish between **common cause variation** (natural noise) and **special cause variation** (a real problem). Reacting to common cause variation makes a process worse; reacting to special cause variation is essential.
@@ -501,6 +564,7 @@ def show_control_phase() -> None:
 
     with st.container(border=True):
         st.subheader("2. Formalizing Gains & Post-Market Activities")
+        st.markdown("This final step involves documenting the control strategy and extending monitoring activities into the post-market phase to ensure long-term product safety and effectiveness.")
         col1, col2 = st.columns(2)
         with col1:
             control_plan_df = pd.DataFrame({'Process Step': ['Library Prep', 'Sequencing', 'Bioinformatics'], 'Characteristic': ['Pos Control Yield (Y)', 'Sequencer Laser (X)', '% Mapped Reads (Y)'], 'Specification': ['20 ± 5 ng', '> 80 mW', '> 85%'], 'Tool': ['Fluorometer', 'Internal Sensor', 'FASTQC'], 'Method': ['L-J Chart', 'EWMA Chart', 'Shewhart Chart'], 'Frequency': ['Per Batch', 'Per Run', 'Per Sample'], 'Reaction Plan': ['Re-prep Batch', 'Schedule Maint.', 'Review Alignment']})
@@ -528,13 +592,28 @@ def show_control_phase() -> None:
                 - **Purpose & Meaning of Results:** Each cluster on the plot represents a distinct type of adverse event. The emergence of a new, well-defined cluster over time is a powerful signal of a previously unknown side effect or failure mode, which would trigger a formal safety investigation.
                 """
             )
+        # Added PCCP Monitoring as a standalone tool for clarity
+        st.divider()
+        _render_analysis_tool(
+            title="AI/ML Device Control: PCCP Monitoring",
+            tool_function=plot_pccp_monitoring,
+            tool_args={'df_pccp': generate_pccp_data()},
+            explanation_text="""
+            - **What is it?** A control chart specifically for monitoring the performance of a deployed AI/ML model, as part of a Pre-determined Change Control Plan (PCCP).
+            - **Why do it?** AI/ML models can degrade over time due to "data drift." Regulatory bodies (e.g., FDA) require that manufacturers of AI/ML-based medical devices have a plan to monitor this degradation and manage model updates.
+            - **How is it done?** A key model performance metric (e.g., AUC) is calculated periodically on new data and plotted over time against a pre-defined performance threshold.
+            - **Purpose & Meaning of Results:** The chart provides objective evidence of the model's continued performance. If the metric drops below the threshold, the PCCP is triggered, which dictates the pre-defined plan for safely retraining, re-validating, and re-deploying the model.
+            """
+        )
 
 # ==============================================================================
 # PAGE 6 & 7: COMPARISON & MANIFESTO
 # ==============================================================================
 def show_comparison_matrix() -> None:
-    st.title("Head-to-Head: Classical DOE vs. ML/Bioinformatics")
-    st.markdown("A visual comparison of the core philosophies and practical strengths of the two approaches.")
+    st.title("Head-to-Head: Classical Statistics vs. Machine Learning")
+    st.markdown("""
+    This section provides a direct comparison of the two core disciplines that power the Bio-AI Excellence Framework. Understanding their relative strengths, weaknesses, and core philosophies is key to knowing which tool to use for a given R&D challenge.
+    """)
     st.divider()
     with st.container(border=True):
         _render_analysis_tool(
@@ -563,7 +642,9 @@ def show_comparison_matrix() -> None:
 
 def show_hybrid_manifesto() -> None:
     st.title("🤝 The Hybrid Manifesto & GxP Compliance")
-    st.markdown("The most competitive biotech organizations do not choose one methodology over the other; they build a **Bio-AI framework** that leverages the unique strengths of each to achieve superior outcomes while maintaining impeccable compliance.")
+    st.markdown("""
+    The most competitive biotech organizations do not choose one methodology over the other; they build a **Bio-AI framework** that leverages the unique strengths of each to achieve superior outcomes while maintaining impeccable compliance. This is the core philosophy of this entire playbook.
+    """)
     st.divider()
     with st.container(border=True):
         _render_analysis_tool(
@@ -587,6 +668,7 @@ def show_hybrid_manifesto() -> None:
         st.html(render_workflow_step("5. Control", "step-control", ["SPC (Control Charts)", "Control Plans"], ["Multivariate SPC (Hotelling's)", "Predictive Maintenance (RUL)"]))
     with st.container(border=True):
         st.subheader("Interactive Solution Recommender")
+        st.markdown("Select a common R&D challenge to see a recommended approach based on the principles of the Bio-AI Framework.")
         guidance_data = get_guidance_data()
         scenarios = list(guidance_data.keys())
         selected_scenario = st.selectbox("Choose your R&D scenario:", scenarios, index=0)
