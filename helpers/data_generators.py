@@ -337,3 +337,122 @@ def generate_pccp_data(seed: Optional[int] = GLOBAL_SEED) -> pd.DataFrame:
     performance[70:] -= 0.05
     
     return pd.DataFrame({'Deployment_Day': time, 'Model_AUC': np.clip(performance, 0, 1)})
+
+# ==============================================================================
+# SECTION 3: CASE STUDY & ADVISOR DATA (NEW)
+# ==============================================================================
+
+def generate_case_study_data() -> List[Dict[str, Any]]:
+    """
+    Generates a list of structured, detailed case studies simulating a
+    licensed repository from sources like ASQ or iSixSigma.
+    """
+    return [
+        {
+            "id": "pharma_001",
+            "Title": "Reducing Batch Cycle Time in Monoclonal Antibody Production",
+            "Industry/Sector": ["Pharma", "Biotech"],
+            "Problem Statement": "A 35% batch failure rate in upstream mAb production was causing significant delays and costing over $1.5M per quarter.",
+            "Business Unit": "Manufacturing",
+            "Define Phase": {
+                "Charter": "Project chartered to reduce upstream failure rate from 35% to <10% within 6 months, with an estimated ROI of 300%.",
+                "SIPOC": "Key inputs identified were cell bank quality, media composition, and bioreactor sensor calibration."
+            },
+            "Measure Phase": {
+                "KPIs": ["Batch Success Rate", "Product Titer (g/L)", "Cycle Time (Days)"],
+                "Baseline": "Success Rate: 65% (Cpk = 0.45). Average Titer: 2.1 g/L. Cycle Time: 22 days."
+            },
+            "Analyze Phase": {
+                "Root Causes": ["Poorly characterized raw material (a specific amino acid)", "Sub-optimal bioreactor temperature profile", "Inconsistent seed train expansion protocol"],
+                "Tools Used": ["Regression", "ANOVA", "Fishbone", "5 Whys"]
+            },
+            "Improve Phase": {
+                "Solutions": "Implemented multi-variate testing on raw materials, optimized the bioreactor temperature curve using a DOE, and standardized the seed train SOP.",
+                "Tools Used": ["DOE", "Pilot Study"]
+            },
+            "Control Phase": {
+                "Control Plan": "New raw material CoA requirements established with supplier. Bioreactor control recipe updated in MES. Operators retrained on new SOP.",
+                "Final Performance": "Success Rate: 94% (Cpk = 1.4). Average Titer: 2.8 g/L. Cycle Time: 19 days."
+            },
+            "Project Outcomes": {
+                "Financial Impact": 1200000,
+                "Operational Impact": "Reduced failure rate by 29 percentage points.",
+                "Lessons Learned": "Initial assumptions about the root cause being operator error were wrong. The data clearly pointed to raw material variation, highlighting the need for data-driven analysis over anecdotal evidence."
+            }
+        },
+        {
+            "id": "med_dev_001",
+            "Title": "Improving Catheter Extrusion Yield by Reducing Surface Defects",
+            "Industry/Sector": ["Med Device"],
+            "Problem Statement": "High scrap rate (18%) due to surface striations on a new Pebax catheter product line was jeopardizing the launch timeline and profitability.",
+            "Business Unit": "R&D",
+            "Define Phase": {
+                "Charter": "Reduce scrap rate from 18% to less than 5% before product launch in 4 months.",
+                "SIPOC": "Focus on extrusion process: resin drying, extruder screw speed, temperature zones, and puller speed."
+            },
+            "Measure Phase": {
+                "KPIs": ["Scrap Rate (%)", "Dimensional Stability (Cpk)", "Tensile Strength"],
+                "Baseline": "Scrap Rate: 18%. Dimensional Cpk: 1.1. Tensile strength was within spec."
+            },
+            "Analyze Phase": {
+                "Root Causes": ["Interaction between barrel temperature Zone 2 and screw speed", "Insufficient resin drying time"],
+                "Tools Used": ["Regression", "DOE"]
+            },
+            "Improve Phase": {
+                "Solutions": "A Response Surface Methodology (RSM) experiment identified an optimal operating window for temperature and screw speed. Implemented a new protocol increasing resin drying time from 4 hours to 8 hours.",
+                "Tools Used": ["RSM"]
+            },
+            "Control Phase": {
+                "Control Plan": "Process parameters locked in the HMI. Implemented a sensor-based check to ensure resin hopper had met the 8-hour drying time before enabling the extruder.",
+                "Final Performance": "Scrap Rate: 3.5%. Dimensional Cpk: 1.6."
+            },
+            "Project Outcomes": {
+                "Financial Impact": 850000,
+                "Operational Impact": "Reduced scrap by 14.5 percentage points, enabling a successful on-time product launch.",
+                "Lessons Learned": "A simple OFAT (One-Factor-at-a-Time) experiment would have missed the critical temperature-speed interaction. The use of a statistical DOE was essential for success."
+            }
+        },
+        {
+            "id": "aerospace_001",
+            "Title": "Validating NDI Procedure for Composite Fuselage Delamination",
+            "Industry/Sector": ["Aerospace"],
+            "Problem Statement": "The current ultrasonic NDI (Non-Destructive Inspection) method had a high rate of false positives, leading to unnecessary and costly repairs.",
+            "Business Unit": "Quality",
+            "Define Phase": {
+                "Charter": "Develop a new NDI procedure with >95% accuracy and validate the measurement system.",
+                "SIPOC": "Process involved creating reference standards, performing inspections, and analyzing signal data."
+            },
+            "Measure Phase": {
+                "KPIs": ["Gage R&R", "Accuracy", "False Positive Rate"],
+                "Baseline": "Gage R&R: 42% (Unacceptable). Accuracy: ~75%."
+            },
+            "Analyze Phase": {
+                "Root Causes": ["Ambiguous defect definition", "High signal noise from probe", "Operator technique variation"],
+                "Tools Used": ["Gage R&R", "Fishbone"]
+            },
+            "Improve Phase": {
+                "Solutions": "Created a visual standard for defects. Switched to a new focused-beam ultrasonic probe. Developed a fixture to standardize probe angle and pressure.",
+                "Tools Used": ["Pilot Study"]
+            },
+            "Control Phase": {
+                "Control Plan": "New SOP with visual defect guide. Mandated use of new probe and fixture. Operators underwent formal recertification.",
+                "Final Performance": "Gage R&R: 8% (Acceptable). Accuracy: 97%."
+            },
+            "Project Outcomes": {
+                "Financial Impact": 2500000,
+                "Operational Impact": "Avoided millions in unnecessary repair costs and improved fleet safety.",
+                "Lessons Learned": "A robust measurement system is the foundation of quality. Improving the Gage R&R was the most critical step that enabled all other improvements."
+            }
+        },
+    ]
+
+def generate_anova_data(
+    means: list, stds: list, n: int, seed: Optional[int] = GLOBAL_SEED
+) -> pd.DataFrame:
+    """Generates data for an ANOVA test comparing multiple groups."""
+    rng = _get_rng(seed)
+    data, groups = [], []
+    for i, (mean, std) in enumerate(zip(means, stds)):
+        data.extend(rng.normal(mean, std, n))
+        groups.extend([f'Supplier {chr(65+i)}'] * n)
+    return pd.DataFrame({'Purity': data, 'Supplier': groups})
