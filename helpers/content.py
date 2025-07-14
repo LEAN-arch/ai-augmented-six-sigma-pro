@@ -116,3 +116,86 @@ def render_workflow_step(
         </div>
     </div>
     """
+# ==============================================================================
+# 3. AI & ADVISOR CONTENT (NEW)
+# ==============================================================================
+
+def get_ai_summary_for_case(case: Dict[str, Any]) -> str:
+    """Generates a concise, AI-style executive summary for a case study."""
+    return f"""
+    ### ✨ AI-Generated Executive Summary
+
+    - **Problem:** {case['Problem Statement']}
+    - **Key Root Cause(s) Identified:** {", ".join(case['Analyze Phase']['Root Causes'])}.
+    - **Solution Implemented:** {case['Improve Phase']['Solutions']}
+    - **Primary Tools for Success:** {", ".join(set(case['Analyze Phase']['Tools Used'] + case['Improve Phase']['Tools Used']))}.
+    - **Outcome:** Achieved a financial impact of **${case['Project Outcomes']['Financial Impact']:,}** and {case['Project Outcomes']['Operational Impact'].lower()}
+    """
+
+def get_tool_advisor_data() -> Dict[str, Dict[str, Any]]:
+    """
+    Returns a structured dictionary containing deep-dive information for
+    various statistical and quality tools.
+    """
+    return {
+        "One-Way ANOVA": {
+            "objective": "Compare Means",
+            "what_is_it": "A statistical test used to determine whether there are any statistically significant differences between the means of three or more independent groups.",
+            "when_to_use": [
+                "Comparing the average yield from three different manufacturing lines.",
+                "Testing if different suppliers provide raw material with the same average purity.",
+                "Evaluating if various sterilization methods affect the average bioburden.",
+            ],
+            "assumptions": {
+                "Data must be continuous": True,
+                "Groups must be independent": True,
+                "Data should be normally distributed (within each group)": True,
+                "Variances should be equal across groups (homoscedasticity)": True,
+            },
+            "interpretation": {
+                "statistic": "The **p-value** is the most critical output. A p-value less than your significance level (typically 0.05) indicates that you can reject the null hypothesis; it means at least one group mean is different from the others.",
+                "visualization": "Use a **Box Plot** to visualize the differences. Look for non-overlapping 'notches' or medians at different levels, which visually support a significant finding.",
+            },
+            "pitfalls": "ANOVA tells you *that* a difference exists, but not *which* specific groups are different. After a significant ANOVA result, you must run a **post-hoc test** (like Tukey's HSD) to find out which pairs of groups are different.",
+            "example_data_func": lambda: generate_anova_data(means=[102, 105, 98], stds=[2, 2.5, 2.2], n=30)
+        },
+        "Process Capability (Cpk)": {
+            "objective": "Analyze Process Capability",
+            "what_is_it": "A statistical measure that quantifies how well a process can produce output within its specification limits. It measures both the process spread and its centering relative to the specifications.",
+            "when_to_use": [
+                "Validating a process to ensure it can consistently meet customer requirements.",
+                "Providing objective evidence of process performance for regulatory submissions (e.g., PPQ).",
+                "Determining if a process improvement project has been successful.",
+            ],
+            "assumptions": {
+                "Data must be continuous": True,
+                "Data should be from a stable, in-control process": True,
+                "Data should be approximately normally distributed": True,
+            },
+            "interpretation": {
+                "statistic": "The **Cpk value** is the key metric. A Cpk of **1.33 or higher** is generally considered capable for most industries. A Cpk of **1.67 or higher** is a common goal for safety-critical processes.",
+                "visualization": "The **Capability Histogram** shows the 'voice of the process' (your data's distribution) against the 'voice of the customer' (the specification limits - LSL/USL). This plot instantly reveals if your process is off-center or has too much variation.",
+            },
+            "pitfalls": "A Cpk value is meaningless if the process is not stable and in statistical control. Always confirm process stability with a control chart *before* running a capability analysis.",
+            "example_data_func": None
+        },
+        "Design of Experiments (DOE)": {
+            "objective": "Look for Relationships",
+            "what_is_it": "A structured and efficient method for experimentation where multiple input factors are varied simultaneously to understand their individual and interactive effects on a process output.",
+            "when_to_use": [
+                "Optimizing a process with multiple parameters (e.g., finding the best temperature, pressure, and time).",
+                "Identifying the 'vital few' factors that have the biggest impact on performance.",
+                "Characterizing a design space for regulatory filings (QbD).",
+            ],
+            "assumptions": {
+                "Factors can be controlled": True,
+                "Response can be measured quantitatively": True,
+            },
+            "interpretation": {
+                "statistic": "The **Main Effects Plot** shows the impact of each individual factor. The **Interaction Plot** is crucial and reveals if the effect of one factor depends on the level of another—an insight impossible with one-factor-at-a-time testing.",
+                "visualization": "A **Pareto Plot of Effects** ranks the factors and interactions by importance. A **Cube Plot** or **Contour Plot** helps visualize the relationship between inputs and the output.",
+            },
+            "pitfalls": "Failing to include center points in the experiment, which prevents you from detecting curvature in the process response. Also, failing to randomize the experimental runs can lead to incorrect conclusions due to time-based effects.",
+            "example_data_func": None
+        }
+    }
