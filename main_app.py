@@ -20,6 +20,8 @@ try:
         show_analyze_phase, show_improve_phase, show_control_phase,
         show_comparison_matrix, show_hybrid_manifesto
     )
+        show_case_study_library, show_tool_advisor
+    )
 except ImportError as e:
     error_msg = (
         f"A critical module is missing: {e}. "
@@ -77,6 +79,12 @@ class BioAIApp:
             ("Analyze: Root Cause & Failure", show_analyze_phase, "📈"),
             ("Improve: Optimization & Robustness", show_improve_phase, "⚙️"),
             ("Control: Lab Operations & PMS", show_control_phase, "📡"),
+            ("Methodology Comparison", show_comparison_matrix, "⚔️"),
+            ("The Hybrid Manifesto & GxP", show_hybrid_manifesto, "🤝")
+                        # --- New Pages Added to Navigation ---
+            ("Statistical Tool Advisor", show_tool_advisor, "🧭"),
+            ("Case Study Library", show_case_study_library, "📚"),
+            # ---
             ("Methodology Comparison", show_comparison_matrix, "⚔️"),
             ("The Hybrid Manifesto & GxP", show_hybrid_manifesto, "🤝")
         ]
