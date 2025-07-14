@@ -738,10 +738,8 @@ def show_tool_advisor():
     """)
     st.divider()
 
-    # --- 1. Interactive Sankey Diagram ---
     st.plotly_chart(plot_tool_advisor_sankey(), use_container_width=True)
 
-    # --- 2. Tool Deep Dive Section ---
     st.header("Tool Deep Dive")
     tool_data = get_tool_advisor_data()
     tool_names = list(tool_data.keys())
@@ -750,66 +748,42 @@ def show_tool_advisor():
 
     if selected_tool and selected_tool in tool_data:
         tool_info = tool_data[selected_tool]
-
         with st.container(border=True):
             st.subheader(f"Deep Dive: {selected_tool}")
-            
-            # --- What is it & When to Use It ---
             col1, col2 = st.columns(2)
             with col1:
-                st.markdown("##### What is it?")
-                st.markdown(tool_info['what_is_it'])
+                st.markdown("##### What is it?"); st.markdown(tool_info['what_is_it'])
             with col2:
                 st.markdown("##### When to Use It")
-                for scenario in tool_info['when_to_use']:
-                    st.markdown(f"- {scenario}")
-            
+                for scenario in tool_info['when_to_use']: st.markdown(f"- {scenario}")
             st.divider()
-
-            # --- Assumptions & Pitfalls ---
             st.markdown("##### Key Assumptions & Common Pitfalls")
             col3, col4 = st.columns(2)
             with col3:
                 with st.expander("Data Requirements & Assumptions", expanded=True):
-                    for assumption, _ in tool_info['assumptions'].items():
-                        st.markdown(f"✅ {assumption}")
+                    for assumption, _ in tool_info['assumptions'].items(): st.markdown(f"✅ {assumption}")
             with col4:
                 with st.expander("Common Pitfalls & Warnings", expanded=True):
                     st.warning(f"**Warning:** {tool_info['pitfalls']}")
-
             st.divider()
-            
-            # --- Interpretation Guide ---
             st.markdown("##### Interpreting the Output (The 'So What?')")
             col5, col6 = st.columns(2)
-            with col5:
-                st.info(f"**Key Statistic:** {tool_info['interpretation']['statistic']}")
-            with col6:
-                st.info(f"**Visual Interpretation:** {tool_info['interpretation']['visualization']}")
-
-            # --- "Try It Out" Section ---
+            with col5: st.info(f"**Key Statistic:** {tool_info['interpretation']['statistic']}")
+            with col6: st.info(f"**Visual Interpretation:** {tool_info['interpretation']['visualization']}")
             if tool_info.get("example_data_func"):
-                st.divider()
-                st.subheader("🔬 Try It Out!")
+                st.divider(); st.subheader("🔬 Try It Out!")
                 st.markdown(f"See a live example of a **{selected_tool}** analysis.")
-                
                 if st.button(f"Run Sample {selected_tool} Analysis", type="primary"):
-                    # Generate sample data using the function defined in the content dictionary
                     sample_df = tool_info["example_data_func"]()
-                    
                     if selected_tool == "One-Way ANOVA":
                         value_col, group_col = 'Purity', 'Supplier'
                         fig, f_val, p_val = plot_anova_results(sample_df, value_col, group_col)
-
                         st.plotly_chart(fig, use_container_width=True)
-
-                        # AI Augmentation: Natural Language Interpretation
                         st.markdown("##### 🤖 AI-Powered Interpretation")
                         if p_val < 0.05:
                             st.success(f"**Conclusion:** The p-value of **{p_val:.3f}** is less than 0.05, indicating a **statistically significant difference** exists between the average {value_col.lower()} of at least two suppliers. The box plot visually confirms this difference.")
                         else:
                             st.error(f"**Conclusion:** The p-value of **{p_val:.3f}** is greater than 0.05, indicating there is **no statistically significant difference** between the average {value_col.lower()} of the suppliers based on this data.")
-
 
 # ==============================================================================
 # NEW PAGE: CASE STUDY LIBRARY
@@ -823,151 +797,78 @@ def render_contextual_cases(current_phase: str):
     A helper to find and display case studies relevant to the current DMAIC phase.
     """
     case_studies = load_all_case_studies()
-    relevant_cases = []
-    
-    phase_key_map = {
-        "Define": "Define Phase", "Measure": "Measure Phase", "Analyze": "Analyze Phase",
-        "Improve": "Improve Phase", "Control": "Control Phase"
-    }
+    phase_key_map = {"Define": "Define Phase", "Measure": "Measure Phase", "Analyze": "Analyze Phase", "Improve": "Improve Phase", "Control": "Control Phase"}
     phase_key = phase_key_map.get(current_phase)
-    
     if phase_key:
-        # A simple logic to find relevant cases; could be improved with better tagging
-        relevant_cases = [
-            case for case in case_studies
-            if case.get(phase_key, {}).get("Tools Used") or case.get(phase_key, {}).get("Charter")
-        ]
-
-    if relevant_cases:
-        st.markdown("Here are a few projects that involved significant work in this phase:")
-        for case in relevant_cases[:2]: # Show top 2
-            if st.button(f"**{case['Title']}** ({case['Industry/Sector'][0]})", key=f"ctx_{case['id']}_{current_phase}", use_container_width=True):
-                st.query_params.page = "Case Study Library"
-                st.query_params.case_id = case['id']
-                st.rerun()
-
-    else:
-        st.info("No specific case studies highlighting this phase were found in the library.")
+        relevant_cases = [case for case in case_studies if case.get(phase_key, {}).get("Tools Used") or case.get(phase_key, {}).get("Charter")]
+        if relevant_cases:
+            st.markdown("Here are a few projects that involved significant work in this phase:")
+            for case in relevant_cases[:2]:
+                if st.button(f"**{case['Title']}** ({case['Industry/Sector'][0]})", key=f"ctx_{case['id']}_{current_phase}", use_container_width=True):
+                    st.query_params.page = "Case Study Library"; st.query_params.case_id = case['id']; st.rerun()
+        else:
+            st.info("No specific case studies highlighting this phase were found in the library.")
 
 def show_case_study_library():
     """Renders the interactive Case Study library with filtering and search."""
     st.title("📚 Interactive Case Study Library")
     
     case_studies = load_all_case_studies()
-    
-    # Check for detailed view request from query params
     if "case_id" in st.query_params:
         case_id = st.query_params["case_id"]
         selected_case = next((c for c in case_studies if c['id'] == case_id), None)
-        if selected_case:
-            render_case_study_detail(selected_case)
+        if selected_case: render_case_study_detail(selected_case)
         else:
             st.error("Case study not found.")
-            if st.button("← Back to Library"):
-                st.query_params.clear()
-                st.rerun()
-    else:
-        render_library_view(case_studies)
+            if st.button("← Back to Library"): st.query_params.clear(); st.rerun()
+    else: render_library_view(case_studies)
 
 def render_library_view(case_studies):
     """The main view with filters and cards."""
-    st.markdown("""
-    Explore a curated repository of real-world projects. Use the filters to find case studies relevant to your industry, business function, or the specific tools you're using.
-    """)
+    st.markdown("Explore a curated repository of real-world projects. Use the filters to find case studies relevant to your industry, business function, or the specific tools you're using.")
     st.divider()
-
-    # --- Filtering and Search UI ---
     with st.sidebar:
         st.header("🔎 Filter Case Studies")
-        
-        # Faceted Search
-        industries = sorted(list(set(sum([c['Industry/Sector'] for c in case_studies], []))))
-        selected_industries = st.multiselect("Industry / Sector", industries, placeholder="Choose an industry")
-        
-        units = sorted(list(set([c['Business Unit'] for c in case_studies])))
-        selected_units = st.multiselect("Business Unit", units, placeholder="Choose a business unit")
-        
-        tools = sorted(list(set(sum([c['Analyze Phase']['Tools Used'] + c['Improve Phase']['Tools Used'] for c in case_studies], []))))
-        selected_tools = st.multiselect("Tools Used", tools, placeholder="Filter by tools used")
-
-        # Semantic Search (simulated by keyword search for this implementation)
-        st.divider()
-        search_query = st.text_input("🔬 Natural Language Search", placeholder="e.g., improve yield in upstream")
-
-    # --- Apply Filters ---
+        industries = sorted(list(set(sum([c['Industry/Sector'] for c in case_studies], [])))); selected_industries = st.multiselect("Industry / Sector", industries, placeholder="Choose an industry")
+        units = sorted(list(set([c['Business Unit'] for c in case_studies]))); selected_units = st.multiselect("Business Unit", units, placeholder="Choose a business unit")
+        tools = sorted(list(set(sum([c['Analyze Phase']['Tools Used'] + c['Improve Phase']['Tools Used'] for c in case_studies], [])))); selected_tools = st.multiselect("Tools Used", tools, placeholder="Filter by tools used")
+        st.divider(); search_query = st.text_input("🔬 Natural Language Search", placeholder="e.g., improve yield in upstream")
     filtered_cases = case_studies
-    if selected_industries:
-        filtered_cases = [c for c in filtered_cases if any(i in c['Industry/Sector'] for i in selected_industries)]
-    if selected_units:
-        filtered_cases = [c for c in filtered_cases if c['Business Unit'] in selected_units]
-    if selected_tools:
-        filtered_cases = [c for c in filtered_cases if any(t in (c['Analyze Phase']['Tools Used'] + c['Improve Phase']['Tools Used']) for t in selected_tools)]
-    if search_query:
-        query_lower = search_query.lower()
-        filtered_cases = [c for c in filtered_cases if query_lower in c['Problem Statement'].lower() or query_lower in c['Title'].lower() or query_lower in str(c['Analyze Phase']['Root Causes'])]
-
-    st.subheader(f"Showing {len(filtered_cases)} of {len(case_studies)} Case Studies")
-    st.divider()
-
-    # --- Display Case Study Cards ---
-    if not filtered_cases:
-        st.warning("No case studies match your current filter criteria.")
+    if selected_industries: filtered_cases = [c for c in filtered_cases if any(i in c['Industry/Sector'] for i in selected_industries)]
+    if selected_units: filtered_cases = [c for c in filtered_cases if c['Business Unit'] in selected_units]
+    if selected_tools: filtered_cases = [c for c in filtered_cases if any(t in (c['Analyze Phase']['Tools Used'] + c['Improve Phase']['Tools Used']) for t in selected_tools)]
+    if search_query: query_lower = search_query.lower(); filtered_cases = [c for c in filtered_cases if query_lower in c['Problem Statement'].lower() or query_lower in c['Title'].lower() or query_lower in str(c['Analyze Phase']['Root Causes'])]
+    st.subheader(f"Showing {len(filtered_cases)} of {len(case_studies)} Case Studies"); st.divider()
+    if not filtered_cases: st.warning("No case studies match your current filter criteria.")
     else:
         for case in filtered_cases:
             with st.container(border=True):
                 col1, col2 = st.columns([3, 1])
                 with col1:
-                    st.markdown(f"##### {case['Title']}")
-                    st.caption(f"**Industry:** {', '.join(case['Industry/Sector'])} | **Business Unit:** {case['Business Unit']}")
-                    st.markdown(f"**Problem:** *{case['Problem Statement']}*")
+                    st.markdown(f"##### {case['Title']}"); st.caption(f"**Industry:** {', '.join(case['Industry/Sector'])} | **Business Unit:** {case['Business Unit']}"); st.markdown(f"**Problem:** *{case['Problem Statement']}*")
                 with col2:
                     st.metric("💰 Financial Impact", f"${case['Project Outcomes']['Financial Impact']/1e6:.1f}M")
-                    if st.button("View Details", key=case['id'], type="primary", use_container_width=True):
-                        st.query_params.case_id = case['id']
-                        st.rerun()
+                    if st.button("View Details", key=case['id'], type="primary", use_container_width=True): st.query_params.case_id = case['id']; st.rerun()
 
 def render_case_study_detail(case):
     """Renders the detailed view for a single selected case study."""
-    if st.button("← Back to Library"):
-        st.query_params.clear()
-        st.rerun()
-        
-    st.title(case['Title'])
-    st.caption(f"**Industry:** {', '.join(case['Industry/Sector'])} | **Business Unit:** {case['Business Unit']}")
-    st.markdown(f"> {case['Problem Statement']}")
-    
-    # AI Summary Button
+    if st.button("← Back to Library"): st.query_params.clear(); st.rerun()
+    st.title(case['Title']); st.caption(f"**Industry:** {', '.join(case['Industry/Sector'])} | **Business Unit:** {case['Business Unit']}"); st.markdown(f"> {case['Problem Statement']}")
     if st.session_state.get(f"summary_visible_{case['id']}", False):
-         with st.container(border=True):
-            st.markdown(get_ai_summary_for_case(case))
-
-    if st.button("✨ Generate AI Summary", key=f"summary_{case['id']}"):
-        st.session_state[f"summary_visible_{case['id']}"] = True
-        st.rerun()
-
+        with st.container(border=True): st.markdown(get_ai_summary_for_case(case))
+    if st.button("✨ Generate AI Summary", key=f"summary_{case['id']}"): st.session_state[f"summary_visible_{case['id']}"] = True; st.rerun()
     st.divider()
-
-    # --- DMAIC Tabs ---
     d, m, a, i, c = st.tabs(["🌀 Define", "🔬 Measure", "📈 Analyze", "⚙️ Improve", "📡 Control"])
-    
     with d:
-        st.subheader("Define Phase")
-        st.markdown(f"**Project Charter:** {case['Define Phase']['Charter']}")
-        st.markdown(f"**SIPOC Focus:** {case['Define Phase']['SIPOC']}")
+        st.subheader("Define Phase"); st.markdown(f"**Project Charter:** {case['Define Phase']['Charter']}"); st.markdown(f"**SIPOC Focus:** {case['Define Phase']['SIPOC']}")
     with m:
-        st.subheader("Measure Phase")
-        st.markdown(f"**KPIs Measured:** {', '.join(case['Measure Phase']['KPIs'])}")
-        st.metric("Baseline Performance", value=case['Measure Phase']['Baseline'])
+        st.subheader("Measure Phase"); st.markdown(f"**KPIs Measured:** {', '.join(case['Measure Phase']['KPIs'])}"); st.metric("Baseline Performance", value=case['Measure Phase']['Baseline'])
     with a:
-        st.subheader("Analyze Phase")
-        st.markdown(f"**Validated Root Causes:**")
-        for cause in case['Analyze Phase']['Root Causes']:
-            st.markdown(f"- {cause}")
+        st.subheader("Analyze Phase"); st.markdown(f"**Validated Root Causes:**");
+        for cause in case['Analyze Phase']['Root Causes']: st.markdown(f"- {cause}")
         st.markdown(f"**Tools Used:** `{', '.join(case['Analyze Phase']['Tools Used'])}`")
     with i:
-        st.subheader("Improve Phase")
-        st.markdown(f"**Solutions Implemented:** {case['Improve Phase']['Solutions']}")
-        st.markdown(f"**Tools Used:** `{', '.join(case['Improve Phase']['Tools Used'])}`")
+        st.subheader("Improve Phase"); st.markdown(f"**Solutions Implemented:** {case['Improve Phase']['Solutions']}"); st.markdown(f"**Tools Used:** `{', '.join(case['Improve Phase']['Tools Used'])}`")
     with c:
         st.subheader("Control Phase")
         # --- CRITICAL FIX IMPLEMENTED HERE ---
@@ -976,9 +877,6 @@ def render_case_study_detail(case):
     st.divider()
     st.header("Project Outcomes & Lessons Learned")
     col1, col2 = st.columns(2)
-    with col1:
-        st.metric("💰 Final Financial Impact (Hard/Soft Savings)", f"${case['Project Outcomes']['Financial Impact']:,}")
-    with col2:
-        st.metric("📈 Operational Impact", case['Project Outcomes']['Operational Impact'])
-    
+    with col1: st.metric("💰 Final Financial Impact (Hard/Soft Savings)", f"${case['Project Outcomes']['Financial Impact']:,}")
+    with col2: st.metric("📈 Operational Impact", case['Project Outcomes']['Operational Impact'])
     st.info(f"**Key Lesson Learned:** {case['Project Outcomes']['Lessons Learned']}")
