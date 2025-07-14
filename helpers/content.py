@@ -5,17 +5,17 @@ This module centralizes all static text, markdown, and HTML content used
 throughout the application.
 
 Author: Bio-AI Excellence SME Collective
-Version: 32.2 (Inclusive Regulatory Content Build)
-Date: 2025-07-16
+Version: 32.3 (Typing Hotfix)
+Date: 2025-07-17
 
-Changelog from v32.1:
-- [CRITICAL-FIX] Corrected a major omission by inclusively ADDING all new
-  regulatory scenarios to the `get_guidance_data` function while preserving
-  all original scenarios. The recommender is now complete and correct.
+Changelog from v32.2:
+- [BUGFIX] Corrected a `NameError` by importing the `Any` type from the
+  `typing` module, which is used in the new case study functions.
 """
 
-from typing import List, Dict
+from typing import List, Dict, Any
 from .styling import COLORS
+from .data_generators import generate_anova_data
 
 # ==============================================================================
 # 1. UI DATA STRUCTURES
@@ -116,6 +116,7 @@ def render_workflow_step(
         </div>
     </div>
     """
+
 # ==============================================================================
 # 3. AI & ADVISOR CONTENT (NEW)
 # ==============================================================================
