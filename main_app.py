@@ -6,18 +6,15 @@ Excellence Framework application. This version is updated to incorporate the
 new Case Study Library and Statistical Tool Advisor pages.
 
 Author: AI Engineering SME
-Version: 30.0 (Feature-Complete Final Build)
+Version: 30.1 (Navigation Hotfix)
 Date: 2025-07-17
 
-Changelog from v29.2:
-- [FEATURE] Imported the new page rendering functions `show_case_study_library`
-  and `show_tool_advisor` from the `app_pages` module.
-- [ENHANCEMENT] Updated the `_build_sidebar` method to add the "Statistical Tool
-  Advisor" and "Case Study Library" to the main application navigation list,
-  making them accessible to the user.
-- [ROBUSTNESS] The application's `_render_page` method now correctly handles
-  navigation to the new pages, including state management via query parameters
-  for the case study deep dives.
+Changelog from v30.0:
+- [BUGFIX] Corrected a `StreamlitAPIException` related to non-unique URL
+  pathnames in `st.navigation`. Removed the explicit `url_path` generation,
+  allowing Streamlit to handle path creation automatically and robustly.
+- [ENHANCEMENT] Simplified the page selection logic to rely solely on the
+  `st.navigation` component, which improves maintainability.
 """
 import logging
 import sys
@@ -62,10 +59,7 @@ class BioAIApp:
         self.logger = self._setup_logging()
         self.config: Dict[str, Any] = {}
         self.pages: List[st.Page] = []
-        # Use query params to determine the selected page, allowing for direct linking
-        if 'page' not in st.query_params:
-            st.query_params.page = "Welcome & Framework"
-        self.selected_page_title: str = st.query_params.page
+        self.selected_page: st.Page = None
 
     def _setup_logging(self) -> logging.Logger:
         if not logging.root.handlers:
@@ -101,18 +95,16 @@ class BioAIApp:
             ("The Hybrid Manifesto & GxP", show_hybrid_manifesto, "🤝")
         ]
         
-        # Create a mapping from title to function for st.navigation
-        self.pages_dict = {title: func for title, func, icon in page_modules}
-        
-        # Create st.Page objects for st.navigation
-        self.pages = [st.Page(func, title=title, icon=icon, url_path=title.lower().replace(" ", "_").replace("&","and")) for title, func, icon in page_modules]
+        # Create st.Page objects for st.navigation.
+        # REMOVED the problematic url_path parameter to let Streamlit handle it.
+        self.pages = [st.Page(func, title=title, icon=icon) for title, func, icon in page_modules]
         
         with st.sidebar:
             st.title("🧬 Bio-AI Framework")
             st.markdown("##### Assay Development Playbook")
             st.markdown("Navigate the R&D lifecycle below.")
             
-            # st.navigation handles page selection and updates query params
+            # st.navigation handles page selection and updates query params robustly.
             self.selected_page = st.navigation(self.pages)
             
             st.divider()
