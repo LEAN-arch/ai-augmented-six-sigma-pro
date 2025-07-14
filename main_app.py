@@ -2,11 +2,22 @@
 main_app.py
 
 Serves as the primary entry point and navigation controller for the Bio-AI
-Excellence Framework application.
+Excellence Framework application. This version is updated to incorporate the
+new Case Study Library and Statistical Tool Advisor pages.
 
 Author: AI Engineering SME
-Version: 29.2 (Definitive Final Build)
-Date: 2025-07-13
+Version: 30.0 (Feature-Complete Final Build)
+Date: 2025-07-17
+
+Changelog from v29.2:
+- [FEATURE] Imported the new page rendering functions `show_case_study_library`
+  and `show_tool_advisor` from the `app_pages` module.
+- [ENHANCEMENT] Updated the `_build_sidebar` method to add the "Statistical Tool
+  Advisor" and "Case Study Library" to the main application navigation list,
+  making them accessible to the user.
+- [ROBUSTNESS] The application's `_render_page` method now correctly handles
+  navigation to the new pages, including state management via query parameters
+  for the case study deep dives.
 """
 import logging
 import sys
@@ -18,8 +29,8 @@ try:
     from app_pages import (
         show_welcome_page, show_define_phase, show_measure_phase,
         show_analyze_phase, show_improve_phase, show_control_phase,
-        show_comparison_matrix, show_hybrid_manifesto
-    )
+        show_comparison_matrix, show_hybrid_manifesto,
+        # --- New Page Imports ---
         show_case_study_library, show_tool_advisor
     )
 except ImportError as e:
@@ -51,7 +62,10 @@ class BioAIApp:
         self.logger = self._setup_logging()
         self.config: Dict[str, Any] = {}
         self.pages: List[st.Page] = []
-        self.selected_page: st.Page = None
+        # Use query params to determine the selected page, allowing for direct linking
+        if 'page' not in st.query_params:
+            st.query_params.page = "Welcome & Framework"
+        self.selected_page_title: str = st.query_params.page
 
     def _setup_logging(self) -> logging.Logger:
         if not logging.root.handlers:
@@ -79,21 +93,28 @@ class BioAIApp:
             ("Analyze: Root Cause & Failure", show_analyze_phase, "📈"),
             ("Improve: Optimization & Robustness", show_improve_phase, "⚙️"),
             ("Control: Lab Operations & PMS", show_control_phase, "📡"),
-            ("Methodology Comparison", show_comparison_matrix, "⚔️"),
-            ("The Hybrid Manifesto & GxP", show_hybrid_manifesto, "🤝")
-                        # --- New Pages Added to Navigation ---
+            # --- New Pages Added to Navigation ---
             ("Statistical Tool Advisor", show_tool_advisor, "🧭"),
             ("Case Study Library", show_case_study_library, "📚"),
             # ---
             ("Methodology Comparison", show_comparison_matrix, "⚔️"),
             ("The Hybrid Manifesto & GxP", show_hybrid_manifesto, "🤝")
         ]
-        self.pages = [st.Page(func, title=title, icon=icon) for title, func, icon in page_modules]
+        
+        # Create a mapping from title to function for st.navigation
+        self.pages_dict = {title: func for title, func, icon in page_modules}
+        
+        # Create st.Page objects for st.navigation
+        self.pages = [st.Page(func, title=title, icon=icon, url_path=title.lower().replace(" ", "_").replace("&","and")) for title, func, icon in page_modules]
+        
         with st.sidebar:
             st.title("🧬 Bio-AI Framework")
             st.markdown("##### Assay Development Playbook")
             st.markdown("Navigate the R&D lifecycle below.")
+            
+            # st.navigation handles page selection and updates query params
             self.selected_page = st.navigation(self.pages)
+            
             st.divider()
             st.info("A commercial-grade hybrid framework for superior biotech R&D.")
             app_version = self.config.get("app_meta", {}).get("version", "30.0") # Version bumped for new release
@@ -105,6 +126,7 @@ class BioAIApp:
         page_title = self.selected_page.title
         self.logger.info(f"Rendering page: '{page_title}'")
         try:
+            # st.navigation takes care of running the correct page function
             self.selected_page.run()
         except Exception as e:
             self.logger.error(f"Error rendering page '{page_title}'", exc_info=True)
@@ -112,7 +134,12 @@ class BioAIApp:
             st.exception(e)
 
     def run(self) -> None:
-        st.set_page_config(page_title="Bio-AI Excellence Framework", page_icon="🧬", layout="wide", initial_sidebar_state="expanded")
+        st.set_page_config(
+            page_title="Bio-AI Excellence Framework",
+            page_icon="🧬",
+            layout="wide",
+            initial_sidebar_state="expanded"
+        )
         self.logger.info("Application starting up.")
         self._load_config()
         self._apply_styling()
