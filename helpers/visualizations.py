@@ -386,3 +386,76 @@ def plot_bayesian_optimization_interactive(true_func, x_range, sampled_points) -
     fig = go.Figure(); fig.add_trace(go.Scatter(x=np.concatenate([x_range, x_range[::-1]]), y=np.concatenate([y_pred - 1.96 * sigma, (y_pred + 1.96 * sigma)[::-1]]), fill='toself', fillcolor=hex_to_rgba(COLORS['primary'], 0.2), line=dict(color='rgba(255,255,255,0)'), name='95% Confidence Interval'))
     fig.add_trace(go.Scatter(x=x_range, y=true_func(x_range), mode='lines', name='True Function (Unknown to Model)', line=dict(color=COLORS['dark_gray'], dash='dash'))); fig.add_trace(go.Scatter(x=x_range, y=y_pred, mode='lines', name='GP Mean Prediction', line=dict(color=COLORS['primary'], width=3))); fig.add_trace(go.Scatter(x=x_range, y=ucb, mode='lines', name='Acquisition Function (UCB)', line=dict(color=COLORS['secondary'], dash='dot', width=2))); fig.add_trace(go.Scatter(x=sampled_points['x'], y=sampled_points['y'], mode='markers', name='Sampled Points', marker=dict(color=COLORS['danger'], size=12, symbol='x', line_width=2))); fig.add_vline(x=next_point, line=dict(color=COLORS['accent'], dash='longdash', width=2), annotation_text="Next Experiment", annotation_position="top left")
     fig.update_layout(title=f"<b>Bayesian Optimization:</b> Iteration {len(sampled_points['x'])}", xaxis_title="Process Parameter (e.g., Annealing Temperature)", yaxis_title="Assay Yield / Performance", legend=dict(y=1.15)); return fig, next_point
+
+# --- 4. NEW VISUALIZATIONS FOR ADVISOR & CASE STUDIES (NEW) ---
+
+def plot_tool_advisor_sankey() -> go.Figure:
+    """
+    Creates an interactive Sankey diagram to guide users to the correct
+    statistical tool based on their objective and data type.
+    """
+    labels = [
+        # Nodes 0-3: Objectives
+        'Compare Means', 'Look for Relationships', 'Analyze Process Capability', 'Monitor a Process',
+        # Nodes 4-5: Number of Groups
+        '2 Groups', '3+ Groups',
+        # Nodes 6-7: Data Type
+        'Continuous Data', 'Attribute Data',
+        # Nodes 8-15: Recommended Tools
+        '2-Sample t-Test', 'Paired t-Test', 'One-Way ANOVA',
+        'Regression', 'DOE', 'Cpk Analysis', 'P/NP Chart', 'I-MR / XbarR Chart'
+    ]
+    
+    source = [0, 0, 1, 1, 2, 3, 3, 4, 4, 5]
+    target = [4, 5, 6, 7, 6, 6, 7, 8, 9, 10]
+    value =  [2, 3, 3, 1, 4, 3, 2, 1, 1, 3] # Flow values for sizing
+    
+    # Add tool nodes
+    source.extend([6, 6, 6, 7, 7])
+    target.extend([11, 12, 13, 14, 15])
+    value.extend( [2, 1, 4, 2, 3])
+
+    fig = go.Figure(data=[go.Sankey(
+        node=dict(
+            pad=25,
+            thickness=20,
+            line=dict(color="black", width=0.5),
+            label=labels,
+            color=COLORS['primary']
+        ),
+        link=dict(
+            source=source,
+            target=target,
+            value=value,
+            color=hex_to_rgba(COLORS['dark_gray'], 0.4)
+        )
+    )])
+
+    fig.update_layout(
+        title_text="<b>Interactive Statistical Tool Advisor</b><br>Follow the path from your objective to the recommended tool",
+        font=dict(size=12),
+        height=600,
+        margin=dict(t=100, l=10, r=10, b=10)
+    )
+    return fig
+
+
+def plot_anova_results(df: pd.DataFrame, value_col: str, group_col: str) -> Tuple[go.Figure, float, float]:
+    """
+    Performs a One-Way ANOVA, generates a box plot, and returns key results.
+    """
+    groups = df[group_col].unique()
+    grouped_data = [df[value_col][df[group_col] == g] for g in groups]
+    
+    f_val, p_val = f_oneway(*grouped_data)
+    
+    fig = px.box(
+        df, x=group_col, y=value_col, color=group_col,
+        title=f"<b>ANOVA Results:</b> F-statistic = {f_val:.2f}, p-value = {p_val:.3f}",
+        points="all",
+        color_discrete_sequence=px.colors.qualitative.T10
+    )
+    
+    fig.update_layout(showlegend=False)
+    
+    return fig, f_val, p_val
