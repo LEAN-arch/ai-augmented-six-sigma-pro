@@ -4,16 +4,21 @@ app_pages.py
 Contains the rendering logic for each main page of the Bio-AI Excellence
 Framework. This definitive, content-rich version integrates expert-level SME
 explanations directly alongside every plot, figure, and table, and features
-a substantially improved narrative across all pages.
+a substantially improved narrative across all pages. This version has been
+extended to include the Interactive Case Study Library and Statistical Tool Advisor.
 
 Author: Bio-AI Excellence SME Collective
-Version: 33.3 (Definitive Final Build)
-Date: 2025-07-16
+Version: 34.0 (Feature-Complete Build)
+Date: 2025-07-17
 
-Changelog from v33.2:
-- [FINAL-REVIEW] Performed a line-by-line review to ensure all code, content,
-  and reinstated plots are present and unabridged. This is the final,
-  complete, and correct version of the file. No content has been removed.
+Changelog from v33.3:
+- [FEATURE] Added the complete "Interactive Case Study Library" feature, including
+  data ingestion simulation, faceted search UI, and detailed case view.
+- [FEATURE] Added the complete "Statistical Tool Advisor" feature, including the
+  interactive Sankey diagram, deep-dive content pages, and a "Try It Out"
+  ANOVA analysis module.
+- [ENHANCEMENT] Integrated contextual case study recommendations into the
+  sidebar of each DMAIC phase page.
 """
 
 import streamlit as st
@@ -22,24 +27,18 @@ import numpy as np
 from typing import Dict, Callable, Any
 
 # ==============================================================================
-# 1. IMPORTS FROM HELPER MODULES
+# 1. IMPORTS FROM HELPER MODULES (UPDATED)
 # ==============================================================================
 from helpers.styling import COLORS
-from helpers.content import get_guidance_data, render_workflow_step
+from helpers.content import get_guidance_data, render_workflow_step, get_tool_advisor_data, get_ai_summary_for_case
 from helpers.data_generators import (
     generate_nonlinear_data, generate_doe_data, generate_rsm_data,
     generate_dfmea_data, generate_qfd_data, generate_kano_data,
     generate_pareto_data, generate_risk_signal_data,
     generate_adverse_event_data, generate_pccp_data,
     generate_control_chart_data, generate_hotelling_data,
-    generate_process_data, generate_capa_data
-)
-from helpers.ml_models import (
-    train_regression_models, get_shap_explanation,
-    perform_risk_signal_clustering, perform_text_clustering,
-    perform_topic_modeling_on_capa
-)
-from helpers.visualizations import * # Import all upgraded plotting functions
+    generate_process_data, generate_capa_data,
+    # --- New Imports ---
     generate_case_study_data, generate_anova_data
 )
 from helpers.ml_models import (
@@ -50,6 +49,7 @@ from helpers.ml_models import (
 from helpers.visualizations import * # Import all upgraded plotting functions
 # --- New Imports ---
 from scipy.stats import f_oneway
+
 # ==============================================================================
 # 2. CONSTANTS AND CONFIGURATIONS
 # ==============================================================================
@@ -145,7 +145,7 @@ def show_welcome_page() -> None:
     - **Improve:** Optimize your process using powerful experimental designs and smart algorithms.
     - **Control:** Implement systems to monitor performance and ensure your gains are sustained over time.
 
-    In each section, you will find classical tools presented alongside their AI-augmented counterparts, complete with detailed explanations of their purpose, methodology, and interpretation.
+    In each section, you will find classical tools presented alongside their AI-augmented counterparts, complete with detailed explanations of their purpose, methodology, and interpretation. The new **Statistical Tool Advisor** and **Case Study Library** provide further expert guidance and real-world examples.
     """)
     st.success("Begin your journey by selecting a phase from the navigation panel on the left.")
 
@@ -718,7 +718,9 @@ def show_hybrid_manifesto() -> None:
             recommendation = guidance_data[selected_scenario]
             st.success(f"##### Recommended Approach: {recommendation['approach']}")
             st.markdown(f"**Rationale:** {recommendation['rationale']}")
-    # ==============================================================================
+
+
+# ==============================================================================
 # NEW PAGE: STATISTICAL TOOL ADVISOR
 # ==============================================================================
 def show_tool_advisor():
@@ -827,17 +829,19 @@ def render_contextual_cases(current_phase: str):
     
     if phase_key:
         # Find cases where the 'Tools Used' in the relevant phase is not empty
+        # This is a simple logic; could be improved with better tagging
         relevant_cases = [
             case for case in case_studies
-            if case.get(phase_key, {}).get("Tools Used")
+            if case.get(phase_key, {}).get("Tools Used") or case.get(phase_key, {}).get("Charter")
         ]
 
     if relevant_cases:
         st.markdown("Here are a few projects that involved significant work in this phase:")
-        for case in relevant_cases[:3]: # Show top 3
+        for case in relevant_cases[:2]: # Show top 2
             if st.button(f"**{case['Title']}** ({case['Industry/Sector'][0]})", key=f"ctx_{case['id']}_{current_phase}", use_container_width=True):
-                st.query_params.page = "case_study"
-                st.query_params.case_id = case['id']
+                # Using query_params is a robust way to handle state for page navigation
+                st.query_params["page"] = "Case Study Library" # Navigate to the library
+                st.query_params["case_id"] = case['id'] # Specify which case to open
                 st.rerun()
 
     else:
@@ -849,7 +853,7 @@ def show_case_study_library():
     
     case_studies = load_all_case_studies()
     
-    # Check for detailed view request
+    # Check for detailed view request from query params
     if "case_id" in st.query_params:
         case_id = st.query_params["case_id"]
         selected_case = next((c for c in case_studies if c['id'] == case_id), None)
@@ -876,15 +880,15 @@ def render_library_view(case_studies):
         
         # Faceted Search
         industries = sorted(list(set(sum([c['Industry/Sector'] for c in case_studies], []))))
-        selected_industries = st.multiselect("Industry / Sector", industries)
+        selected_industries = st.multiselect("Industry / Sector", industries, placeholder="Choose an industry")
         
         units = sorted(list(set([c['Business Unit'] for c in case_studies])))
-        selected_units = st.multiselect("Business Unit", units)
+        selected_units = st.multiselect("Business Unit", units, placeholder="Choose a business unit")
         
         tools = sorted(list(set(sum([c['Analyze Phase']['Tools Used'] + c['Improve Phase']['Tools Used'] for c in case_studies], []))))
-        selected_tools = st.multiselect("Tools Used", tools)
+        selected_tools = st.multiselect("Tools Used", tools, placeholder="Filter by tools used")
 
-        # Semantic Search (simulated)
+        # Semantic Search (simulated by keyword search for this implementation)
         st.divider()
         search_query = st.text_input("🔬 Natural Language Search", placeholder="e.g., improve yield in upstream")
 
@@ -898,7 +902,7 @@ def render_library_view(case_studies):
         filtered_cases = [c for c in filtered_cases if any(t in (c['Analyze Phase']['Tools Used'] + c['Improve Phase']['Tools Used']) for t in selected_tools)]
     if search_query:
         query_lower = search_query.lower()
-        filtered_cases = [c for c in filtered_cases if query_lower in c['Problem Statement'].lower() or query_lower in c['Title'].lower()]
+        filtered_cases = [c for c in filtered_cases if query_lower in c['Problem Statement'].lower() or query_lower in c['Title'].lower() or query_lower in str(c['Analyze Phase']['Root Causes'])]
 
     st.subheader(f"Showing {len(filtered_cases)} of {len(case_studies)} Case Studies")
     st.divider()
@@ -917,7 +921,6 @@ def render_library_view(case_studies):
                 with col2:
                     st.metric("💰 Financial Impact", f"${case['Project Outcomes']['Financial Impact']/1e6:.1f}M")
                     if st.button("View Details", key=case['id'], type="primary", use_container_width=True):
-                        st.query_params.page = "case_study" # Optional, for clarity
                         st.query_params.case_id = case['id']
                         st.rerun()
 
@@ -932,10 +935,12 @@ def render_case_study_detail(case):
     st.markdown(f"> {case['Problem Statement']}")
     
     # AI Summary Button
-    if "show_summary" in st.session_state and st.session_state.show_summary:
-        st.markdown(get_ai_summary_for_case(case))
+    if st.session_state.get(f"summary_visible_{case['id']}", False):
+         with st.container(border=True):
+            st.markdown(get_ai_summary_for_case(case))
+
     if st.button("✨ Generate AI Summary", key=f"summary_{case['id']}"):
-        st.session_state.show_summary = True
+        st.session_state[f"summary_visible_{case['id']}"] = True
         st.rerun()
 
     st.divider()
@@ -950,7 +955,7 @@ def render_case_study_detail(case):
     with m:
         st.subheader("Measure Phase")
         st.markdown(f"**KPIs Measured:** {', '.join(case['Measure Phase']['KPIs'])}")
-        st.markdown(f"**Baseline Performance:** {case['Measure Phase']['Baseline']}")
+        st.metric("Baseline Performance", value=case['Measure Phase']['Baseline'])
     with a:
         st.subheader("Analyze Phase")
         st.markdown(f"**Validated Root Causes:**")
@@ -977,17 +982,28 @@ def render_case_study_detail(case):
     
     st.info(f"**Key Lesson Learned:** {case['Project Outcomes']['Lessons Learned']}")
     
-# --- INTEGRATE CONTEXTUAL HELPER INTO EXISTING PAGES ---
-# (A decorator to avoid code repetition)
+# ==============================================================================
+# CONTEXTUAL CASE RECOMMENDATION INTEGRATION
+# ==============================================================================
 def add_contextual_cases_to_page(page_function):
+    """
+    A decorator to add the contextual case study sidebar to DMAIC pages
+    without repeating code.
+    """
     def wrapper(*args, **kwargs):
-        page_function(*args, **kwargs) # Run the original page function
+        # Add the expander to the sidebar *before* rendering the page content
         phase_name = page_function.__name__.replace("show_", "").replace("_phase", "").title()
-        with st.expander(f"📚 Relevant Case Studies for the {phase_name} Phase"):
-            render_contextual_cases(phase_name)
+        with st.sidebar:
+            st.divider()
+            with st.expander(f"📚 Relevant Case Studies"):
+                render_contextual_cases(phase_name)
+        
+        # Now, run the original page function to render the main content
+        page_function(*args, **kwargs)
+
     return wrapper
 
-# Apply the decorator to existing DMAIC pages
+# Apply the decorator to existing DMAIC pages to add the new functionality
 show_define_phase = add_contextual_cases_to_page(show_define_phase)
 show_measure_phase = add_contextual_cases_to_page(show_measure_phase)
 show_analyze_phase = add_contextual_cases_to_page(show_analyze_phase)
