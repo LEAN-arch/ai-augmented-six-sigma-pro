@@ -9,18 +9,18 @@ controlled by a seeded random number generator. This is essential for
 consistent demonstrations and testing.
 
 Author: AI Engineering SME
-Version: 30.0 (Gold-Standard Build)
-Date: 2025-07-14
+Version: 30.1 (Typing Hotfix)
+Date: 2025-07-17
 
-Changelog from v29.1:
-- [REVIEW] Data generation functions reviewed and confirmed to be of
-  gold-standard quality, providing a stable and realistic data foundation
-  for the upgraded v30.0 visualizations. No changes were necessary.
+Changelog from v30.0:
+- [BUGFIX] Corrected a `NameError` by importing the `Any` type from the
+  `typing` module, which is used in the new `generate_case_study_data` and
+  `generate_anova_data` functions.
 """
 
 import numpy as np
 import pandas as pd
-from typing import List, Tuple, Dict, Optional
+from typing import List, Tuple, Dict, Optional, Any
 
 # --- Constants for realistic data simulation ---
 GLOBAL_SEED = 42
@@ -337,6 +337,7 @@ def generate_pccp_data(seed: Optional[int] = GLOBAL_SEED) -> pd.DataFrame:
     performance[70:] -= 0.05
     
     return pd.DataFrame({'Deployment_Day': time, 'Model_AUC': np.clip(performance, 0, 1)})
+
 
 # ==============================================================================
 # SECTION 3: CASE STUDY & ADVISOR DATA (NEW)
